@@ -1,0 +1,61 @@
+1)
+
+Sol:
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table products \
+--hive-import \
+--hive-database default \
+--hive-table product_new \
+--fields-terminated-by ':' \
+--lines-terminated-by '|' \
+--as-parquetfile \
+--warehouse-dir /user/cloudera/problem2/products/parquet
+
+18/10/31 12:26:21 INFO mapreduce.ImportJobBase: Retrieved 1345 records.
+
+mysql> select count(*) from products;
++----------+
+| count(*) |
++----------+
+|     1345 |
++----------+
+1 row in set (0.14 sec)
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/problem2/products/parquet
+ls: `/user/cloudera/problem2/products/parquet': No such file or directory
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/hive/warehouse
+Found 15 items
+drwxrwxrwx   - cloudera supergroup          0 2018-10-10 16:12 /user/hive/warehouse/categories
+drwxrwxrwx   - cloudera supergroup          0 2018-10-10 16:13 /user/hive/warehouse/customers
+drwxrwxrwx   - cloudera supergroup          0 2018-09-20 18:24 /user/hive/warehouse/daily_revenue_per_product.db
+drwxrwxrwx   - cloudera supergroup          0 2018-10-22 16:09 /user/hive/warehouse/departments
+drwxrwxrwx   - cloudera supergroup          0 2018-10-10 20:35 /user/hive/warehouse/hadoopexam.db
+drwxrwxrwx   - cloudera supergroup          0 2018-10-10 16:16 /user/hive/warehouse/order_items
+drwxrwxrwx   - cloudera supergroup          0 2018-10-10 16:17 /user/hive/warehouse/orders
+drwxrwxrwx   - cloudera supergroup          0 2018-10-28 12:28 /user/hive/warehouse/problem5.db
+drwxrwxrwx   - cloudera supergroup          0 2018-10-29 19:20 /user/hive/warehouse/problem6.db
+drwxrwxrwx   - cloudera supergroup          0 2018-10-31 12:26 /user/hive/warehouse/product_new
+drwxrwxrwx   - cloudera supergroup          0 2018-10-31 11:52 /user/hive/warehouse/product_replica
+drwxrwxrwx   - cloudera supergroup          0 2018-10-10 16:18 /user/hive/warehouse/products
+drwxrwxrwx   - cloudera supergroup          0 2018-09-17 17:15 /user/hive/warehouse/retail_db.db
+drwxrwxrwx   - cloudera supergroup          0 2018-09-17 12:55 /user/hive/warehouse/retail_db_orc.db
+drwxrwxrwx   - cloudera supergroup          0 2018-09-21 12:40 /user/hive/warehouse/sqoop.db
+
+Basically what happens is data will be imported to /user/cloudera/mysql_table_name
+
+from /user/cloudera/mysql_table_name data will be imported to the database you have mentioned.
+
+by default it will be imported to  this directory /user/cloudera. 
+
+If you want to change it you can change using --warehouse-dir 
+
+
+
+
+
+

@@ -1,0 +1,554 @@
+1)
+
+Sol:
+
+sqoop import-all-tables \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--as-avrodatafile \
+--compress \
+--compression-codec org.apache.hadoop.io.compress.SnappyCodec \
+--warehouse-dir /user/cloudera/Udemy/retail_db.db \
+-m 1
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/retail_db.db
+Found 15 items
+drwxr-xr-x   - cloudera cloudera          0 2018-11-01 13:59 /user/cloudera/Udemy/retail_db.db/categories
+drwxr-xr-x   - cloudera cloudera          0 2018-11-01 14:00 /user/cloudera/Udemy/retail_db.db/customer_new
+drwxr-xr-x   - cloudera cloudera          0 2018-11-01 14:00 /user/cloudera/Udemy/retail_db.db/customers
+drwxr-xr-x   - cloudera cloudera          0 2018-11-01 14:01 /user/cloudera/Udemy/retail_db.db/departments
+drwxr-xr-x   - cloudera cloudera          0 2018-11-01 14:01 /user/cloudera/Udemy/retail_db.db/departments_export
+drwxr-xr-x   - cloudera cloudera          0 2018-11-01 14:02 /user/cloudera/Udemy/retail_db.db/departments_new
+drwxr-xr-x   - cloudera cloudera          0 2018-11-01 14:02 /user/cloudera/Udemy/retail_db.db/order_items
+drwxr-xr-x   - cloudera cloudera          0 2018-11-01 14:03 /user/cloudera/Udemy/retail_db.db/orders
+drwxr-xr-x   - cloudera cloudera          0 2018-11-01 14:04 /user/cloudera/Udemy/retail_db.db/product_hive
+drwxr-xr-x   - cloudera cloudera          0 2018-11-01 14:04 /user/cloudera/Udemy/retail_db.db/products
+drwxr-xr-x   - cloudera cloudera          0 2018-11-01 14:05 /user/cloudera/Udemy/retail_db.db/products_external
+drwxr-xr-x   - cloudera cloudera          0 2018-11-01 14:05 /user/cloudera/Udemy/retail_db.db/products_replica
+drwxr-xr-x   - cloudera cloudera          0 2018-11-01 14:06 /user/cloudera/Udemy/retail_db.db/result
+drwxr-xr-x   - cloudera cloudera          0 2018-11-01 14:06 /user/cloudera/Udemy/retail_db.db/sqoop_inc
+drwxr-xr-x   - cloudera cloudera          0 2018-11-01 14:07 /user/cloudera/Udemy/retail_db.db/sqoop_inc1
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/retail_db.db/orders
+Found 2 items
+-rw-r--r--   1 cloudera cloudera          0 2018-11-01 14:03 /user/cloudera/Udemy/retail_db.db/orders/_SUCCESS
+-rw-r--r--   1 cloudera cloudera     660171 2018-11-01 14:03 /user/cloudera/Udemy/retail_db.db/orders/part-m-00000.avro
+
+scala> import com.databricks.spark.avro._
+import com.databricks.spark.avro._
+
+scala> val ordersDF = sqlContext.read.avro("/user/cloudera/Udemy/retail_db.db/orders")
+ordersDF: org.apache.spark.sql.DataFrame = [order_id: int, order_date: bigint, order_customer_id: int, order_status: string]
+
+scala> ordersDF.count()
+res0: Long = 68883
+
+[cloudera@quickstart ~]$ hadoop fs -get /user/cloudera/Udemy/retail_db.db/orders/part-m-00000.avro /home/cloudera/Documents/Udemy/OrdersAvro
+
+[cloudera@quickstart ~]$ avro-tools getschema /home/cloudera/Documents/Udemy/OrdersAvro/part-m-00000.avro > orders.avsc
+log4j:WARN No appenders could be found for logger (org.apache.hadoop.metrics2.lib.MutableMetricsFactory).
+log4j:WARN Please initialize the log4j system properly.
+log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.
+
+[cloudera@quickstart ~]$ hadoop fs -mkdir /user/hive/schemas
+
+[cloudera@quickstart ~]$ hadoop fs -put orders.avsc /user/hive/schemas
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/hive/schemas
+Found 1 items
+-rw-r--r--   1 cloudera supergroup        708 2018-11-01 14:30 /user/hive/schemas/orders.avsc
+
+hive> create table orders_sqoop stored as avro location '/user/cloudera/Udemy/retail_db.db/orders' tblproperties ('avro.schema.url' = '/user/hive/schemas/orders.avsc'); 
+OK
+Time taken: 0.695 seconds
+
+hive> desc orders_sqoop
+    > ;
+OK
+order_id            	int                 	                    
+order_date          	bigint              	                    
+order_customer_id   	int                 	                    
+order_status        	string              	                    
+Time taken: 0.228 seconds, Fetched: 4 row(s)
+
+======================================================================================================================================================================
+
+2)
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table customers \
+--as-textfile \
+--fields-terminated-by '\t' \
+--target-dir /user/cloudera/problem3/customers/textfile
+
+18/11/01 14:57:23 INFO mapreduce.ImportJobBase: Retrieved 12435 records.
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/problem3/customers/textfile
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-11-01 14:57 /user/cloudera/problem3/customers/textfile/_SUCCESS
+-rw-r--r--   1 cloudera cloudera     237145 2018-11-01 14:57 /user/cloudera/problem3/customers/textfile/part-m-00000
+-rw-r--r--   1 cloudera cloudera     237965 2018-11-01 14:57 /user/cloudera/problem3/customers/textfile/part-m-00001
+-rw-r--r--   1 cloudera cloudera     238092 2018-11-01 14:57 /user/cloudera/problem3/customers/textfile/part-m-00002
+-rw-r--r--   1 cloudera cloudera     240323 2018-11-01 14:57 /user/cloudera/problem3/customers/textfile/part-m-00003
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/problem3/customers/textfile/* | wc -l
+12435
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/problem3/customers/textfile/part-m-00000 | head
+
+1       Richard	Hernandez	XXXXXXXXX	XXXXXXXXX	6303 Heather Plaza	Brownsville	TX	78521
+2	Mary	Barrett	XXXXXXXXX	XXXXXXXXX	9526 Noble Embers Ridge	Littleton	CO	80126
+3	Ann	Smith   XXXXXXXXX	XXXXXXXXX	3422 Blue Pioneer Bend	Caguas	PR	00725
+4	Mary	Jones	XXXXXXXXX	XXXXXXXXX	8324 Little Common	San Marcos	CA	92069
+5	Robert	Hudson	XXXXXXXXX	XXXXXXXXX	10 Crystal River Mall 	Caguas	PR	00725
+6	Mary	Smith	XXXXXXXXX	XXXXXXXXX	3151 Sleepy Quail Promenade	Passaic	NJ	07055
+7	Melissa	Wilcox	XXXXXXXXX	XXXXXXXXX	9453 High Concession	Caguas	PR	00725
+8	Megan	Smith	XXXXXXXXX	XXXXXXXXX	3047 Foggy Forest Plaza	Lawrence	MA	01841
+9	Mary	Perez	XXXXXXXXX	XXXXXXXXX	3616 Quaking Street	Caguas	PR	00725
+10	Melissa	Smith	XXXXXXXXX	XXXXXXXXX	8598 Harvest Beacon Plaza	Stafford	VA	22554
+cat: Unable to write to output stream.
+
+scala> case class Customers(
+     | customer_id : Int,
+     | customer_fname : String,
+     | customer_lname : String,
+     | customer_email : String
+     | )
+defined class Customers
+
+scala> val custDF = sc.textFile("/user/cloudera/problem3/customers/textfile").
+     | map(rec => rec.split('\t')).
+     | map(rec => Customers(rec(0).toInt,rec(1),rec(2),rec(3))).
+     | toDF()
+custDF: org.apache.spark.sql.DataFrame = [customer_id: int, customer_fname: string, customer_lname: string, customer_email: string]
+
+scala> custDF.show(5)
++-----------+--------------+--------------+--------------+
+|customer_id|customer_fname|customer_lname|customer_email|
++-----------+--------------+--------------+--------------+
+|          1|       Richard|     Hernandez|     XXXXXXXXX|
+|          2|          Mary|       Barrett|     XXXXXXXXX|
+|          3|           Ann|         Smith|     XXXXXXXXX|
+|          4|          Mary|         Jones|     XXXXXXXXX|
+|          5|        Robert|        Hudson|     XXXXXXXXX|
++-----------+--------------+--------------+--------------+
+only showing top 5 rows
+
+
+scala> val custDF1 = custDF.map(rec => rec(0) + "|" + rec(1) + "|" + rec(2) + "|" + rec(3)).saveAsTextFile("/user/cloudera/problem3/customers/textfile/output")
+custDF1: Unit = ()
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/problem3/customers/textfile/output/part-00000 | head
+1|Richard|Hernandez|XXXXXXXXX
+2|Mary|Barrett|XXXXXXXXX
+3|Ann|Smith|XXXXXXXXX
+4|Mary|Jones|XXXXXXXXX
+5|Robert|Hudson|XXXXXXXXX
+6|Mary|Smith|XXXXXXXXX
+7|Melissa|Wilcox|XXXXXXXXX
+8|Megan|Smith|XXXXXXXXX
+9|Mary|Perez|XXXXXXXXX
+10|Melissa|Smith|XXXXXXXXX
+cat: Unable to write to output stream.
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/problem3/customers/textfile/output/* | wc -l
+12435
+ 
+======================================================================================================================================================================
+
+3)
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table customers \
+--target-dir /user/cloudera/Udemy/problem3/customers/permissions
+
+18/11/01 16:05:21 INFO mapreduce.ImportJobBase: Retrieved 12435 records.
+
+mysql> select count(*) from customers;
++----------+
+| count(*) |
++----------+
+|    12435 |
++----------+
+1 row in set (0.02 sec)
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/problem3/customers/permissions
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-11-01 16:05 /user/cloudera/Udemy/problem3/customers/permissions/_SUCCESS
+-rw-r--r--   1 cloudera cloudera     237145 2018-11-01 16:05 /user/cloudera/Udemy/problem3/customers/permissions/part-m-00000
+-rw-r--r--   1 cloudera cloudera     237965 2018-11-01 16:05 /user/cloudera/Udemy/problem3/customers/permissions/part-m-00001
+-rw-r--r--   1 cloudera cloudera     238092 2018-11-01 16:05 /user/cloudera/Udemy/problem3/customers/permissions/part-m-00002
+-rw-r--r--   1 cloudera cloudera     240323 2018-11-01 16:05 /user/cloudera/Udemy/problem3/customers/permissions/part-m-00003
+
+[cloudera@quickstart ~]$ hadoop fs -chmod 765 /user/cloudera/Udemy/problem3/customers/permissions/*
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/problem3/customers/permissions
+Found 5 items
+-rwxrw-r-x   1 cloudera cloudera          0 2018-11-01 16:05 /user/cloudera/Udemy/problem3/customers/permissions/_SUCCESS
+-rwxrw-r-x   1 cloudera cloudera     237145 2018-11-01 16:05 /user/cloudera/Udemy/problem3/customers/permissions/part-m-00000
+-rwxrw-r-x   1 cloudera cloudera     237965 2018-11-01 16:05 /user/cloudera/Udemy/problem3/customers/permissions/part-m-00001
+-rwxrw-r-x   1 cloudera cloudera     238092 2018-11-01 16:05 /user/cloudera/Udemy/problem3/customers/permissions/part-m-00002
+-rwxrw-r-x   1 cloudera cloudera     240323 2018-11-01 16:05 /user/cloudera/Udemy/problem3/customers/permissions/part-m-00003
+
+======================================================================================================================================================================
+
+4)
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table customers \
+--target-dir /user/cloudera/Udemy/customers/delate \
+--fields-terminated-by '^' \
+--compress \
+--compression-codec org.apache.hadoop.io.compress.DeflateCodec \
+--columns "customer_id,customer_fname,customer_lname,customer_street"
+
+18/11/01 17:00:39 INFO mapreduce.ImportJobBase: Retrieved 12435 records.
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/customers/delate
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-11-01 17:00 /user/cloudera/Udemy/customers/delate/_SUCCESS
+-rw-r--r--   1 cloudera cloudera      44163 2018-11-01 17:00 /user/cloudera/Udemy/customers/delate/part-m-00000.deflate
+-rw-r--r--   1 cloudera cloudera      44205 2018-11-01 17:00 /user/cloudera/Udemy/customers/delate/part-m-00001.deflate
+-rw-r--r--   1 cloudera cloudera      44269 2018-11-01 17:00 /user/cloudera/Udemy/customers/delate/part-m-00002.deflate
+-rw-r--r--   1 cloudera cloudera      44396 2018-11-01 17:00 /user/cloudera/Udemy/customers/delate/part-m-00003.deflate
+
+
+======================================================================================================================================================================
+
+5)
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table orders \
+--as-parquetfile \
+--target-dir /user/cloudera/Udemy/orders/parquet
+
+18/11/01 17:18:21 INFO mapreduce.ImportJobBase: Retrieved 68883 records.
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/orders/parquet
+Found 6 items
+drwxr-xr-x   - cloudera cloudera          0 2018-11-01 17:16 /user/cloudera/Udemy/orders/parquet/.metadata
+drwxr-xr-x   - cloudera cloudera          0 2018-11-01 17:18 /user/cloudera/Udemy/orders/parquet/.signals
+-rw-r--r--   1 cloudera cloudera     147312 2018-11-01 17:18 /user/cloudera/Udemy/orders/parquet/20da0b60-19fb-4996-884d-be4844413724.parquet
+-rw-r--r--   1 cloudera cloudera     147465 2018-11-01 17:18 /user/cloudera/Udemy/orders/parquet/2cdb328c-f32b-412b-9a68-71b0dc9ebdff.parquet
+-rw-r--r--   1 cloudera cloudera     151742 2018-11-01 17:18 /user/cloudera/Udemy/orders/parquet/4baa1091-729b-4f05-a7d5-43bfcbe2c8ef.parquet
+-rw-r--r--   1 cloudera cloudera     147265 2018-11-01 17:18 /user/cloudera/Udemy/orders/parquet/a9cd1e10-195c-41c5-95cc-0007f99e28bc.parquet
+
+scala> val ordersDF = sqlContext.read.parquet("/user/cloudera/Udemy/orders/parquet")
+ordersDF: org.apache.spark.sql.DataFrame = [order_id: int, order_date: bigint, order_customer_id: int, order_status: string]
+
+scala> ordersDF.count()
+res3: Long = 68883                                                              
+
+scala> sqlContext.setConf("spark.sql.avro.compression.codec","snappy")
+
+scala> ordersDF.write.avro("/user/cloudera/Udemy/orders/parquet/output")
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/orders/parquet/output
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-11-01 17:23 /user/cloudera/Udemy/orders/parquet/output/_SUCCESS
+-rw-r--r--   1 cloudera cloudera     163875 2018-11-01 17:23 /user/cloudera/Udemy/orders/parquet/output/part-r-00000-d08df272-d6f1-469c-8c58-fc417332837b.avro
+-rw-r--r--   1 cloudera cloudera     164048 2018-11-01 17:23 /user/cloudera/Udemy/orders/parquet/output/part-r-00001-d08df272-d6f1-469c-8c58-fc417332837b.avro
+-rw-r--r--   1 cloudera cloudera     169178 2018-11-01 17:23 /user/cloudera/Udemy/orders/parquet/output/part-r-00002-d08df272-d6f1-469c-8c58-fc417332837b.avro
+-rw-r--r--   1 cloudera cloudera     163894 2018-11-01 17:23 /user/cloudera/Udemy/orders/parquet/output/part-r-00003-d08df272-d6f1-469c-8c58-fc417332837b.avro
+
+======================================================================================================================================================================
+
+6)
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table order_items \
+--target-dir /user/cloudera/Udemy/problem3/order-items \
+--as-textfile
+
+18/11/01 17:40:41 INFO mapreduce.ImportJobBase: Retrieved 172198 records.
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/Udemy/problem3/order-items/* | wc -l
+172198
+
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table products \
+--as-textfile \
+--target-dir /user/cloudera/Udemy/problem3/products \
+--columns "product_id,product_name"
+
+18/11/01 17:44:08 INFO mapreduce.ImportJobBase: Retrieved 1345 records.
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/Udemy/problem3/products/* | wc -l
+1345
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/Udemy/problem3/order-items/part-m-00000 | head
+1,1,957,1,299.98,299.98
+2,2,1073,1,199.99,199.99
+3,2,502,5,250.0,50.0
+4,2,403,1,129.99,129.99
+5,4,897,2,49.98,24.99
+6,4,365,5,299.95,59.99
+7,4,502,3,150.0,50.0
+8,4,1014,4,199.92,49.98
+9,5,957,1,299.98,299.98
+10,5,365,5,299.95,59.99
+cat: Unable to write to output stream.
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/Udemy/problem3/products/part-m-00000 | head
+1,Quest Q64 10 FT. x 10 FT. Slant Leg Instant U
+2,Under Armour Men's Highlight MC Football Clea
+3,Under Armour Men's Renegade D Mid Football Cl
+4,Under Armour Men's Renegade D Mid Football Cl
+5,Riddell Youth Revolution Speed Custom Footbal
+6,Jordan Men's VI Retro TD Football Cleat
+7,Schutt Youth Recruit Hybrid Custom Football H
+8,Nike Men's Vapor Carbon Elite TD Football Cle
+9,Nike Adult Vapor Jet 3.0 Receiver Gloves
+10,Under Armour Men's Highlight MC Football Clea
+cat: Unable to write to output stream.
+
+case class OrderItems(
+order_item_id : Int,
+order_item_order_id : Int,
+order_item_product_id : Int,
+order_item_quantity : Int,
+order_item_subtotal : Float,
+order_item_product_price : Float
+)
+
+scala> val ordersDF = sc.textFile("/user/cloudera/Udemy/problem3/order-items").
+     | map(rec => rec.split(',')).
+     | map(rec => OrderItems(rec(0).toInt,rec(1).toInt,rec(2).toInt,rec(3).toInt,rec(4).toFloat,rec(5).toFloat)).
+     | toDF()
+ordersDF: org.apache.spark.sql.DataFrame = [order_item_id: int, order_item_order_id: int, order_item_product_id: int, order_item_quantity: int, order_item_subtotal: float, order_item_product_price: float]
+
+scala> ordersDF.show(5)
++-------------+-------------------+---------------------+-------------------+-------------------+------------------------+
+|order_item_id|order_item_order_id|order_item_product_id|order_item_quantity|order_item_subtotal|order_item_product_price|
++-------------+-------------------+---------------------+-------------------+-------------------+------------------------+
+|            1|                  1|                  957|                  1|             299.98|                  299.98|
+|            2|                  2|                 1073|                  1|             199.99|                  199.99|
+|            3|                  2|                  502|                  5|              250.0|                    50.0|
+|            4|                  2|                  403|                  1|             129.99|                  129.99|
+|            5|                  4|                  897|                  2|              49.98|                   24.99|
++-------------+-------------------+---------------------+-------------------+-------------------+------------------------+
+only showing top 5 rows
+
+
+scala> val ordersDF = sc.textFile("/user/cloudera/Udemy/problem3/order-items").
+     | map(rec => rec.split(',')).
+     | map(rec => OrderItems(rec(0).toInt,rec(1).toInt,rec(2).toInt,rec(3).toInt,rec(4).toFloat,rec(5).toFloat)).
+     | toDF()
+ordersDF: org.apache.spark.sql.DataFrame = [order_item_id: int, order_item_order_id: int, order_item_product_id: int, order_item_quantity: int, order_item_subtotal: float, order_item_product_price: float]
+
+scala> ordersDF.show(5)
++-------------+-------------------+---------------------+-------------------+-------------------+------------------------+
+|order_item_id|order_item_order_id|order_item_product_id|order_item_quantity|order_item_subtotal|order_item_product_price|
++-------------+-------------------+---------------------+-------------------+-------------------+------------------------+
+|            1|                  1|                  957|                  1|             299.98|                  299.98|
+|            2|                  2|                 1073|                  1|             199.99|                  199.99|
+|            3|                  2|                  502|                  5|              250.0|                    50.0|
+|            4|                  2|                  403|                  1|             129.99|                  129.99|
+|            5|                  4|                  897|                  2|              49.98|                   24.99|
++-------------+-------------------+---------------------+-------------------+-------------------+------------------------+
+only showing top 5 rows
+
+scala> val ordItemsDF = ordersDF.select("order_item_product_id","order_item_subtotal").orderBy(col("order_item_subtotal").desc)
+ordItemsDF: org.apache.spark.sql.DataFrame = [order_item_product_id: int, order_item_subtotal: float]
+
+scala> ordItemsDF.show(10)
++---------------------+-------------------+                                     
+|order_item_product_id|order_item_subtotal|
++---------------------+-------------------+
+|                  208|            1999.99|
+|                  208|            1999.99|
+|                  208|            1999.99|
+|                  208|            1999.99|
+|                  208|            1999.99|
+|                  208|            1999.99|
+|                  208|            1999.99|
+|                  208|            1999.99|
+|                  208|            1999.99|
+|                  208|            1999.99|
++---------------------+-------------------+
+only showing top 10 rows
+
+
+scala> ordItemsDF.registerTempTable("orderItemsTable")
+
+scala> val query1 = sqlContext.sql("""
+     | select distinct order_item_product_id,order_item_subtotal 
+     | from orderItemsTable limit 10
+     | """)
+query1: org.apache.spark.sql.DataFrame = [order_item_product_id: int, order_item_subtotal: float]
+
+scala> query1.show()
++---------------------+-------------------+                                     
+|order_item_product_id|order_item_subtotal|
++---------------------+-------------------+
+|                  208|            1999.99|
+|                   60|             999.99|
+|                  226|             599.99|
+|                  860|             599.99|
+|                  724|              500.0|
+|                  191|             499.95|
+|                   78|             499.95|
+|                  359|             499.95|
+|                  646|             499.95|
+|                  677|             499.95|
++---------------------+-------------------+
+
+scala> query1.map(rec => rec(0) + ":" + rec(1)).saveAsTextFile("/user/cloudera/Udemy/problem3/order-items/output")
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/problem3/order-items/output
+Found 2 items
+-rw-r--r--   1 cloudera cloudera          0 2018-11-01 18:35 /user/cloudera/Udemy/problem3/order-items/output/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        108 2018-11-01 18:35 /user/cloudera/Udemy/problem3/order-items/output/part-00000
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/Udemy/problem3/order-items/output/part-00000 | head
+208:1999.99
+60:999.99
+226:599.99
+860:599.99
+724:500.0
+191:499.95
+78:499.95
+359:499.95
+646:499.95
+677:499.95
+
+======================================================================================================================================================================
+
+7)
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table orders \
+--as-parquetfile \
+--target-dir /user/cloudera/Udemy/problem3/Orders/parquet
+
+Question wrong. 
+
+Read Sequence file
+
+Write as Sequence file
+
+======================================================================================================================================================================
+
+8)
+
+scala> val prodTable = sqlContext.table("default.product_ranked")
+prodTable: org.apache.spark.sql.DataFrame = [product_id: int, product_category_id: int, product_name: string, product_description: string, product_price: double, product_image: string]
+
+scala> prodTable.show(5)
++----------+-------------------+--------------------+-------------------+-------------+--------------------+
+|product_id|product_category_id|        product_name|product_description|product_price|       product_image|
++----------+-------------------+--------------------+-------------------+-------------+--------------------+
+|         1|                  2|Quest Q64 10 FT. ...|                   |        59.98|http://images.acm...|
+|         2|                  2|Under Armour Men'...|                   |       129.99|http://images.acm...|
+|         3|                  2|Under Armour Men'...|                   |        89.99|http://images.acm...|
+|         4|                  2|Under Armour Men'...|                   |        89.99|http://images.acm...|
+|         5|                  2|Riddell Youth Rev...|                   |       199.99|http://images.acm...|
++----------+-------------------+--------------------+-------------------+-------------+--------------------+
+only showing top 5 rows
+
+
+scala> val prodAgg = prodTable.groupBy(col("product_category_id")).agg(max("product_price"))
+prodAgg: org.apache.spark.sql.DataFrame = [product_category_id: int, max(product_price): double]
+
+scala> val prodAgg = prodTable.groupBy(col("product_category_id")).agg(max("product_price").alias("max_price"))
+prodAgg: org.apache.spark.sql.DataFrame = [product_category_id: int, max_price: double]
+
+scala> prodAgg.show(5)
++-------------------+---------+                                                 
+|product_category_id|max_price|
++-------------------+---------+
+|                 31|   899.99|
+|                 32|   999.99|
+|                 33|   169.99|
+|                 34|   169.99|
+|                 35|   299.99|
++-------------------+---------+
+only showing top 5 rows
+
+scala> val prodAgg = prodTable.groupBy(col("product_category_id").alias("prod_cat_id")).agg(max("product_price").alias("max_price"))
+prodAgg: org.apache.spark.sql.DataFrame = [prod_cat_id: int, max_price: double]
+
+scala> val finale = prodAgg.join(prodTable, prodAgg("prod_cat_id") === prodTable("product_category_id") && prodAgg("max_price") === prodTable("product_price"))
+finale: org.apache.spark.sql.DataFrame = [prod_cat_id: int, max_price: double, product_id: int, product_category_id: int, product_name: string, product_description: string, product_price: double, product_image: string]
+
+scala> finale.show(5)
++-----------+---------+----------+-------------------+--------------------+-------------------+-------------+--------------------+
+|prod_cat_id|max_price|product_id|product_category_id|        product_name|product_description|product_price|       product_image|
++-----------+---------+----------+-------------------+--------------------+-------------------+-------------+--------------------+
+|         31|   899.99|       685|                 31|TaylorMade SLDR I...|                   |       899.99|http://images.acm...|
+|         32|   999.99|       694|                 32|Callaway Women's ...|                   |       999.99|http://images.acm...|
+|         32|   999.99|       695|                 32|Callaway Women's ...|                   |       999.99|http://images.acm...|
+|         33|   169.99|       739|                 33|Nike TW 14 Mesh G...|                   |       169.99|http://images.acm...|
+|         33|   169.99|       740|                 33|Nike TW 14 Mesh G...|                   |       169.99|http://images.acm...|
++-----------+---------+----------+-------------------+--------------------+-------------------+-------------+--------------------+
+only showing top 5 rows
+
+======================================================================================================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

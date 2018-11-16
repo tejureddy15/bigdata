@@ -1,0 +1,633 @@
+1)
+
+Instructions: Connect to mySQL database using sqoop, import all products into a metastore table named product_new inside default database. Data Description: A mysql instance is running on the gateway node.In that instance you will find products table > Installation : on the cluser node gateway  > Database name:  retail_db > Table name: Products > Username: root > Password: cloudera Output Requirement: product_new table does not exist in metastore. Warehouse directory should be changed to "/user/cloudera/problem1/products/parquet" Save output in parquet format fields separated by a colon and lines should be terminated by pipe
+
+Sol:
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table products \
+--hive-import \
+--hive-database default \
+--hive-table product_new \
+--fields-terminated-by ':' \
+--lines-terminated-by '|' \
+--as-parquetfile \
+--warehouse-dir /user/cloudera/problem2/products/parquet
+
+18/10/31 12:26:21 INFO mapreduce.ImportJobBase: Retrieved 1345 records.
+
+mysql> select count(*) from products;
++----------+
+| count(*) |
++----------+
+|     1345 |
++----------+
+1 row in set (0.14 sec)
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/problem2/products/parquet
+ls: `/user/cloudera/problem2/products/parquet': No such file or directory
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/hive/warehouse
+Found 15 items
+drwxrwxrwx   - cloudera supergroup          0 2018-10-10 16:12 /user/hive/warehouse/categories
+drwxrwxrwx   - cloudera supergroup          0 2018-10-10 16:13 /user/hive/warehouse/customers
+drwxrwxrwx   - cloudera supergroup          0 2018-09-20 18:24 /user/hive/warehouse/daily_revenue_per_product.db
+drwxrwxrwx   - cloudera supergroup          0 2018-10-22 16:09 /user/hive/warehouse/departments
+drwxrwxrwx   - cloudera supergroup          0 2018-10-10 20:35 /user/hive/warehouse/hadoopexam.db
+drwxrwxrwx   - cloudera supergroup          0 2018-10-10 16:16 /user/hive/warehouse/order_items
+drwxrwxrwx   - cloudera supergroup          0 2018-10-10 16:17 /user/hive/warehouse/orders
+drwxrwxrwx   - cloudera supergroup          0 2018-10-28 12:28 /user/hive/warehouse/problem5.db
+drwxrwxrwx   - cloudera supergroup          0 2018-10-29 19:20 /user/hive/warehouse/problem6.db
+drwxrwxrwx   - cloudera supergroup          0 2018-10-31 12:26 /user/hive/warehouse/product_new
+drwxrwxrwx   - cloudera supergroup          0 2018-10-31 11:52 /user/hive/warehouse/product_replica
+drwxrwxrwx   - cloudera supergroup          0 2018-10-10 16:18 /user/hive/warehouse/products
+drwxrwxrwx   - cloudera supergroup          0 2018-09-17 17:15 /user/hive/warehouse/retail_db.db
+drwxrwxrwx   - cloudera supergroup          0 2018-09-17 12:55 /user/hive/warehouse/retail_db_orc.db
+drwxrwxrwx   - cloudera supergroup          0 2018-09-21 12:40 /user/hive/warehouse/sqoop.db
+
+Basically what happens is data will be imported to /user/cloudera/mysql_table_name
+
+from /user/cloudera/mysql_table_name data will be imported to the database you have mentioned.
+
+by default it will be imported to  this directory /user/cloudera. 
+
+If you want to change it you can change using --warehouse-dir 
+
+hive> show tables;
+OK
+categories
+customers
+departments
+order_items
+orders
+product_new
+product_replica
+products
+Time taken: 0.081 seconds, Fetched: 8 row(s)
+
+hive> select count(*) from product_new;
+
+OK
+1345
+Time taken: 47.552 seconds, Fetched: 1 row(s)
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/hive/warehouse/product_new
+Found 6 items
+drwxr-xr-x   - cloudera supergroup          0 2018-10-31 12:24 /user/hive/warehouse/product_new/.metadata
+drwxr-xr-x   - cloudera supergroup          0 2018-10-31 12:26 /user/hive/warehouse/product_new/.signals
+-rw-r--r--   1 cloudera supergroup      13609 2018-10-31 12:26 /user/hive/warehouse/product_new/3485eea6-5c20-4f31-9465-81e2c7c75c36.parquet
+-rw-r--r--   1 cloudera supergroup      13909 2018-10-31 12:26 /user/hive/warehouse/product_new/73d2a594-c68e-4c2c-a4c2-74a485a2df91.parquet
+-rw-r--r--   1 cloudera supergroup      16748 2018-10-31 12:26 /user/hive/warehouse/product_new/a0a0fd25-8d63-440f-87a4-c6b9b8fed633.parquet
+-rw-r--r--   1 cloudera supergroup      16992 2018-10-31 12:26 /user/hive/warehouse/product_new/dea60aec-d637-42fe-9500-c91d274ba560.parquet
+[cloudera@quickstart ~]$ 
+ 
+
+======================================================================================================================================================================
+
+2)
+
+PreRequiste: Create product_hive table in mysql using below script: use retail_db;create table product_hive as select * from products;truncate product_hive; Instructions: Using sqoop export all data from metastore product_new table created in last problem statement into products_hive table table in mysql.  Data Description: A mysql instance is running on the gateway node.In that instance you will find customers table that contains customers data. > Installation : on the cluser node gateway  > Database name:  retail_db > Table name: product_hive> Username: root > Password: cloudera Output Requirement: product_hive  table should contain all product data imported from hive table.
+
+Sol:
+
+mysql> create table product_hive as select * from products;
+Query OK, 1345 rows affected (0.22 sec)
+Records: 1345  Duplicates: 0  Warnings: 0
+
+mysql> select count(*) from product_hive;
++----------+
+| count(*) |
++----------+
+|     1345 |
++----------+
+1 row in set (0.00 sec)
+
+mysql> truncate product_hive;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> select count(*) from product_hive;
++----------+
+| count(*) |
++----------+
+|        0 |
++----------+
+1 row in set (0.00 sec)
+
+sqoop export \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table product_hive \
+--export-dir /user/hive/warehouse/product_new/
+
+Error in configuration. Need new jars of kite-sdk in the lib folder of Sqoop
+
+======================================================================================================================================================================
+
+3)
+
+PreRequiste: Run below sqoop command to import orders table from mysql  into hdfs to the destination /user/cloudera/problem2/avro1 as avro file. sqoop import --connect "jdbc:mysql://localhost/retail_db" --password cloudera --username root --table orders --as-avrodatafile --target-dir /user/cloudera/problem2/avro1  Instructions: Convert data-files stored at hdfs location /user/cloudera/problem2/avro1 into parquet file with no compression and save in HDFS. Output Requirement: Result should be saved in /user/cloudera/problem2/parquet-nocompress Output file should be saved as Parquet file with no Compression
+
+Sol:
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table orders \
+--as-avrodatafile \
+--target-dir /user/cloudera/Udemy/problem2/orders
+
+mysql> select count(*) from orders;
++----------+
+| count(*) |
++----------+
+|    68883 |
++----------+
+1 row in set (0.03 sec)
+
+18/10/31 14:17:57 INFO mapreduce.ImportJobBase: Retrieved 68883 records.
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/problem2/orders
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-31 14:17 /user/cloudera/Udemy/problem2/orders/_SUCCESS
+-rw-r--r--   1 cloudera cloudera     439146 2018-10-31 14:17 /user/cloudera/Udemy/problem2/orders/part-m-00000.avro
+-rw-r--r--   1 cloudera cloudera     447726 2018-10-31 14:17 /user/cloudera/Udemy/problem2/orders/part-m-00001.avro
+-rw-r--r--   1 cloudera cloudera     446959 2018-10-31 14:17 /user/cloudera/Udemy/problem2/orders/part-m-00002.avro
+-rw-r--r--   1 cloudera cloudera     447606 2018-10-31 14:17 /user/cloudera/Udemy/problem2/orders/part-m-00003.avro
+
+scala> val ordersDF = sqlContext.read.avro("/user/cloudera/Udemy/problem2/orders")
+ordersDF: org.apache.spark.sql.DataFrame = [order_id: int, order_date: bigint, order_customer_id: int, order_status: string]
+
+scala> ordersDF.show(5)
++--------+-------------+-----------------+---------------+
+|order_id|   order_date|order_customer_id|   order_status|
++--------+-------------+-----------------+---------------+
+|       1|1374690600000|            11599|         CLOSED|
+|       2|1374690600000|              256|PENDING_PAYMENT|
+|       3|1374690600000|            12111|       COMPLETE|
+|       4|1374690600000|             8827|         CLOSED|
+|       5|1374690600000|            11318|       COMPLETE|
++--------+-------------+-----------------+---------------+
+only showing top 5 rows
+
+
+scala> sqlContext.setConf("spark.sql.parquet.compression.codec","uncompressed")
+
+scala> ordersDF.write.parquet("/user/cloudera/Udemy/problem2/orders/parquet")
+18/10/31 14:22:38 WARN hdfs.DFSClient: Caught exception                         
+java.lang.InterruptedException
+	at java.lang.Object.wait(Native Method)
+	at java.lang.Thread.join(Thread.java:1281)
+	at java.lang.Thread.join(Thread.java:1355)
+	at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.closeResponder(DFSOutputStream.java:967)
+	at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.endBlock(DFSOutputStream.java:705)
+	at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.run(DFSOutputStream.java:8
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/problem2/orders/parquet
+Found 7 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-31 14:22 /user/cloudera/Udemy/problem2/orders/parquet/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        530 2018-10-31 14:22 /user/cloudera/Udemy/problem2/orders/parquet/_common_metadata
+-rw-r--r--   1 cloudera cloudera       2592 2018-10-31 14:22 /user/cloudera/Udemy/problem2/orders/parquet/_metadata
+-rw-r--r--   1 cloudera cloudera     147326 2018-10-31 14:22 /user/cloudera/Udemy/problem2/orders/parquet/part-r-00000-6103aa3c-e05e-4d10-9af1-c00ebe86009b.parquet
+-rw-r--r--   1 cloudera cloudera     147257 2018-10-31 14:22 /user/cloudera/Udemy/problem2/orders/parquet/part-r-00001-6103aa3c-e05e-4d10-9af1-c00ebe86009b.parquet
+-rw-r--r--   1 cloudera cloudera     147441 2018-10-31 14:22 /user/cloudera/Udemy/problem2/orders/parquet/part-r-00002-6103aa3c-e05e-4d10-9af1-c00ebe86009b.parquet
+-rw-r--r--   1 cloudera cloudera     152266 2018-10-31 14:22 /user/cloudera/Udemy/problem2/orders/parquet/part-r-00003-6103aa3c-e05e-4d10-9af1-c00ebe86009b.parquet
+
+======================================================================================================================================================================
+
+4)
+
+PreRequiste: Run below sqoop command to import customers table from mysql into hive table customers_hive: sqoop import --connect "jdbc:mysql://localhost/retail_db" --username root --password cloudera --table customers --warehouse-dir /user/cloudera/problem3/customers_hive/input --hive-import --create-hive-table --hive-database default --hive-table customers_hive Instructions: Get Customers from metastore table named "customers_hive" whose fname is like "Rich" and save the results in HDFS in text format. Output Requirement: Result should be saved in /user/cloudera/problem4/customers/output as text file. Output should contain only fname, lname and cityfname and lname should seperated by tab with city seperated by colon Sample Output Richard Plaza:FranciscoRich Smith:Chicago
+
+Sol:
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table customers \
+--hive-import \
+--create-hive-table \
+--hive-database default \
+--hive-table customers_hive \
+--warehouse-dir /user/cloudera/problem2/customers_hive/input
+
+18/10/31 14:33:41 INFO mapreduce.ImportJobBase: Retrieved 12435 records.
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/problem2/customers_hive/input    (pasted as it is)
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/problem2/customers_hive/input/*
+cat: `/user/cloudera/problem2/customers_hive/input/*': No such file or directory
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/problem2/customers_hive/input
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/problem2/customers_hive/input/* | wc -l
+cat: `/user/cloudera/problem2/customers_hive/input/*': No such file or directory
+0
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/problem2/customers_hive/input/* | wc -l
+ls: `/user/cloudera/problem2/customers_hive/input/*': No such file or directory
+0
+
+hive> show tables;
+OK
+categories
+customers
+customers_hive
+departments
+order_items
+orders
+product_new
+product_replica
+products
+Time taken: 0.081 seconds, Fetched: 9 row(s)
+
+hive> select count(*) from customers_hive;
+OK
+12435
+Time taken: 43.385 seconds, Fetched: 1 row(s)
+
+scala> val custTable = sqlContext.table("default.customers_hive")
+custTable: org.apache.spark.sql.DataFrame = [customer_id: int, customer_fname: string, customer_lname: string, customer_email: string, customer_password: string, customer_street: string, customer_city: string, customer_state: string, customer_zipcode: string]
+
+scala> custTable.show(5)
++-----------+--------------+--------------+--------------+-----------------+--------------------+-------------+--------------+----------------+
+|customer_id|customer_fname|customer_lname|customer_email|customer_password|     customer_street|customer_city|customer_state|customer_zipcode|
++-----------+--------------+--------------+--------------+-----------------+--------------------+-------------+--------------+----------------+
+|          1|       Richard|     Hernandez|     XXXXXXXXX|        XXXXXXXXX|  6303 Heather Plaza|  Brownsville|            TX|           78521|
+|          2|          Mary|       Barrett|     XXXXXXXXX|        XXXXXXXXX|9526 Noble Embers...|    Littleton|            CO|           80126|
+|          3|           Ann|         Smith|     XXXXXXXXX|        XXXXXXXXX|3422 Blue Pioneer...|       Caguas|            PR|           00725|
+|          4|          Mary|         Jones|     XXXXXXXXX|        XXXXXXXXX|  8324 Little Common|   San Marcos|            CA|           92069|
+|          5|        Robert|        Hudson|     XXXXXXXXX|        XXXXXXXXX|10 Crystal River ...|       Caguas|            PR|           00725|
++-----------+--------------+--------------+--------------+-----------------+--------------------+-------------+--------------+----------------+
+only showing top 5 rows
+
+
+scala> custTable.registerTempTable("cust")
+
+scala> val query1 = sqlContext.sql("""
+     | select customer_fname,customer_lname,customer_city
+     | from cust
+     | where customer_fname LIKE "Rich%"
+     | """)
+query1: org.apache.spark.sql.DataFrame = [customer_fname: string, customer_lname: string, customer_city: string]
+
+scala> query1.show()
++--------------+--------------+-------------+
+|customer_fname|customer_lname|customer_city|
++--------------+--------------+-------------+
+|       Richard|     Hernandez|  Brownsville|
+|       Richard|         Smith|      Modesto|
+|       Richard|         Smith|     Columbus|
+|       Richard|      Holloway|       Caguas|
+|       Richard|          Reed|       Caguas|
+|       Richard|         Smith|  San Antonio|
+|       Richard|        Flores|San Francisco|
+|       Richard|        Haynes|      Hayward|
+|       Richard|         Perry|        Bronx|
+|       Richard|       Goodman|     New York|
+|       Richard|        Stokes|      Seattle|
+|       Richard|         Leach|       Caguas|
+|       Richard|        Jordan| Broken Arrow|
+|       Richard|         Smith|       Caguas|
+|       Richard|       Edwards|    Englewood|
+|       Richard|        Pineda|  Los Angeles|
+|       Richard|         Smith|    Cleveland|
+|       Richard|         Welch|    Escondido|
+|       Richard|         Smith| Bell Gardens|
+|       Richard|        Davila|       Caguas|
++--------------+--------------+-------------+
+only showing top 20 rows
+
+
+scala> val query2 = query1.map(rec => rec(0) + "\t" + rec(1) + ":" + rec(2))
+query2: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[1206] at map at <console>:31
+
+scala> query2.take(5)
+res93: Array[String] = Array(Richard	Hernandez:Brownsville, Richard	Smith:Modesto, Richard	Smith:Columbus, Richard	Holloway:Caguas, Richard	Reed:Caguas)
+
+scala> query2.saveAsTextFile("/user/cloudera/Udemy/problem2/customers_hive/output")
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/problem2/customers_hive/output
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-31 14:47 /user/cloudera/Udemy/problem2/customers_hive/output/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        412 2018-10-31 14:47 /user/cloudera/Udemy/problem2/customers_hive/output/part-00000
+-rw-r--r--   1 cloudera cloudera        427 2018-10-31 14:47 /user/cloudera/Udemy/problem2/customers_hive/output/part-00001
+-rw-r--r--   1 cloudera cloudera        439 2018-10-31 14:47 /user/cloudera/Udemy/problem2/customers_hive/output/part-00002
+-rw-r--r--   1 cloudera cloudera        519 2018-10-31 14:47 /user/cloudera/Udemy/problem2/customers_hive/output/part-00003
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/Udemy/problem2/customers_hive/output/part-00000
+Richard Hernandez:Brownsville
+Richard	Smith:Modesto
+Richard	Smith:Columbus
+Richard	Holloway:Caguas
+Richard	Reed:Caguas
+Richard	Smith:San Antonio
+Richard	Flores:San Francisco
+Richard	Haynes:Hayward
+Richard	Perry:Bronx
+Richard	Goodman:New York
+Richard	Stokes:Seattle
+Richard	Leach:Caguas
+Richard	Jordan:Broken Arrow
+Richard	Smith:Caguas
+Richard	Edwards:Englewood
+Richard	Pineda:Los Angeles
+Richard	Smith:Cleveland
+
+======================================================================================================================================================================
+
+5)
+
+PreRequiste: Run below sqoop command to import customer table from mysql  into hdfs to the destination /user/cloudera/problem2/customer/parquet  as parquet file.  sqoop import --connect "jdbc:mysql://localhost/retail_db" --password cloudera --username root --table customers --as-parquetfile --target-dir /user/cloudera/problem2/customer/parquet Instructions: Get total numbers customers in each state  and  save results in HDFS in csv format. Output Requirement: Result should be saved in /user/cloudera/problem2/customer_csv_new. Output should have state name followed by total number of customers in that state.Important Information:To run on local vm, start the spark-shell with databricks packages but in actual exam you don't need to add packages while starting shell. All databricks packages should be available by default in spark-shell.spark-shell --packages com.databricks:spark-csv_2.10:1.4.0Spark 2.0 has built in CSV format so below command will work perfectly in spark 2.0 but not in spark 1.6groupedData.write.csv("/user/cloudera/problem2/customer_csv_new")
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table customers \
+--as-parquetfile \
+--target-dir /user/cloudera/Udemy/problem2/customers/parquet
+
+18/10/31 15:00:36 INFO mapreduce.ImportJobBase: Retrieved 12435 records.
+
+mysql> select count(*) from customers;
++----------+
+| count(*) |
++----------+
+|    12435 |
++----------+
+1 row in set (0.01 sec)
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/problem2/customers/parquet
+Found 6 items
+drwxr-xr-x   - cloudera cloudera          0 2018-10-31 14:57 /user/cloudera/Udemy/problem2/customers/parquet/.metadata
+drwxr-xr-x   - cloudera cloudera          0 2018-10-31 15:00 /user/cloudera/Udemy/problem2/customers/parquet/.signals
+-rw-r--r--   1 cloudera cloudera      89047 2018-10-31 15:00 /user/cloudera/Udemy/problem2/customers/parquet/366a3e80-4dbb-4b6d-b2f8-efad43beb772.parquet
+-rw-r--r--   1 cloudera cloudera      89163 2018-10-31 15:00 /user/cloudera/Udemy/problem2/customers/parquet/852acbe2-765b-4214-b7d5-3845991f9cf7.parquet
+-rw-r--r--   1 cloudera cloudera      88762 2018-10-31 15:00 /user/cloudera/Udemy/problem2/customers/parquet/9c319938-f055-4a56-bc3b-ccf875016c81.parquet
+-rw-r--r--   1 cloudera cloudera      88944 2018-10-31 15:00 /user/cloudera/Udemy/problem2/customers/parquet/e4b3da69-88de-4159-b5a3-bf6b16cba100.parquet
+
+
+scala> val custDF = sqlContext.read.parquet("/user/cloudera/Udemy/problem2/customers/parquet")
+custDF: org.apache.spark.sql.DataFrame = [customer_id: int, customer_fname: string, customer_lname: string, customer_email: string, customer_password: string, customer_street: string, customer_city: string, customer_state: string, customer_zipcode: string]
+
+scala> custDF.show(5)
++-----------+--------------+--------------+--------------+-----------------+--------------------+-------------+--------------+----------------+
+|customer_id|customer_fname|customer_lname|customer_email|customer_password|     customer_street|customer_city|customer_state|customer_zipcode|
++-----------+--------------+--------------+--------------+-----------------+--------------------+-------------+--------------+----------------+
+|       6219|        Walter|         Simon|     XXXXXXXXX|        XXXXXXXXX|4746 Green Hills ...|       Caguas|            PR|           00725|
+|       6220|          Mary|         Smith|     XXXXXXXXX|        XXXXXXXXX|2329 Sunny View C...|       Ithaca|            NY|           14850|
+|       6221|        Andrew|         Mcgee|     XXXXXXXXX|        XXXXXXXXX| 5261 Thunder Valley|     San Jose|            CA|           95127|
+|       6222|     Stephanie|         Smith|     XXXXXXXXX|        XXXXXXXXX|    9453 Tawny Close|     New York|            NY|           10003|
+|       6223|       Carolyn|         Stein|     XXXXXXXXX|        XXXXXXXXX|   8548 Heather Gate|     Columbus|            OH|           43230|
++-----------+--------------+--------------+--------------+-----------------+--------------------+-------------+--------------+----------------+
+only showing top 5 rows
+
+
+scala> val custDF1 = custDF.groupBy(col("customer_state")).agg(countDistinct(col("customer_id")).alias("customerCount"))
+custDF1: org.apache.spark.sql.DataFrame = [customer_state: string, customerCount: bigint]
+
+scala> custDF1.show()
++--------------+-------------+                                                  
+|customer_state|customerCount|
++--------------+-------------+
+|            MT|            7|
+|            TN|          104|
+|            NC|          150|
+|            ND|           14|
+|            AL|            3|
+|            TX|          635|
+|            NJ|          219|
+|            NM|           73|
+|            AR|           12|
+|            NV|          103|
+|            AZ|          213|
+|            HI|           87|
+|            NY|          775|
+|            UT|           69|
+|            OH|          276|
+|            OK|           19|
+|            IA|            5|
+|            VA|          136|
+|            OR|          119|
+|            ID|            9|
++--------------+-------------+
+only showing top 20 rows
+
+
+scala> import com.databricks.spark.csv;
+<console>:29: error: object csv is not a member of package com.databricks.spark
+         import com.databricks.spark.csv;
+                ^
+
+scala> custDF1.map(rec => rec(0) + "," + rec(1)).saveAsTextFile("/user/cloudera/Udemy/problem2/customers/csv")
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/Udemy/problem2/customers/csv/*
+
+DC,42
+DE,23
+WV,16
+KS,29
+KY,35
+RI,15
+LA,63
+SC,41
+FL,374
+MA,113
+MD,164
+MI,254
+MN,39
+GA,169
+MO,92
+
+======================================================================================================================================================================
+
+6)
+
+Instructions: Import products table from mysql into hive metastore table named product_ranked in warehouse directory /user/cloudera/practice4.db. Run below sqoop statement sqoop import --connect "jdbc:mysql://gateway/retail_db" --username root --password cloudera --table products --warehouse-dir /user/cloudera/practice4.db --hive-import --create-hive-table --hive-database default --hive-table product_ranked -m 1 Rank products within each category by price and order by price ascending and rank descending Data Description: A mysql instance is running on the gateway node.In that instance you will find products table. > Installation : on the cluser node gateway  > Database name:  retail_db > Table name: Products > Username: root > Password: cloudera Output Requirement: Output should have product_id,product_name,product_price and its rank.Result should be saved in /user/cloudera/pratice4/output
+
+Sol:
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table products \
+--hive-import \
+--create-hive-table \
+--hive-database default \
+--hive-table product_ranked \
+--warehouse-dir /user/cloudera/Udemy/problem2/product_ranked/input
+
+18/10/31 15:22:32 INFO mapreduce.ImportJobBase: Retrieved 1345 records.
+
+mysql> select count(*) from products;
++----------+
+| count(*) |
++----------+
+|     1345 |
++----------+
+1 row in set (0.00 sec)
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/problem2/product_ranked/input (It's not showing no such file or directory)
+[cloudera@quickstart ~]$ 
+
+hive> show tables;
+OK
+categories
+customers
+customers_hive
+departments
+order_items
+orders
+product_new
+product_ranked
+product_replica
+products
+Time taken: 2.89 seconds, Fetched: 10 row(s)
+
+hive> select count(*) from product_ranked;
+OK
+1345
+Time taken: 70.406 seconds, Fetched: 1 row
+
+scala> val hiveTable = sqlContext.table("default.product_ranked")
+hiveTable: org.apache.spark.sql.DataFrame = [product_id: int, product_category_id: int, product_name: string, product_description: string, product_price: double, product_image: string]
+
+scala> hiveTable.show(5)
++----------+-------------------+--------------------+-------------------+-------------+--------------------+
+|product_id|product_category_id|        product_name|product_description|product_price|       product_image|
++----------+-------------------+--------------------+-------------------+-------------+--------------------+
+|         1|                  2|Quest Q64 10 FT. ...|                   |        59.98|http://images.acm...|
+|         2|                  2|Under Armour Men'...|                   |       129.99|http://images.acm...|
+|         3|                  2|Under Armour Men'...|                   |        89.99|http://images.acm...|
+|         4|                  2|Under Armour Men'...|                   |        89.99|http://images.acm...|
+|         5|                  2|Riddell Youth Rev...|                   |       199.99|http://images.acm...|
++----------+-------------------+--------------------+-------------------+-------------+--------------------+
+only showing top 5 rows
+
+
+scala> hiveTable.registerTempTable("prods")
+
+scala> val query1 = sqlContext.sql("""
+select product_id,product_name,product_price,
+dense_rank() over(partition by product_category_id order by product_price) as rank
+from prods
+oredr by product_price,rank desc
+""")
+
+query1.show()
+
+scala> query1.rdd.saveAsTextFile("/user/cloudera/Udemy/problem2/products/rankProb")
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/Udemy/problem2/products/rankProb/part-00191
+[987,GoPro HERO3+ Black Edition Camera,399.99,14]
+[995,Bushnell 2014 Tour V3 Slope Patriot Pack Lase,399.99,14]
+[1015,GoPro HERO3+ Black Edition Camera,399.99,13]
+[1018,Coleman Scanoe Canoe,399.99,13]
+[1028,YETI Tundra 65 Chest Cooler,399.99,13]
+[944,GoPro HERO3+ Black Edition Camera,399.99,12]
+[955,Diamondback Women's Clarity Hybrid Bike 2013,399.99,12]
+[959,Diamondback Adult Insight Hybrid Bike 2013,399.99,12]
+[961,Diamondback Women's Clarity 1 Hybrid Bike 201,399.99,12]
+[1058,Lifetime Freestyle XL Stand-Up Paddle Board,399.99,12]
+[1070,Coleman Scanoe Canoe,399.99,12]
+[1081,Snap OnTop Solo Kayak,399.99,12]
+
+scala> query1.map(rec => rec(0) + "," + rec(1) + "," + rec(2) + "," + rec(3)).saveAsTextFile("/user/cloudera/Udemy/problem2/products/rankProb1")
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/Udemy/problem2/products/rankProb1/part-00191
+987,GoPro HERO3+ Black Edition Camera,399.99,14
+995,Bushnell 2014 Tour V3 Slope Patriot Pack Lase,399.99,14
+1015,GoPro HERO3+ Black Edition Camera,399.99,13
+1018,Coleman Scanoe Canoe,399.99,13
+1028,YETI Tundra 65 Chest Cooler,399.99,13
+944,GoPro HERO3+ Black Edition Camera,399.99,12
+955,Diamondback Women's Clarity Hybrid Bike 2013,399.99,12
+959,Diamondback Adult Insight Hybrid Bike 2013,399.99,12
+961,Diamondback Women's Clarity 1 Hybrid Bike 201,399.99,12
+1058,Lifetime Freestyle XL Stand-Up Paddle Board,399.99,12
+1070,Coleman Scanoe Canoe,399.99,12
+1081,Snap OnTop Solo Kayak,399.99,12
+
+======================================================================================================================================================================
+
+7)
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table orders \
+--target-dir /user/cloudera/Udemy/problem2/orders/parquet \
+--as-parquetfile
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/problem2/orders/parquet
+Found 8 items
+drwxr-xr-x   - cloudera cloudera          0 2018-10-31 16:03 /user/cloudera/Udemy/problem2/orders/parquet/.metadata
+-rw-r--r--   1 cloudera cloudera          0 2018-10-31 14:22 /user/cloudera/Udemy/problem2/orders/parquet/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        530 2018-10-31 14:22 /user/cloudera/Udemy/problem2/orders/parquet/_common_metadata
+-rw-r--r--   1 cloudera cloudera       2592 2018-10-31 14:22 /user/cloudera/Udemy/problem2/orders/parquet/_metadata
+-rw-r--r--   1 cloudera cloudera     147326 2018-10-31 14:22 /user/cloudera/Udemy/problem2/orders/parquet/part-r-00000-6103aa3c-e05e-4d10-9af1-c00ebe86009b.parquet
+-rw-r--r--   1 cloudera cloudera     147257 2018-10-31 14:22 /user/cloudera/Udemy/problem2/orders/parquet/part-r-00001-6103aa3c-e05e-4d10-9af1-c00ebe86009b.parquet
+-rw-r--r--   1 cloudera cloudera     147441 2018-10-31 14:22 /user/cloudera/Udemy/problem2/orders/parquet/part-r-00002-6103aa3c-e05e-4d10-9af1-c00ebe86009b.parquet
+-rw-r--r--   1 cloudera cloudera     152266 2018-10-31 14:22 /user/cloudera/Udemy/problem2/orders/parquet/part-r-00003-6103aa3c-e05e-4d10-9af1-c00ebe86009b.parquet
+
+scala> val ordersDF = sqlContext.read.parquet("/user/cloudera/Udemy/problem2/orders/parquet")
+ordersDF: org.apache.spark.sql.DataFrame = [order_id: int, order_date: bigint, order_customer_id: int, order_status: string]
+
+scala> ordersDF.show(5)
++--------+-------------+-----------------+---------------+
+|order_id|   order_date|order_customer_id|   order_status|
++--------+-------------+-----------------+---------------+
+|       1|1374690600000|            11599|         CLOSED|
+|       2|1374690600000|              256|PENDING_PAYMENT|
+|       3|1374690600000|            12111|       COMPLETE|
+|       4|1374690600000|             8827|         CLOSED|
+|       5|1374690600000|            11318|       COMPLETE|
++--------+-------------+-----------------+---------------+
+only showing top 5 rows
+
+
+scala> ordersDF.count()
+18/11/01 13:21:05 WARN hadoop.ParquetRecordReader: Can not initialize counter due to context is not a instance of TaskInputOutputContext, but is org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
+18/11/01 13:21:05 WARN hadoop.ParquetRecordReader: Can not initialize counter due to context is not a instance of TaskInputOutputContext, but is org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
+18/11/01 13:21:05 WARN hadoop.ParquetRecordReader: Can not initialize counter due to context is not a instance of TaskInputOutputContext, but is org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
+18/11/01 13:21:05 WARN hadoop.ParquetRecordReader: Can not initialize counter due to context is not a instance of TaskInputOutputContext, but is org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
+res107: Long = 68883
+
+scala> import org.apache.hadoop.io.compress.SnappyCodec
+import org.apache.hadoop.io.compress.SnappyCodec
+
+scala> filtered.toJSON.saveAsTextFile("/user/cloudera/Udemy/problem2/json/snappy",classOf[SnappyCodec])
+
+Doubt
+
+======================================================================================================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,506 @@
+PS 1:
+
+1)
+
+Instructions: Connect to mySQL database using sqoop, import all customers that lives in 'CA' state. Data Description: A mysql instance is running on the gateway node.In that instance you will find customers table that contains customers data. > Installation : on the cluser node gateway  > Database name:  retail_db > Table name: Customers > Username: root > Password: cloudera Output Requirement: Place the customers files in HDFS directory "/user/cloudera/problem1/customers/avrodata" Use avro format with pipe delimiter and snappy compression. Load every customer record completely
+
+Sol:
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table customers \
+--fields-terminated-by '|' \
+--as-avrodatafile \
+--compress \
+--compression-codec org.apache.hadoop.io.compress.SnappyCodec \
+--target-dir /user/cloudera/Udemy/problem1/customers/avrodata \
+--where "customer_state = 'CA'"
+
+mysql> select count(*) from customers where customer_state = 'CA';
++----------+
+| count(*) |
++----------+
+|     2012 |
++----------+
+1 row in set (0.02 sec)
+
+18/10/30 15:04:12 INFO mapreduce.ImportJobBase: Retrieved 2012 records.
+
+[cloudera@quickstart ~]$ hadoop fs -get /user/cloudera/Udemy/problem1/customers/avrodata /home/cloudera/Documents/Udemy/Customers
+
+[cloudera@quickstart ~]$ avro-tools getmeta /home/cloudera/Documents/Udemy/Customers/avrodata/part-m-00000.avro
+
+log4j:WARN No appenders could be found for logger (org.apache.hadoop.metrics2.lib.MutableMetricsFactory).
+log4j:WARN Please initialize the log4j system properly.
+log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.
+avro.codec	snappy
+avro.schema	{"type":"record","name":"customers","doc":"Sqoop import of customers","fields":[{"name":"customer_id","type":["null","int"],"default":null,"columnName":"customer_id","sqlType":"4"},{"name":"customer_fname","type":["null","string"],"default":null,"columnName":"customer_fname","sqlType":"12"},{"name":"customer_lname","type":["null","string"],"default":null,"columnName":"customer_lname","sqlType":"12"},{"name":"customer_email","type":["null","string"],"default":null,"columnName":"customer_email","sqlType":"12"},{"name":"customer_password","type":["null","string"],"default":null,"columnName":"customer_password","sqlType":"12"},{"name":"customer_street","type":["null","string"],"default":null,"columnName":"customer_street","sqlType":"12"},{"name":"customer_city","type":["null","string"],"default":null,"columnName":"customer_city","sqlType":"12"},{"name":"customer_state","type":["null","string"],"default":null,"columnName":"customer_state","sqlType":"12"},{"name":"customer_zipcode","type":["null","string"],"default":null,"columnName":"customer_zipcode","sqlType":"12"}],"tableName":"customers"}
+
+
+[cloudera@quickstart ~]$ avro-tools getmeta /home/cloudera/Documents/Udemy/Customers/avrodata/part-m-00001.avro
+log4j:WARN No appenders could be found for logger (org.apache.hadoop.metrics2.lib.MutableMetricsFactory).
+log4j:WARN Please initialize the log4j system properly.
+log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.
+avro.codec	snappy
+avro.schema	{"type":"record","name":"customers","doc":"Sqoop import of customers","fields":[{"name":"customer_id","type":["null","int"],"default":null,"columnName":"customer_id","sqlType":"4"},{"name":"customer_fname","type":["null","string"],"default":null,"columnName":"customer_fname","sqlType":"12"},{"name":"customer_lname","type":["null","string"],"default":null,"columnName":"customer_lname","sqlType":"12"},{"name":"customer_email","type":["null","string"],"default":null,"columnName":"customer_email","sqlType":"12"},{"name":"customer_password","type":["null","string"],"default":null,"columnName":"customer_password","sqlType":"12"},{"name":"customer_street","type":["null","string"],"default":null,"columnName":"customer_street","sqlType":"12"},{"name":"customer_city","type":["null","string"],"default":null,"columnName":"customer_city","sqlType":"12"},{"name":"customer_state","type":["null","string"],"default":null,"columnName":"customer_state","sqlType":"12"},{"name":"customer_zipcode","type":["null","string"],"default":null,"columnName":"customer_zipcode","sqlType":"12"}],"tableName":"customers"}
+
+
+[cloudera@quickstart ~]$ avro-tools getmeta /home/cloudera/Documents/Udemy/Customers/avrodata/part-m-00002.avro
+log4j:WARN No appenders could be found for logger (org.apache.hadoop.metrics2.lib.MutableMetricsFactory).
+log4j:WARN Please initialize the log4j system properly.
+log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.
+avro.codec	snappy
+avro.schema	{"type":"record","name":"customers","doc":"Sqoop import of customers","fields":[{"name":"customer_id","type":["null","int"],"default":null,"columnName":"customer_id","sqlType":"4"},{"name":"customer_fname","type":["null","string"],"default":null,"columnName":"customer_fname","sqlType":"12"},{"name":"customer_lname","type":["null","string"],"default":null,"columnName":"customer_lname","sqlType":"12"},{"name":"customer_email","type":["null","string"],"default":null,"columnName":"customer_email","sqlType":"12"},{"name":"customer_password","type":["null","string"],"default":null,"columnName":"customer_password","sqlType":"12"},{"name":"customer_street","type":["null","string"],"default":null,"columnName":"customer_street","sqlType":"12"},{"name":"customer_city","type":["null","string"],"default":null,"columnName":"customer_city","sqlType":"12"},{"name":"customer_state","type":["null","string"],"default":null,"columnName":"customer_state","sqlType":"12"},{"name":"customer_zipcode","type":["null","string"],"default":null,"columnName":"customer_zipcode","sqlType":"12"}],"tableName":"customers"}
+
+
+[cloudera@quickstart ~]$ avro-tools getmeta /home/cloudera/Documents/Udemy/Customers/avrodata/part-m-00003.avro
+log4j:WARN No appenders could be found for logger (org.apache.hadoop.metrics2.lib.MutableMetricsFactory).
+log4j:WARN Please initialize the log4j system properly.
+log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.
+avro.codec	snappy
+avro.schema	{"type":"record","name":"customers","doc":"Sqoop import of customers","fields":[{"name":"customer_id","type":["null","int"],"default":null,"columnName":"customer_id","sqlType":"4"},{"name":"customer_fname","type":["null","string"],"default":null,"columnName":"customer_fname","sqlType":"12"},{"name":"customer_lname","type":["null","string"],"default":null,"columnName":"customer_lname","sqlType":"12"},{"name":"customer_email","type":["null","string"],"default":null,"columnName":"customer_email","sqlType":"12"},{"name":"customer_password","type":["null","string"],"default":null,"columnName":"customer_password","sqlType":"12"},{"name":"customer_street","type":["null","string"],"default":null,"columnName":"customer_street","sqlType":"12"},{"name":"customer_city","type":["null","string"],"default":null,"columnName":"customer_city","sqlType":"12"},{"name":"customer_state","type":["null","string"],"default":null,"columnName":"customer_state","sqlType":"12"},{"name":"customer_zipcode","type":["null","string"],"default":null,"columnName":"customer_zipcode","sqlType":"12"}],"tableName":"customers"}
+
+
+Expl: 
+
+To check if the files are compressed or not first move all the files to local file system
+
+and then hit 
+
+avro-tools getmeta /home/cloudera/Documents/Udemy/Customers/avrodata/part-m-00003.avro
+
+it gives 
+
+1) avro.codec	snappy
+2) avro.schema
+
+======================================================================================================================================================================
+
+2)
+
+PreRequiste: Run below sqoop command to import customers table from mysql  into hdfs to the destination /user/cloudera/problem1/customers/text2  \sqoop import --connect "jdbc:mysql://localhost/retail_db" --password cloudera --username root --table customers --target-dir /user/cloudera/problem1/customers/text2 --fields-terminated-by '^' --columns "customer_id,customer_lname,customer_street''  Create customer_new table in mysql using below script: create table retail_db.customer_new(id int,lname varchar(255),street varchar(255)); Instructions Using sqoop export all data back from hdfs location "/user/cloudera/problem1/customers/text2" into customers_new table in mysql.  Data Description: A mysql instance is running on the gateway node.In that instance you will find customers table that contains customers data. > Installation : on the cluser node gateway  > Database name:  retail_db > Table name: customer_new> Username: root > Password: cloudera Output Requirement: customer_new table should contain all customers from HDFS location
+
+Sol:
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table customers \
+--fields-terminated-by '^' \
+--target-dir /user/cloudera/Udemy/problem1/customers/text1 \
+--columns "customer_id,customer_lname,customer_street"
+
+
+mysql> select count(*) from customers;
++----------+
+| count(*) |
++----------+
+|    12435 |
++----------+
+1 row in set (0.01 sec)
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/problem1/customers/text1
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-30 16:10 /user/cloudera/Udemy/problem1/customers/text1/_SUCCESS
+-rw-r--r--   1 cloudera cloudera     100548 2018-10-30 16:09 /user/cloudera/Udemy/problem1/customers/text1/part-m-00000
+-rw-r--r--   1 cloudera cloudera     101251 2018-10-30 16:09 /user/cloudera/Udemy/problem1/customers/text1/part-m-00001
+-rw-r--r--   1 cloudera cloudera     101543 2018-10-30 16:10 /user/cloudera/Udemy/problem1/customers/text1/part-m-00002
+-rw-r--r--   1 cloudera cloudera     103861 2018-10-30 16:10 /user/cloudera/Udemy/problem1/customers/text1/part-m-00003
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/Udemy/problem1/customers/text1/* | wc -l
+12435
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/Udemy/problem1/customers/text1/part-m-00000 | head
+1^Hernandez^6303 Heather Plaza
+2^Barrett^9526 Noble Embers Ridge
+3^Smith^3422 Blue Pioneer Bend
+4^Jones^8324 Little Common
+5^Hudson^10 Crystal River Mall 
+6^Smith^3151 Sleepy Quail Promenade
+7^Wilcox^9453 High Concession
+8^Smith^3047 Foggy Forest Plaza
+9^Perez^3616 Quaking Street
+10^Smith^8598 Harvest Beacon Plaza
+cat: Unable to write to output stream.
+
+mysql> create table customer_new(
+    -> id int,
+    -> lname varchar(255),
+    -> street varchar(255)
+    -> );
+Query OK, 0 rows affected (1.05 sec)
+
+sqoop export \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table customer_new \
+--export-dir /user/cloudera/Udemy/problem1/customers/text1 \
+--input-fields-terminated-by '^' \
+--input-null-string "null" \
+--input-null-non-string "null"
+
+18/10/30 16:17:45 INFO mapreduce.ExportJobBase: Exported 12435 records.
+
+mysql> select count(*) from customer_new;
++----------+
+| count(*) |
++----------+
+|    12435 |
++----------+
+1 row in set (0.01 sec)
+
+
+======================================================================================================================================================================
+
+3)
+
+PreRequiste: Run below sqoop command to import orders table from mysql  into hdfs to the destination /user/cloudera/problem2/avro as avro file.sqoop import --connect "jdbc:mysql://localhost/retail_db" --password cloudera --username root --table orders --as-avrodatafile --target-dir /user/cloudera/problem2/avro Instructions: Convert data-files stored at hdfs location /user/cloudera/problem2/avro  into parquet file using snappy compression and save in HDFS. Output Requirement: Result should be saved in /user/cloudera/problem2/parquet-snappyOutput file should be saved as Parquet file in Snappy Compression.
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table orders \
+--as-parquetfile \
+--compress \
+--compression-codec org.apache.hadoop.io.compress.SnappyCodec \
+--target-dir /user/cloudera/Udemy/problem3/orders/parquetFormat
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/problem3/orders/parquetFormat
+Found 6 items
+drwxr-xr-x   - cloudera cloudera          0 2018-10-30 16:41 /user/cloudera/Udemy/problem3/orders/parquetFormat/.metadata
+drwxr-xr-x   - cloudera cloudera          0 2018-10-30 16:43 /user/cloudera/Udemy/problem3/orders/parquetFormat/.signals
+-rw-r--r--   1 cloudera cloudera     151742 2018-10-30 16:43 /user/cloudera/Udemy/problem3/orders/parquetFormat/0d8b0da8-9e89-4f2f-ad12-2750ccb7b5ad.parquet
+-rw-r--r--   1 cloudera cloudera     147465 2018-10-30 16:43 /user/cloudera/Udemy/problem3/orders/parquetFormat/2bcd4dfb-684c-43b6-9628-e1df1070c37a.parquet
+-rw-r--r--   1 cloudera cloudera     147265 2018-10-30 16:43 /user/cloudera/Udemy/problem3/orders/parquetFormat/2e625635-d2b8-40c4-b428-a4b1e0caf6bf.parquet
+-rw-r--r--   1 cloudera cloudera     147312 2018-10-30 16:43 /user/cloudera/Udemy/problem3/orders/parquetFormat/456d5c83-0df4-4f15-ab84-0223499a35df.parquet
+--------------------------------
+--------------------------------
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table orders \
+--as-avrodatafile \
+--compress \
+--compression-codec org.apache.hadoop.io.compress.SnappyCodec \
+--target-dir /user/cloudera/Udemy/problem1/orders/avrodata
+
+18/10/30 17:32:58 INFO mapreduce.ImportJobBase: Retrieved 68883 records.
+
+mysql> select count(*) from orders;
++----------+
+| count(*) |
++----------+
+|    68883 |
++----------+
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/problem1/orders/avrodata
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-30 17:32 /user/cloudera/Udemy/problem1/orders/avrodata/_SUCCESS
+-rw-r--r--   1 cloudera cloudera     164094 2018-10-30 17:32 /user/cloudera/Udemy/problem1/orders/avrodata/part-m-00000.avro
+-rw-r--r--   1 cloudera cloudera     164150 2018-10-30 17:32 /user/cloudera/Udemy/problem1/orders/avrodata/part-m-00001.avro
+-rw-r--r--   1 cloudera cloudera     164263 2018-10-30 17:32 /user/cloudera/Udemy/problem1/orders/avrodata/part-m-00002.avro
+-rw-r--r--   1 cloudera cloudera     169304 2018-10-30 17:32 /user/cloudera/Udemy/problem1/orders/avrodata/part-m-00003.avro
+
+scala> val ordersDF = sqlContext.read.avro("/user/cloudera/Udemy/problem1/orders/avrodata")
+ordersDF: org.apache.spark.sql.DataFrame = [order_id: int, order_date: bigint, order_customer_id: int, order_status: string]
+
+scala> sqlContext.setConf("spark.sql.parquet.compression.codec","snappy")
+
+scala> ordersDF.write.parquet("/user/cloudera/Udemy/problem1/orders/parquetdata")
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/problem1/orders/parquetdata
+Found 7 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-30 17:39 /user/cloudera/Udemy/problem1/orders/parquetdata/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        530 2018-10-30 17:39 /user/cloudera/Udemy/problem1/orders/parquetdata/_common_metadata
+-rw-r--r--   1 cloudera cloudera       2704 2018-10-30 17:39 /user/cloudera/Udemy/problem1/orders/parquetdata/_metadata
+-rw-r--r--   1 cloudera cloudera     147135 2018-10-30 17:39 /user/cloudera/Udemy/problem1/orders/parquetdata/part-r-00000-20f0fea8-13f6-4c0f-a3ed-53c4a414088a.snappy.parquet
+-rw-r--r--   1 cloudera cloudera     147088 2018-10-30 17:39 /user/cloudera/Udemy/problem1/orders/parquetdata/part-r-00001-20f0fea8-13f6-4c0f-a3ed-53c4a414088a.snappy.parquet
+-rw-r--r--   1 cloudera cloudera     147288 2018-10-30 17:39 /user/cloudera/Udemy/problem1/orders/parquetdata/part-r-00002-20f0fea8-13f6-4c0f-a3ed-53c4a414088a.snappy.parquet
+-rw-r--r--   1 cloudera cloudera     151565 2018-10-30 17:39 /user/cloudera/Udemy/problem1/orders/parquetdata/part-r-00003-20f0fea8-13f6-4c0f-a3ed-53c4a414088a.snappy.parquet
+
+Note:
+
+LZO : com.hadoop.compression.lzo.LzopCodec
+
+======================================================================================================================================================================
+
+4)
+
+Prerequiste: Import orders table from mysql into hdfs location /user/cloudera/practice4/question3/orders/.Run below sqoop statement sqoop import --connect "jdbc:mysql://localhost/retail_db" --username root --password cloudera --table orders --target-dir /user/cloudera/practice4/question3/orders/ Import customers from mysql into hdfs location /user/cloudera/practice4/question3/customers/.Run below sqoop statement sqoop import --connect "jdbc:mysql://localhost/retail_db" --username root --password cloudera --table customers --target-dir /user/cloudera/practice4/question3/customers/ Instructions: Join the data at hdfs location /user/cloudera/practice4/question3/orders/ & /user/cloudera/practice4/question3/customers/ to find out customers whose orders status is like "pending" Output Requirement: Output should have customer_id,customer_fname,order_id and order_status.Result should be saved in /user/cloudera/p1/q7/output
+
+
+Sol:
+
+Already orders and customers table were imported
+
+scala> val ordersDF = sqlContext.read.avro("/user/cloudera/Udemy/problem1/orders/avrodata")
+ordersDF: org.apache.spark.sql.DataFrame = [order_id: int, order_date: bigint, order_customer_id: int, order_status: string]
+
+scala> val customersDF = sqlContext.read.avro("/user/cloudera/Udemy/problem1/customers/avrodata")
+customersDF: org.apache.spark.sql.DataFrame = [customer_id: int, customer_fname: string, customer_lname: string, customer_email: string, customer_password: string, customer_street: string, customer_city: string, customer_state: string, customer_zipcode: string]
+
+scala> val joinDF = ordersDF.join(customersDF,ordersDF("order_customer_id") === customersDF("customer_id"))
+joinDF: org.apache.spark.sql.DataFrame = [order_id: int, order_date: bigint, order_customer_id: int, order_status: string, customer_id: int, customer_fname: string, customer_lname: string, customer_email: string, customer_password: string, customer_street: string, customer_city: string, customer_state: string, customer_zipcode: string]
+
+scala> joinDF.registerTempTable("ordersAndCustomers")
+
+scala> val query1 = sqlContext.sql("""
+     | select customer_id,customer_fname,order_id,order_status
+     | from ordersAndCustomers
+     | where order_status LIKE "PENDING%"
+     | """)
+query1: org.apache.spark.sql.DataFrame = [customer_id: int, customer_fname: string, order_id: int, order_status: string]
+
+scala> query1.show()
++-----------+--------------+--------+---------------+                           
+|customer_id|customer_fname|order_id|   order_status|
++-----------+--------------+--------+---------------+
+|       9149|        Ronald|      13|PENDING_PAYMENT|
+|       8214|          Mary|      39|        PENDING|
+|      10628|          Mary|      54|PENDING_PAYMENT|
+|       2256|          Mary|      93|PENDING_PAYMENT|
+|       7790|        Edward|     104|PENDING_PAYMENT|
+|       2772|      Patricia|     128|PENDING_PAYMENT|
+|       1347|          Alan|     167|        PENDING|
+|       7436|         Megan|     198|PENDING_PAYMENT|
+|      11791|          Mary|     203|PENDING_PAYMENT|
+|       7282|      Jennifer|     216|        PENDING|
+|       4285|        Johnny|     235|PENDING_PAYMENT|
+|        488|          Mary|     265|PENDING_PAYMENT|
+|       4797|       Russell|     331|PENDING_PAYMENT|
+|       2071|        Walter|     333|PENDING_PAYMENT|
+|       1977|          Sara|     352|PENDING_PAYMENT|
+|         76|        Joseph|     394|PENDING_PAYMENT|
+|       9547|          Mary|     402|PENDING_PAYMENT|
+|       5239|        Johnny|     441|PENDING_PAYMENT|
+|       1719|          Ruth|     467|PENDING_PAYMENT|
+|       8349|          Jose|     474|PENDING_PAYMENT|
++-----------+--------------+--------+---------------+
+only showing top 20 rows
+
+
+scala> sqlContext.setConf("spark.sql.avro.compression.codec","gzip")
+
+scala> query1.write.avro("/user/cloudera/Udemy/Problem1/OrdersAndCustomers")
+18/10/30 18:01:21 ERROR avro.AvroRelation: compression gzip is not supported
+18/10/30 18:01:21 WARN hdfs.DFSClient: Caught exception 
+java.lang.InterruptedException
+	at java.lang.Object.wait(Native Method)
+	at java.lang.Thread.join(Thread.java:1281)
+	at java.lang.Thread.join(Thread.java:1355)
+	at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.closeResponder(DFSOutputStream.java:967)
+	at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.endBlock(DFSOutputStream.java:705)
+	at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.run(DFSOutputStream.java:894)
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/Problem1/OrdersAndCustomers
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-30 18:01 /user/cloudera/Udemy/Problem1/OrdersAndCustomers/_SUCCESS
+-rw-r--r--   1 cloudera cloudera      25457 2018-10-30 18:01 /user/cloudera/Udemy/Problem1/OrdersAndCustomers/part-r-00000-36dd05f5-c0e6-4f27-8638-ada6bc8cd3e1.avro
+-rw-r--r--   1 cloudera cloudera      26990 2018-10-30 18:01 /user/cloudera/Udemy/Problem1/OrdersAndCustomers/part-r-00001-36dd05f5-c0e6-4f27-8638-ada6bc8cd3e1.avro
+-rw-r--r--   1 cloudera cloudera      24912 2018-10-30 18:01 /user/cloudera/Udemy/Problem1/OrdersAndCustomers/part-r-00002-36dd05f5-c0e6-4f27-8638-ada6bc8cd3e1.avro
+-rw-r--r--   1 cloudera cloudera      25833 2018-10-30 18:01 /user/cloudera/Udemy/Problem1/OrdersAndCustomers/part-r-00003-36dd05f5-c0e6-4f27-8638-ada6bc8cd3e1.avro
+
+======================================================================================================================================================================
+
+5)
+
+PreRequiste: Run below sqoop command to import customer table from mysql  into hdfs to the destination /user/cloudera/problem3/customer/parquet  as parquet file. Only import customer_id,customer_fname,customer_city. sqoop import --connect "jdbc:mysql://localhost/retail_db" --password cloudera --username root --table customers --columns "customer_id,customer_fname,customer_city"  --target-dir /user/cloudera/problem3/customer/parquet --as-parquetfile Instructions: Count number of customers grouped by customer city,customer first name where customer_fname is like "Mary" and order the results  by customer first name and save the result as text file with fields separated by pipe character Input folder is  /user/cloudera/problem3/customer/parquet. Output Requirement: Result should have customer_city,customer_fname and count of customers and output should be saved in /user/cloudera/problem3/customer_grouped as text file with fields separated by pipe character
+
+Sol:
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table customers \
+--as-parquetfile \
+--target-dir /user/cloudera/Udemy/Problem1/Customers/parquet \
+--columns "customer_id,customer_fname,customer_city"
+
+18/10/30 18:49:41 INFO mapreduce.ImportJobBase: Retrieved 12435 records.
+
+
+scala> val custDF = sqlContext.read.parquet("/user/cloudera/Udemy/Problem1/Customers/parquet")
+custDF: org.apache.spark.sql.DataFrame = [customer_id: int, customer_fname: string, customer_city: string]
+
+scala> custDF.show(5)
+18/10/30 18:59:20 WARN parquet.CorruptStatistics: Ignoring statistics because created_by is null or empty! See PARQUET-251 and PARQUET-297
++-----------+--------------+-------------+
+|customer_id|customer_fname|customer_city|
++-----------+--------------+-------------+
+|       9327|         Donna|       Caguas|
+|       9328|          Mary|Moreno Valley|
+|       9329|        Eugene|     Metairie|
+|       9330|          Mary|       Caguas|
+|       9331|         Donna|    Clementon|
++-----------+--------------+-------------+
+only showing top 5 rows
+
+
+scala> custDF.registerTempTable("customers")
+
+scala> val query1 = sqlContext.sql("""
+     | select customer_city,customer_fname,count(customer_id) as customerCount
+     | from customers
+     | group by customer_city,customer_fname
+     | """)
+query1: org.apache.spark.sql.DataFrame = [customer_city: string, customer_fname: string, customerCount: bigint]
+
+scala> val query2 = query1.filter(col("customer_fname") === "Mary")
+query2: org.apache.spark.sql.DataFrame = [customer_city: string, customer_fname: string, customerCount: bigint]
+
+scala> query2.show()
++----------------+--------------+-------------+
+|   customer_city|customer_fname|customerCount|
++----------------+--------------+-------------+
+|         Gardena|          Mary|            6|
+|      Greensboro|          Mary|            8|
+|       Charlotte|          Mary|            4|
+|           Bronx|          Mary|           35|
+|          Normal|          Mary|            3|
+| Rowland Heights|          Mary|            8|
+|           Ponce|          Mary|            1|
+|      Round Rock|          Mary|            2|
+|       Opa Locka|          Mary|            3|
+|       Hamtramck|          Mary|            1|
+|       Wyandotte|          Mary|            5|
+|          Joliet|          Mary|            7|
+|Rancho Cucamonga|          Mary|            2|
+|         Hialeah|          Mary|           13|
+|     Bolingbrook|          Mary|            2|
+|     Pico Rivera|          Mary|            2|
+|          Denver|          Mary|            8|
+|  San Bernardino|          Mary|            7|
+|       Milwaukee|          Mary|            1|
+|       La Crosse|          Mary|            5|
++----------------+--------------+-------------+
+only showing top 20 rows
+
+scala> val query3 = query2.map(rec => rec(0) + "|" + rec(1) + "|" +  rec(2)).saveAsTextFile("/user/cloudera/Udemy/Problem1/Customers/textFile/result")
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/Udemy/Problem1/Customers/textFile/result/part-00000
+Gardena|Mary|6
+Greensboro|Mary|8
+Charlotte|Mary|4
+
+======================================================================================================================================================================
+
+6)
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table customers \
+--fields-terminated-by '\t' \
+--as-textfile \
+--target-dir /user/cloudera/Udemy/Problem1/Customers/textfile \
+--columns "customer_id,customer_fname,customer_city"
+
+mysql> select count(*) from customers;
++----------+
+| count(*) |
++----------+
+|    12435 |
++----------+
+1 row in set (0.01 sec)
+
+18/10/30 19:27:05 INFO mapreduce.ImportJobBase: Retrieved 12435 records.
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/Problem1/Customers/textfile
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-30 19:27 /user/cloudera/Udemy/Problem1/Customers/textfile/_SUCCESS
+-rw-r--r--   1 cloudera cloudera      60874 2018-10-30 19:26 /user/cloudera/Udemy/Problem1/Customers/textfile/part-m-00000
+-rw-r--r--   1 cloudera cloudera      62098 2018-10-30 19:26 /user/cloudera/Udemy/Problem1/Customers/textfile/part-m-00001
+-rw-r--r--   1 cloudera cloudera      61957 2018-10-30 19:26 /user/cloudera/Udemy/Problem1/Customers/textfile/part-m-00002
+-rw-r--r--   1 cloudera cloudera      64282 2018-10-30 19:27 /user/cloudera/Udemy/Problem1/Customers/textfile/part-m-00003
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/Udemy/Problem1/Customers/textfile/* | wc -l
+12435
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/Udemy/Problem1/Customers/textfile/part-m-00000 | head
+1       Richard	Brownsville
+2       Mary    Littleton
+3       Ann	Caguas
+4       Mary    San Marcos
+5       Robert  Caguas
+6	Mary    Passaic
+7	Melissa	Caguas
+8	Megan	Lawrence
+9	Mary	Caguas
+10	Melissa	Stafford
+cat: Unable to write to output stream
+
+
+each field is separated by tab but tab width is different 2 spaces,4 spaces, 7 spaces 
+
+scala> val query1 = custDF.alias("cd").select("cd.*").where(col("customer_city") === "Brownsville")
+
+scala> query1.show()
++-----------+--------------+-------------+
+|customer_id|customer_fname|customer_city|
++-----------+--------------+-------------+
+|          1|       Richard|  Brownsville|
+|        526|      Kimberly|  Brownsville|
+|       2679|          Mary|  Brownsville|
+|       2970|       Kenneth|  Brownsville|
+|       4294|   Christopher|  Brownsville|
+|       4945|          Mary|  Brownsville|
+|       4963|          Mary|  Brownsville|
+|       7063|          Mary|  Brownsville|
+|       7348|          Mary|  Brownsville|
+|       7905|       Cynthia|  Brownsville|
+|       8455|         Brian|  Brownsville|
+|       9733|         Marie|  Brownsville|
+|       9761|         Helen|  Brownsville|
+|       9963|           Roy|  Brownsville|
+|      10082|          Anna|  Brownsville|
+|      10942|        Donald|  Brownsville|
++-----------+--------------+-------------+
+
+
+scala> query1.toJSON.saveAsTextFile("/user/cloudera/Udemy/problem1/Customers/Brownsville")
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/problem1/Customers/Brownsville
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-30 21:10 /user/cloudera/Udemy/problem1/Customers/Brownsville/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        306 2018-10-30 21:10 /user/cloudera/Udemy/problem1/Customers/Brownsville/part-00000
+-rw-r--r--   1 cloudera cloudera        232 2018-10-30 21:10 /user/cloudera/Udemy/problem1/Customers/Brownsville/part-00001
+-rw-r--r--   1 cloudera cloudera        304 2018-10-30 21:10 /user/cloudera/Udemy/problem1/Customers/Brownsville/part-00002
+-rw-r--r--   1 cloudera cloudera        380 2018-10-30 21:10 /user/cloudera/Udemy/problem1/Customers/Brownsville/part-00003
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/Udemy/problem1/Customers/Brownsville/part-00000
+{"customer_id":1,"customer_fname":"Richard","customer_city":"Brownsville"}
+{"customer_id":526,"customer_fname":"Kimberly","customer_city":"Brownsville"}
+{"customer_id":2679,"customer_fname":"Mary","customer_city":"Brownsville"}
+{"customer_id":2970,"customer_fname":"Kenneth","customer_city":"Brownsville"}
+
+======================================================================================================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

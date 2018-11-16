@@ -1,0 +1,285 @@
+1)
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table orders \
+--where "order_status = 'COMPLETE'" \
+--target-dir /user/cloudera/Udemy/problem4/Orders \
+--fields-terminated-by '\t' \
+--as-parquetfile \
+--compress \
+--compression-codec org.apache.hadoop.io.compress.SnappyCodec \
+--null-string 'NA' \
+--null-non-string '-1'
+
+mysql> select count(*) from orders where order_status = 'COMPLETE';
++----------+
+| count(*) |
++----------+
+|    22899 |
++----------+
+1 row in set (0.06 sec)
+
+18/11/02 11:37:59 INFO mapreduce.ImportJobBase: Retrieved 22899 records.
+
+
+======================================================================================================================================================================
+
+2)
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table customers \
+--where "customer_state = 'CA'" \
+--fields-terminated-by '|' \
+--as-avrodatafile \
+--compress \
+--compression-codec org.apache.hadoop.io.compress.SnappyCodec \
+--columns "customer_id,customer_fname,customer_lname" \
+--target-dir /user/cloudera/Udemy/problem4/Customers/avro
+
+mysql> select count(*) from customers where customer_state = 'CA';
++----------+
+| count(*) |
++----------+
+|     2012 |
++----------+
+1 row in set (0.02 sec)
+
+18/11/02 11:43:32 INFO mapreduce.ImportJobBase: Retrieved 2012 records.
+
+======================================================================================================================================================================
+
+3)
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table customers \
+--where "customer_street LIKE '%Plaza%'" \
+--target-dir /user/cloudera/Udemy/customers/Plaza \
+--as-textfile \
+--fields-terminated-by '*' \
+--lines-terminated-by '|' \
+--columns "customer_id,customer_fname,customer_lname,customer_street"
+
+mysql> select count(*) from customers where customer_street LIKE '%Plaza%';
++----------+
+| count(*) |
++----------+
+|      109 |
++----------+
+1 row in set (0.03 sec)
+
+18/11/02 11:50:27 INFO mapreduce.ImportJobBase: Retrieved 109 records.
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/customers/Plaza
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-11-02 11:50 /user/cloudera/Udemy/customers/Plaza/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        974 2018-11-02 11:50 /user/cloudera/Udemy/customers/Plaza/part-m-00000
+-rw-r--r--   1 cloudera cloudera       1165 2018-11-02 11:50 /user/cloudera/Udemy/customers/Plaza/part-m-00001
+-rw-r--r--   1 cloudera cloudera        986 2018-11-02 11:50 /user/cloudera/Udemy/customers/Plaza/part-m-00002
+-rw-r--r--   1 cloudera cloudera       1028 2018-11-02 11:50 /user/cloudera/Udemy/customers/Plaza/part-m-00003
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/Udemy/customers/Plaza/part-m-00000 | head
+1*Richard*Hernandez*6303 Heather Plaza|8*Megan*Smith*3047 Foggy Forest Plaza|10*Melissa*Smith*8598 Harvest Beacon Plaza|44*Howard*Smith*1356 Easy Plaza|141*Mary*Mcmahon*1526 Broad Mountain Plaza|341*Mary*Smith*141 Dewy Plaza|477*Dylan*Smith*3810 Crystal Plaza|488*Mary*Dougherty*5803 Silver Plaza|490*Sandra*Brown*826 Gentle Prairie Plaza|651*Mary*Smith*472 Hidden River Plaza|719*Mary*Hughes*3087 Jagged Plaza|798*Mary*Espinoza*5512 Misty Plaza|801*Elizabeth*Parker*5841 Heather Pond Plaza|909*Laura*Ford*1557 Heather Leaf Plaza|1706*Joyce*Anderson*473 High Plaza|1780*Larry*Sharp*5953 Lost Plaza|1793*Mary*Burke*141 Dewy Plaza|1821*Mary*Trevino*6520 Quaking Quail Plaza|1891*Mary*Mora*1804 Misty Plaza|2053*Ronald*Smith*1025 Colonial Plaza|2247*Alice*Werner*1557 Heather Leaf Plaza|2517*Jose*Kane*5202 Emerald Island Plaza|2545*Larry*Patel*1688 Middle Panda Plaza|2575*Mary*Carroll*4979 Honey Plaza|2831*Mary*Padilla*3810 Crystal Plaza|2875*Mary*Roberts*2205 Velvet Plaza|[cloudera@quickstart ~]$ 
+
+======================================================================================================================================================================
+
+4)
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table orders \
+--where "order_id > 1000" \
+--as-avrodatafile \
+--fields-terminated-by '\t' \
+--compress \
+--compression-codec org.apache.hadoop.io.compress.BZip2Codec \
+--target-dir /user/cloudera/Udemy/problem4/orders
+
+mysql> select count(*) from orders where order_id > 1000;
++----------+
+| count(*) |
++----------+
+|    67883 |
++----------+
+1 row in set (0.08 sec)
+
+18/11/02 12:00:08 INFO mapreduce.ImportJobBase: Retrieved 67883 records.
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/problem4/orders
+Found 6 items
+-rw-r--r--   1 cloudera cloudera          0 2018-11-02 12:00 /user/cloudera/Udemy/problem4/orders/_SUCCESS
+drwxr-xr-x   - cloudera cloudera          0 2018-11-02 12:05 /user/cloudera/Udemy/problem4/orders/parquet
+-rw-r--r--   1 cloudera cloudera      77477 2018-11-02 11:59 /user/cloudera/Udemy/problem4/orders/part-m-00000.avro
+-rw-r--r--   1 cloudera cloudera      77387 2018-11-02 12:00 /user/cloudera/Udemy/problem4/orders/part-m-00001.avro
+-rw-r--r--   1 cloudera cloudera      77500 2018-11-02 12:00 /user/cloudera/Udemy/problem4/orders/part-m-00002.avro
+-rw-r--r--   1 cloudera cloudera      86808 2018-11-02 12:00 /user/cloudera/Udemy/problem4/orders/part-m-00003.avro
+
+[cloudera@quickstart ~]$ hadoop fs -get /user/cloudera/Udemy/problem4/orders /home/cloudera/Documents/Udemy/OrdersBZip2
+
+[cloudera@quickstart ~]$ avro-tools getmeta /home/cloudera/Documents/Udemy/OrdersBZip2/orders/part-m-00000.avro
+log4j:WARN No appenders could be found for logger (org.apache.hadoop.metrics2.lib.MutableMetricsFactory).
+log4j:WARN Please initialize the log4j system properly.
+log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.
+avro.codec	bzip2
+avro.schema	{"type":"record","name":"orders","doc":"Sqoop import of orders","fields":[{"name":"order_id","type":["null","int"],"default":null,"columnName":"order_id","sqlType":"4"},{"name":"order_date","type":["null","long"],"default":null,"columnName":"order_date","sqlType":"93"},{"name":"order_customer_id","type":["null","int"],"default":null,"columnName":"order_customer_id","sqlType":"4"},{"name":"order_status","type":["null","string"],"default":null,"columnName":"order_status","sqlType":"12"}],"tableName":"orders"}
+
+
+======================================================================================================================================================================
+
+5)
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table orders \
+--where "order_id > 1000" \
+--as-parquetfile \
+--fields-terminated-by '\t' \
+--compress \
+--compression-codec org.apache.hadoop.io.compress.GzipCodec \
+--target-dir /user/cloudera/Udemy/problem4/orders/parquet
+
+mysql> select count(*) from orders where order_id > 1000;
++----------+
+| count(*) |
++----------+
+|    67883 |
++----------+
+1 row in set (0.08 sec)
+
+18/11/02 12:06:58 INFO mapreduce.ImportJobBase: Retrieved 67883 records.
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/problem4/orders/parquet
+Found 6 items
+drwxr-xr-x   - cloudera cloudera          0 2018-11-02 12:05 /user/cloudera/Udemy/problem4/orders/parquet/.metadata
+drwxr-xr-x   - cloudera cloudera          0 2018-11-02 12:06 /user/cloudera/Udemy/problem4/orders/parquet/.signals
+-rw-r--r--   1 cloudera cloudera     145434 2018-11-02 12:06 /user/cloudera/Udemy/problem4/orders/parquet/0734a003-e864-41cd-a58a-c703b75f4714.parquet
+-rw-r--r--   1 cloudera cloudera     149840 2018-11-02 12:06 /user/cloudera/Udemy/problem4/orders/parquet/2156b27b-a9ab-465f-b835-7e693426cc80.parquet
+-rw-r--r--   1 cloudera cloudera     145481 2018-11-02 12:06 /user/cloudera/Udemy/problem4/orders/parquet/35d445dd-d9c6-4834-9865-0939040c2640.parquet
+-rw-r--r--   1 cloudera cloudera     145667 2018-11-02 12:06 /user/cloudera/Udemy/problem4/orders/parquet/be5d5ad8-e459-4f61-9112-8ebcaf7ac672.parquet
+
+======================================================================================================================================================================
+
+6)
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table products \
+--hive-import \
+--create-hive-table \
+--hive-database default \
+--hive-table product_sample \
+--warehouse-dir /user/cloudera/Udemy/problem4/product_hive \
+--fields-terminated-by '^'
+
+18/11/02 12:16:55 INFO mapreduce.ImportJobBase: Retrieved 1345 records.
+
+mysql> select count(*) from products;
++----------+
+| count(*) |
++----------+
+|     1345 |
++----------+
+1 row in set (0.00 sec)
+
+hive> show tables;
+OK
+categories
+customers
+customers_hive
+departments
+order_items
+orders
+orders_sqoop
+product_new
+product_ranked
+product_replica
+product_sample
+products
+Time taken: 0.405 seconds, Fetched: 12 row(s)
+
+hive> seelct count(*) from product_sample;
+
+OK
+1345
+Time taken: 50.731 seconds, Fetched: 1 row(s)
+hive> 
+
+
+======================================================================================================================================================================
+
+7)
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table orders \
+--target-dir /user/cloudera/Udemy/problem4/orders/input \
+--as-textfile
+
+18/11/02 12:22:55 INFO mapreduce.ImportJobBase: Retrieved 68883 records.
+
+scala> import java.sql.Timestamp
+import java.sql.Timestamp
+
+scala> case class Orders(
+     | order_id : Int,
+     | order_date : Timestamp,
+     | order_customer_id : Int,
+     | order_status : String
+     | )
+defined class Orders
+
+scala>  val ordersDF = sc.textFile("/user/cloudera/Udemy/problem4/orders/input").
+     | map(rec => rec.split(',')).
+     | map(rec => Orders(rec(0).toInt,Timestamp.valueOf(rec(1)),rec(2).toInt,rec(3))).
+     | toDF()
+ordersDF: org.apache.spark.sql.DataFrame = [order_id: int, order_date: timestamp, order_customer_id: int, order_status: string]
+
+scala> ordersDF.show(5)
++--------+--------------------+-----------------+---------------+
+|order_id|          order_date|order_customer_id|   order_status|
++--------+--------------------+-----------------+---------------+
+|       1|2013-07-25 00:00:...|            11599|         CLOSED|
+|       2|2013-07-25 00:00:...|              256|PENDING_PAYMENT|
+|       3|2013-07-25 00:00:...|            12111|       COMPLETE|
+|       4|2013-07-25 00:00:...|             8827|         CLOSED|
+|       5|2013-07-25 00:00:...|            11318|       COMPLETE|
++--------+--------------------+-----------------+---------------+
+only showing top 5 rows
+
+scala> ordersDF.count()
+res33: Long = 68883                                                             
+
+scala> ordersDF.write.format("orc").save("/user/cloudera/Udemy/problem4/last/orc")
+ 
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Udemy/problem4/last/orc
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-11-02 12:57 /user/cloudera/Udemy/problem4/last/orc/_SUCCESS
+-rw-r--r--   1 cloudera cloudera      40841 2018-11-02 12:57 /user/cloudera/Udemy/problem4/last/orc/part-r-00000-ea71b94e-cf8b-467d-93f9-3cd1bd4bbb61.orc
+-rw-r--r--   1 cloudera cloudera      40854 2018-11-02 12:57 /user/cloudera/Udemy/problem4/last/orc/part-r-00001-ea71b94e-cf8b-467d-93f9-3cd1bd4bbb61.orc
+-rw-r--r--   1 cloudera cloudera      40884 2018-11-02 12:57 /user/cloudera/Udemy/problem4/last/orc/part-r-00002-ea71b94e-cf8b-467d-93f9-3cd1bd4bbb61.orc
+-rw-r--r--   1 cloudera cloudera      43668 2018-11-02 12:57 /user/cloudera/Udemy/problem4/last/orc/part-r-00003-ea71b94e-cf8b-467d-93f9-3cd1bd4bbb61.orc
+
+
+
+
+
+
+
+
+
+
