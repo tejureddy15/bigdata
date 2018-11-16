@@ -1,0 +1,362 @@
+====>
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table products \
+--target-dir /user/cloudera/products \
+--fields-terminated-by '|'                       (--input-fields-terminated by '\t' while exporting from hdfs to mysql (they give tab delimiter mostly in hdfs files))
+
+
+mysql> select count(*) from products;
++----------+
+| count(*) |
++----------+
+|     1345 |
++----------+
+
+18/09/25 04:14:00 INFO mapreduce.ImportJobBase: Transferred 169.915 KB in 127.9139 seconds (1.3284 KB/sec)
+18/09/25 04:14:00 INFO mapreduce.ImportJobBase: Retrieved 1345 records.
+
+cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/products
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-09-25 04:13 /user/cloudera/products/_SUCCESS
+-rw-r--r--   1 cloudera cloudera      41419 2018-09-25 04:13 /user/cloudera/products/part-m-00000
+-rw-r--r--   1 cloudera cloudera      43660 2018-09-25 04:13 /user/cloudera/products/part-m-00001
+-rw-r--r--   1 cloudera cloudera      42195 2018-09-25 04:13 /user/cloudera/products/part-m-00002
+-rw-r--r--   1 cloudera cloudera      46719 2018-09-25 04:13 /user/cloudera/products/part-m-00003
+
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/products/part-m-00000 | head
+
+1|2|Quest Q64 10 FT. x 10 FT. Slant Leg Instant U||59.98|http://images.acmesports.sports/Quest+Q64+10+FT.+x+10+FT.+Slant+Leg+Instant+Up+Canopy
+2|2|Under Armour Men's Highlight MC Football Clea||129.99|http://images.acmesports.sports/Under+Armour+Men%27s+Highlight+MC+Football+Cleat
+3|2|Under Armour Men's Renegade D Mid Football Cl||89.99|http://images.acmesports.sports/Under+Armour+Men%27s+Renegade+D+Mid+Football+Cleat
+4|2|Under Armour Men's Renegade D Mid Football Cl||89.99|http://images.acmesports.sports/Under+Armour+Men%27s+Renegade+D+Mid+Football+Cleat
+5|2|Riddell Youth Revolution Speed Custom Footbal||199.99|http://images.acmesports.sports/Riddell+Youth+Revolution+Speed+Custom+Football+Helmet
+6|2|Jordan Men's VI Retro TD Football Cleat||134.99|http://images.acmesports.sports/Jordan+Men%27s+VI+Retro+TD+Football+Cleat
+7|2|Schutt Youth Recruit Hybrid Custom Football H||99.99|http://images.acmesports.sports/Schutt+Youth+Recruit+Hybrid+Custom+Football+Helmet+2014
+8|2|Nike Men's Vapor Carbon Elite TD Football Cle||129.99|http://images.acmesports.sports/Nike+Men%27s+Vapor+Carbon+Elite+TD+Football+Cleat
+9|2|Nike Adult Vapor Jet 3.0 Receiver Gloves||50.0|http://images.acmesports.sports/Nike+Adult+Vapor+Jet+3.0+Receiver+Gloves
+10|2|Under Armour Men's Highlight MC Football Clea||129.99|http://images.acmesports.sports/Under+Armour+Men%27s+Highlight+MC+Football+Cleat
+cat: Unable to write to output stream.
+
+
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/products/part-m-00000
+men's Essential Banded Tank To||49.99|http://images.acmesports.sports/Under+Armour+Women%27s+Essential+Banded+Tank+Top
+330|15|Nike Women's Dri-FIT Cotton Tight Capris||40.0|http://images.acmesports.sports/Nike+Women%27s+Dri-FIT+Cotton+Tight+Capris
+331|15|The North Face Women's Be Calm Tank Top||38.0|http://images.acmesports.sports/The+North+Face+Women%27s+Be+Calm+Tank+Top
+332|15|Under Armour Women's Pure Stretch Sheer Cheek||12.0|http://images.acmesports.sports/Under+Armour+Women%27s+Pure+Stretch+Sheer+Cheeky+Underwear
+333|15|lucy Women's Heart Center Tank Top||55.0|http://images.acmesports.sports/lucy+Women%27s+Heart+Center+Tank+Top
+334|15|Reebok Women's Fitness Essentials Regular Fit||38.0|http://images.acmesports.sports/Reebok+Women%27s+Fitness+Essentials+Regular+Fit+Pant
+335|15|Nike Women's Dri-FIT Cotton Regular-Fit Capri||45.0|http://images.acmesports.sports/Nike+Women%27s+Dri-FIT+Cotton+Regular-Fit+Capris
+336|15|Nike Swoosh Headband - 2"||5.0|http://images.acmesports.sports/Nike+Swoosh+Headband+-+2%22
+
+
+mysql> desc products;
++---------------------+--------------+------+-----+---------+----------------+
+| Field               | Type         | Null | Key | Default | Extra          |
++---------------------+--------------+------+-----+---------+----------------+
+| product_id          | int(11)      | NO   | PRI | NULL    | auto_increment |
+| product_category_id | int(11)      | NO   |     | NULL    |                |
+| product_name        | varchar(45)  | NO   |     | NULL    |                |
+| product_description | varchar(255) | NO   |     | NULL    |                |
+| product_price       | float        | NO   |     | NULL    |                |
+| product_image       | varchar(255) | NO   |     | NULL    |                |
++---------------------+--------------+------+-----+---------+----------------+
+6 rows in set (0.00 sec)
+
+
+mysql> select * from products limit 10;
++------------+---------------------+-----------------------------------------------+---------------------+---------------+-----------------------------------------------------------------------------------------+
+| product_id | product_category_id | product_name                                  | product_description | product_price | product_image                                                                           |
++------------+---------------------+-----------------------------------------------+---------------------+---------------+-----------------------------------------------------------------------------------------+
+|          1 |                   2 | Quest Q64 10 FT. x 10 FT. Slant Leg Instant U |                     |         59.98 | http://images.acmesports.sports/Quest+Q64+10+FT.+x+10+FT.+Slant+Leg+Instant+Up+Canopy   |
+|          2 |                   2 | Under Armour Men's Highlight MC Football Clea |                     |        129.99 | http://images.acmesports.sports/Under+Armour+Men%27s+Highlight+MC+Football+Cleat        |
+|          3 |                   2 | Under Armour Men's Renegade D Mid Football Cl |                     |         89.99 | http://images.acmesports.sports/Under+Armour+Men%27s+Renegade+D+Mid+Football+Cleat      |
+|          4 |                   2 | Under Armour Men's Renegade D Mid Football Cl |                     |         89.99 | http://images.acmesports.sports/Under+Armour+Men%27s+Renegade+D+Mid+Football+Cleat      |
+|          5 |                   2 | Riddell Youth Revolution Speed Custom Footbal |                     |        199.99 | http://images.acmesports.sports/Riddell+Youth+Revolution+Speed+Custom+Football+Helmet   |
+|          6 |                   2 | Jordan Men's VI Retro TD Football Cleat       |                     |        134.99 | http://images.acmesports.sports/Jordan+Men%27s+VI+Retro+TD+Football+Cleat               |
+|          7 |                   2 | Schutt Youth Recruit Hybrid Custom Football H |                     |         99.99 | http://images.acmesports.sports/Schutt+Youth+Recruit+Hybrid+Custom+Football+Helmet+2014 |
+|          8 |                   2 | Nike Men's Vapor Carbon Elite TD Football Cle |                     |        129.99 | http://images.acmesports.sports/Nike+Men%27s+Vapor+Carbon+Elite+TD+Football+Cleat       |
+|          9 |                   2 | Nike Adult Vapor Jet 3.0 Receiver Gloves      |                     |            50 | http://images.acmesports.sports/Nike+Adult+Vapor+Jet+3.0+Receiver+Gloves                |
+|         10 |                   2 | Under Armour Men's Highlight MC Football Clea |                     |        129.99 | http://images.acmesports.sports/Under+Armour+Men%27s+Highlight+MC+Football+Cleat        |
++------------+---------------------+-----------------------------------------------+---------------------+---------------+-----------------------------------------------------------------------------------------+
+10 rows in set (0.00 sec)
+
+
+Note: product_description is empty therefore || in the result
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/products
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-09-25 04:34 /user/cloudera/products/_SUCCESS
+-rw-r--r--   1 cloudera cloudera      41419 2018-09-25 04:34 /user/cloudera/products/part-m-00000
+-rw-r--r--   1 cloudera cloudera      43660 2018-09-25 04:34 /user/cloudera/products/part-m-00001
+-rw-r--r--   1 cloudera cloudera      42195 2018-09-25 04:34 /user/cloudera/products/part-m-00002
+-rw-r--r--   1 cloudera cloudera      46719 2018-09-25 04:34 /user/cloudera/products/part-m-00003
+
+=================================================================================================================================================================
+
+[cloudera@quickstart ~]$ hadoop fs -mkdir /user/cloudera/problem2      ==> creates directory
+
+[cloudera@quickstart ~]$ hadoop fs -mv /user/cloudera/products /user/cloudera/problem2   hadoop fs -mv src_path dest_path
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/problem2/products
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-09-25 04:34 /user/cloudera/problem2/products/_SUCCESS
+-rw-r--r--   1 cloudera cloudera      41419 2018-09-25 04:34 /user/cloudera/problem2/products/part-m-00000
+-rw-r--r--   1 cloudera cloudera      43660 2018-09-25 04:34 /user/cloudera/problem2/products/part-m-00001
+-rw-r--r--   1 cloudera cloudera      42195 2018-09-25 04:34 /user/cloudera/problem2/products/part-m-00002
+-rw-r--r--   1 cloudera cloudera      46719 2018-09-25 04:34 /user/cloudera/problem2/products/part-m-00003
+
+dzone top 10 hadoop commands refer this link
+
+hadoop fs -mkdir /user/cloudera/problem2      ==> creates directory
+
+hadoop fs -mv /user/cloudera/products /user/cloudera/problem2  ==> moves products folder to /user/cloudera/problem2 (we don't have to create products folder again)
+
+hadoop fs -rm /user/cloudera/abc.txt  ==> for deleting a file
+
+hadoop fs -rmr /user/cloudera/products   ==> for deleting directory
+
+hadoop fs -copyFromLocal local_path hdfs_path   ==> directory where you want to paste should be at the end
+
+hadoop fs -copyToLocal hdfs_path local_path  ==> since we are copying to local it has to be to the end
+
+hadoop fs -cp src_path dest_path   ==> copies files from src path to dest path
+
+hadoop fs -du /user/tejaswini/abc.txt  ==> displays the aggregate length of the file
+
+hadoop fs -tail /user/Tejaswini/abc.txt  ==> displays last few lines of the file
+
+hadoop fs -cat /user/Tejaswini/abc.txt  ==> displays the content of the file
+
+hadoop fs -cat /user/Tejaswini/abc.txt | head  ==> displays top 10 records of the file
+
+================================================================================================================================================================
+
+Note:
+
+Read = 4
+Write = 2
+Execute = 1
+
+R+W+E = 7
+R+W = 6
+R+E = 5
+
+[cloudera@quickstart ~]$ hadoop fs -chmod 765 /user/cloudera/problem2/
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/problem2/
+Found 1 items
+drwxrw-r-x   - cloudera cloudera          0 2018-09-25 04:34 /user/cloudera/problem2/products   (d = directory) (readwriteexecute : rwx) (1st for owner 
+                                                                                                                                          2nd for group
+                                                                     								          3rd for users)
+
+
+
+[cloudera@quickstart ~]$ hadoop fs -chmod 765 /user/cloudera/problem2/products/*
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/problem2/products/
+Found 5 items
+-rwxrw-r-x   1 cloudera cloudera          0 2018-09-25 04:34 /user/cloudera/problem2/products/_SUCCESS           ( - represents file whereas d represents dir)
+-rwxrw-r-x   1 cloudera cloudera      41419 2018-09-25 04:34 /user/cloudera/problem2/products/part-m-00000
+-rwxrw-r-x   1 cloudera cloudera      43660 2018-09-25 04:34 /user/cloudera/problem2/products/part-m-00001
+-rwxrw-r-x   1 cloudera cloudera      42195 2018-09-25 04:34 /user/cloudera/problem2/products/part-m-00002
+-rwxrw-r-x   1 cloudera cloudera      46719 2018-09-25 04:34 /user/cloudera/problem2/products/part-m-00003
+
+=================================================================================================================================================================
+
+scala> case class Products(
+     | product_id : Int,
+     | product_category_id : Int,
+     | product_name: String,
+     | product_description : String,
+     | product_price : Float,
+     | product_image : String
+     | )
+defined class Products
+
+scala> 
+
+scala> val productsDF = sc.textFile("/user/cloudera/problem2/products").
+     | map(rec => rec.split('|')).
+     | map(prod => Products(prod(0).trim.toInt,prod(1).trim.toInt,prod(2).toString,prod(3).toString,prod(4).trim.toFloat,prod(5).toString)).
+     | toDF()
+productsDF: org.apache.spark.sql.DataFrame = [product_id: int, product_category_id: int, product_name: string, product_description: string, product_price: float, product_image: string]
+
+scala> productsDF.show(3)
++----------+-------------------+--------------------+-------------------+-------------+--------------------+
+|product_id|product_category_id|        product_name|product_description|product_price|       product_image|
++----------+-------------------+--------------------+-------------------+-------------+--------------------+
+|         1|                  2|Quest Q64 10 FT. ...|                   |        59.98|http://images.acm...|
+|         2|                  2|Under Armour Men'...|                   |       129.99|http://images.acm...|
+|         3|                  2|Under Armour Men'...|                   |        89.99|http://images.acm...|
++----------+-------------------+--------------------+-------------------+-------------+--------------------+
+only showing top 3 rows
+
+scala> val productsDFFiltered = productsDF.filter(productsDF("product_price") < 100)
+productsDFFiltered: org.apache.spark.sql.DataFrame = [product_id: int, product_category_id: int, product_name: string, product_description: string, product_price: float, product_image: string]
+
+scala> productsDFFiltered.show(10)
++----------+-------------------+--------------------+-------------------+-------------+--------------------+
+|product_id|product_category_id|        product_name|product_description|product_price|       product_image|
++----------+-------------------+--------------------+-------------------+-------------+--------------------+
+|         1|                  2|Quest Q64 10 FT. ...|                   |        59.98|http://images.acm...|
+|         3|                  2|Under Armour Men'...|                   |        89.99|http://images.acm...|
+|         4|                  2|Under Armour Men'...|                   |        89.99|http://images.acm...|
+|         7|                  2|Schutt Youth Recr...|                   |        99.99|http://images.acm...|
+|         9|                  2|Nike Adult Vapor ...|                   |         50.0|http://images.acm...|
+|        13|                  2|Under Armour Men'...|                   |        89.99|http://images.acm...|
+|        15|                  2|Under Armour Kids...|                   |        59.99|http://images.acm...|
+|        18|                  2|Reebok Men's Full...|                   |        29.97|http://images.acm...|
+|        21|                  2|Under Armour Kids...|                   |        54.99|http://images.acm...|
+|        22|                  2|Kijaro Dual Lock ...|                   |        29.99|http://images.acm...|
++----------+-------------------+--------------------+-------------------+-------------+--------------------+
+only showing top 10 rows
+
+
+scala> val productsDFAggregated = productsDFFiltered.groupBy("product_category_id").agg(count("product_id").alias("total_products"), min("product_price").alias("min_price"), max("product_price").alias("max_price"),avg("product_price").alias("avg_price"))
+productsDFAggregated: org.apache.spark.sql.DataFrame = [product_category_id: int, total_products: bigint, min_price: float, max_price: float, avg_price: double]
+
+
+scala> val productsDFOrdered = productsDFAggregated.orderBy(col("product_category_id").asc)
+productsDFOrdered: org.apache.spark.sql.DataFrame = [product_category_id: int, total_products: bigint, min_price: float, max_price: float, avg_price: double]
+
+scala> productsDFOrdered.show(10)
++-------------------+--------------+---------+---------+------------------+     
+|product_category_id|total_products|min_price|max_price|         avg_price|
++-------------------+--------------+---------+---------+------------------+
+|                  2|            11|    29.97|    99.99| 66.80636284568094|
+|                  3|            19|      0.0|     99.0| 55.73000034533049|
+|                  4|            10|    21.99|    99.95| 55.88699932098389|
+|                  5|            13|     14.0|    99.99| 57.98923022930439|
+|                  6|            19|     14.0|    99.99|43.936315837659336|
+|                  7|            18|     14.0|    99.98| 47.48888895246718|
+|                  8|            19|    21.99|    99.98|41.673158043309265|
+|                  9|            17|     28.0|    99.99| 67.16882290559657|
+|                 10|             4|    34.99|    99.95| 78.48249912261963|
+|                 11|             5|    34.99|    99.99| 76.98999862670898|
++-------------------+--------------+---------+---------+------------------+
+only showing top 10 rows
+
+
+scala> sqlContext.setConf("spark.sql.avro.compression.codec", "snappy")
+
+scala> productsDFOrdered.write.avro("user/cloudera/problrm2/products/result-df")
+
+hadoop fs -ls user/cloudera/problrm2/products/result-df
+
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:05 user/cloudera/problrm2/products/result-df/part-r-00039-0a3a9e7d-4a1a-4870-bc2c-406015924242.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:05 user/cloudera/problrm2/products/result-df/part-r-00040-0a3a9e7d-4a1a-4870-bc2c-406015924242.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:05 user/cloudera/problrm2/products/result-df/part-r-00041-0a3a9e7d-4a1a-4870-bc2c-406015924242.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:05 user/cloudera/problrm2/products/result-df/part-r-00042-0a3a9e7d-4a1a-4870-bc2c-406015924242.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:05 user/cloudera/problrm2/products/result-df/part-r-00043-0a3a9e7d-4a1a-4870-bc2c-406015924242.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:05 user/cloudera/problrm2/products/result-df/part-r-00044-0a3a9e7d-4a1a-4870-bc2c-406015924242.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:05 user/cloudera/problrm2/products/result-df/part-r-00045-0a3a9e7d-4a1a-4870-bc2c-406015924242.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:05 user/cloudera/problrm2/products/result-df/part-r-00046-0a3a9e7d-4a1a-4870-bc2c-406015924242.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:05 user/cloudera/problrm2/products/result-df/part-r-00047-0a3a9e7d-4a1a-4870-bc2c-406015924242.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:05 user/cloudera/problrm2/products/result-df/part-r-00048-0a3a9e7d-4a1a-4870-bc2c-406015924242.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:05 user/cloudera/problrm2/products/result-df/part-r-00049-0a3a9e7d-4a1a-4870-bc2c-406015924242.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:05 user/cloudera/problrm2/products/result-df/part-r-00050-0a3a9e7d-4a1a-4870-bc2c-406015924242.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:05 user/cloudera/problrm2/products/result-df/part-r-00051-0a3a9e7d-4a1a-4870-bc2c-406015924242.avro
+-rw-r--r--   1 cloudera cloudera        389 2018-09-26 00:05 user/cloudera/problrm2/products/result-df/part-r-00052-0a3a9e7d-4a1a-4870-bc2c-406015924242.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:05 user/cloudera/problrm2/products/result-df/part-r-00053-0a3a9e7d-4a1a-4870-bc2c-406015924242.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:05 user/cloudera/problrm2/products/result-df/part-r-00054-0a3a9e7d-4a1a-4870-bc2c-406015924242.avro
+-rw-r--r--   1 cloudera cloudera        344 2018-09-26 00:05 user/cloudera/problrm2/products/result-df/part-r-00055-0a3a9e7d-4a1a-4870-bc2c-406015924242.avro
+
+============================================================================================================================================================
+
+
+productsDF.registerTempTable("products")
+
+scala> var sqlResult = sqlContext.sql("""select product_category_id, max(product_price) as max_price, min(product_price) as min_price, avg(product_price) as avg_price, count(product_price)
+     | as total_products
+     | from products
+     | where product_price < 100
+     | group by product_category_id
+     | order by product_category_id""")
+sqlResult: org.apache.spark.sql.DataFrame = [product_category_id: int, max_price: float, min_price: float, avg_price: double, total_products: bigint]
+
+sqlContext.setConf("spark.sql.avro.compression.codec", "snappy")
+
+sqlResult.write.avro("user/cloudera/problrm2/products/result-sqlResult")
+
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:20 user/cloudera/problrm2/products/result-sqlResult/part-r-00043-290433b9-8ccf-4b0b-9e78-7088f944de89.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:20 user/cloudera/problrm2/products/result-sqlResult/part-r-00044-290433b9-8ccf-4b0b-9e78-7088f944de89.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:20 user/cloudera/problrm2/products/result-sqlResult/part-r-00045-290433b9-8ccf-4b0b-9e78-7088f944de89.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:20 user/cloudera/problrm2/products/result-sqlResult/part-r-00046-290433b9-8ccf-4b0b-9e78-7088f944de89.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:20 user/cloudera/problrm2/products/result-sqlResult/part-r-00047-290433b9-8ccf-4b0b-9e78-7088f944de89.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:20 user/cloudera/problrm2/products/result-sqlResult/part-r-00048-290433b9-8ccf-4b0b-9e78-7088f944de89.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:20 user/cloudera/problrm2/products/result-sqlResult/part-r-00049-290433b9-8ccf-4b0b-9e78-7088f944de89.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:20 user/cloudera/problrm2/products/result-sqlResult/part-r-00050-290433b9-8ccf-4b0b-9e78-7088f944de89.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:20 user/cloudera/problrm2/products/result-sqlResult/part-r-00051-290433b9-8ccf-4b0b-9e78-7088f944de89.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:20 user/cloudera/problrm2/products/result-sqlResult/part-r-00052-290433b9-8ccf-4b0b-9e78-7088f944de89.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:20 user/cloudera/problrm2/products/result-sqlResult/part-r-00053-290433b9-8ccf-4b0b-9e78-7088f944de89.avro
+-rw-r--r--   1 cloudera cloudera        391 2018-09-26 00:20 user/cloudera/problrm2/products/result-sqlResult/part-r-00054-290433b9-8ccf-4b0b-9e78-7088f944de89.avro
+-rw-r--r--   1 cloudera cloudera        344 2018-09-26 00:20 user/cloudera/problrm2/products/result-sqlResult/part-r-00055-290433b9-8ccf-4b0b-9e78-7088f944de89.avro
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

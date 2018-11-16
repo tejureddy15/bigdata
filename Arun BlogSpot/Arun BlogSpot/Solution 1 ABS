@@ -1,0 +1,484 @@
+
+Problem Scenario 1:
+
+1) Using sqoop, import orders table into hdfs to folders /user/cloudera/problem1/orders. File should be loaded as Avro File and use snappy compression 
+
+
+Sol:
+
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table orders \
+--target-dir /user/cloudera/problem1/orders \
+--compress \
+--compression-codec org.apache.hadoop.io.compress.SnappyCodec \
+--as-avrodatafile
+
+
+expl: by default, when we use --compress parameter all the output files will be compressed using GZip codec and all the files will end up with .gz extension.
+
+if we want to use another compression codec we need to add --compression-codec parameter
+
+ex: --compression-codec org.apache.hadoop.io.comression.BZip2Codec
+
+    --compress-codec org.apache.hadoop.io.compress.SnappyCodec
+
+NOTE:
+
+you need to make sure the compressed map output is allowed in your Hadoop configuration. For example, if in the mapred-site.xml file, the property
+mapred.output.compress is set to false with the final flag, then
+Sqoop won’t be able to compress the output files even when you call it
+with the --compress parameter.
+
+
+for sequence file format  ==>  --as-sequencefile 
+
+o/p:
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/problem1/orders
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-09-21 00:18 /user/cloudera/problem1/orders/_SUCCESS
+-rw-r--r--   1 cloudera cloudera     164090 2018-09-21 00:18 /user/cloudera/problem1/orders/part-m-00000.avro
+-rw-r--r--   1 cloudera cloudera     164157 2018-09-21 00:18 /user/cloudera/problem1/orders/part-m-00001.avro
+-rw-r--r--   1 cloudera cloudera     164278 2018-09-21 00:18 /user/cloudera/problem1/orders/part-m-00002.avro
+-rw-r--r--   1 cloudera cloudera     169339 2018-09-21 00:18 /user/cloudera/problem1/orders/part-m-00003.avro
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/problem1/orders/part-m-00000.avro
+
+==================================================================================================================================================================
+
+2) Using sqoop, import order_items  table into hdfs to folders /user/cloudera/problem1/order-items. Files should be loaded as avro file and use snappy compression
+
+
+Sol:
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table order_items \
+--target-dir /user/cloudera/problem1/order-items \
+--compress \
+--compression-codec org.apache.hadoop.io.compress.SnappyCodec \
+--as-avrodatafile
+
+o/p:
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/problem1/order-items
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-09-21 00:27 /user/cloudera/problem1/order-items/_SUCCESS
+-rw-r--r--   1 cloudera cloudera     381708 2018-09-21 00:26 /user/cloudera/problem1/order-items/part-m-00000.avro
+-rw-r--r--   1 cloudera cloudera     385380 2018-09-21 00:26 /user/cloudera/problem1/order-items/part-m-00001.avro
+-rw-r--r--   1 cloudera cloudera     385026 2018-09-21 00:27 /user/cloudera/problem1/order-items/part-m-00002.avro
+-rw-r--r--   1 cloudera cloudera     376923 2018-09-21 00:27 /user/cloudera/problem1/order-items/part-m-00003.avro
+
+=======================================================================================================================================
+
+3)  Using Spark Scala load data at /user/cloudera/problem1/orders and /user/cloudera/problem1/orders-items items as dataframes.
+
+import com.databricks.spark.avro._
+
+scala> val ordersDF = sqlContext.read.avro("/user/cloudera/problem1/orders")
+ordersDF: org.apache.spark.sql.DataFrame = [order_id: int, order_date: bigint, order_customer_id: int, order_status: string]
+
+scala> val orderItemsDF = sqlContext.read.avro("/user/cloudera/problem1/order-items")
+orderItemsDF: org.apache.spark.sql.DataFrame = [order_item_id: int, order_item_order_id: int, order_item_product_id: int, order_item_quantity: int, order_item_subtotal: float, order_item_product_price: float]
+
+scala> ordersDF.printSchema()
+root
+ |-- order_id: integer (nullable = true)
+ |-- order_date: long (nullable = true)
+ |-- order_customer_id: integer (nullable = true)
+ |-- order_status: string (nullable = true)
+
+
+scala> orderItemsDF.printSchema()
+root
+ |-- order_item_id: integer (nullable = true)
+ |-- order_item_order_id: integer (nullable = true)
+ |-- order_item_product_id: integer (nullable = true)
+ |-- order_item_quantity: integer (nullable = true)
+ |-- order_item_subtotal: float (nullable = true)
+ |-- order_item_product_price: float (nullable = true)
+
+===================================================================================================================================================================
+
+
+3)
+
+
+
+Sol:
+
+
+scala> val ordersAndOrderItemsDF = ordersDF.join(orderItemsDF, ordersDF("order_id") === orderItemsDF("order_item_order_id")).drop("order_item_order_id")
+
+ordersAndOrderItemsDF: org.apache.spark.sql.DataFrame = [order_id: int, order_date: bigint, order_customer_id: int, order_status: string, order_item_id: int, order_item_product_id: int, order_item_quantity: int, order_item_subtotal: float, order_item_product_price: float]
+
+scala> ordersAndOrderItemsDF.printSchema()
+root
+ |-- order_id: integer (nullable = true)
+ |-- order_date: long (nullable = true)
+ |-- order_customer_id: integer (nullable = true)
+ |-- order_status: string (nullable = true)
+ |-- order_item_id: integer (nullable = true)
+ |-- order_item_product_id: integer (nullable = true)
+ |-- order_item_quantity: integer (nullable = true)
+ |-- order_item_subtotal: float (nullable = true)
+ |-- order_item_product_price: float (nullable = true)
+
+val column_names_str = Seq("order_id", "order_date", "order_status", "order_item_subtotal")
+
+import org.apache.spark.sql.functions.col
+
+val column_names_col = column_names_str.map(name => col(name))
+
+val ordersAndOrderItemsDFWithRelevantColumns = ordersAndOrderItemsDF.select(column_names_col:_*)
+
+scala> ordersAndOrderItemsDFWithRelevantColumns.show(3)
++--------+-------------+---------------+-------------------+                    
+|order_id|   order_date|   order_status|order_item_subtotal|
++--------+-------------+---------------+-------------------+
+|       1|1374735600000|         CLOSED|             299.98|
+|       2|1374735600000|PENDING_PAYMENT|             199.99|
+|       2|1374735600000|PENDING_PAYMENT|              250.0|
++--------+-------------+---------------+-------------------+
+only showing top 3 rows
+
+
+scala> val groupByOrderDateAndOrderStatus = ordersAndOrderItemsDFWithRelevantColumns.groupBy("order_date", "order_status").agg(sum("order_item_subtotal"),count("order_id"))
+groupByOrderDateAndOrderStatus: org.apache.spark.sql.DataFrame = [order_date: bigint, order_status: string, sum(order_item_subtotal): double, count(order_id): bigint]
+
+
+scala> groupByOrderDateAndOrderStatus.show(3)
+[Stage 1:============================================>              (3 + 1) / 4]18/09/24 00:52:15 WARN memory.TaskMemoryManager: leak 16.3 MB memory from org.apache.spark.unsafe.map.BytesToBytesMap@77b133bf
+18/09/24 00:52:15 ERROR executor.Executor: Managed memory leak detected; size = 17039360 bytes, TID = 8
++-------------+------------+------------------------+---------------+           
+|   order_date|order_status|sum(order_item_subtotal)|count(order_id)|
++-------------+------------+------------------------+---------------+
+|1379660400000|     ON_HOLD|       6630.500070571899|             25|
+|1379660400000|     PENDING|        8703.11019897461|             41|
+|1379746800000|     ON_HOLD|       4219.470050811768|             20|
++-------------+------------+------------------------+---------------+
+only showing top 3 rows
+
+
+scala> import org.apache.spark.sql.types.DateType
+import org.apache.spark.sql.types.DateType
+
+val groupByOrderDateAndOrderStatus = ordersAndOrderItemsDFWithRelevantColumns.groupBy(to_date(from_unixtime(col("order_date")/1000)).alias("order_date_formatted"),col("order_status"))
+
+Note:
+
+1)
+
+scala> val groupByOrderDateAndOrderStatus = ordersAndOrderItemsDFWithRelevantColumns.groupBy(to_date(from_unixtime("order_date")).alias("order_date_formatted"),order_status")
+<console>:41: error: type mismatch;
+ found   : String("order_date")
+ required: org.apache.spark.sql.Column
+         val groupByOrderDateAndOrderStatus = ordersAndOrderItemsDFWithRelevantColumns.groupBy(to_date(from_unixtime("order_date")).alias("order_date_formatted"),col"order_status")
+
+
+2)
+
+scala> val groupByOrderDateAndOrderStatus = ordersAndOrderItemsDFWithRelevantColumns.groupBy(to_date(from_unixtime(col("order_date"))).alias("order_date_formatted"),"order_status")
+<console>:41: error: overloaded method value groupBy with alternatives:
+  (col1: String,cols: String*)org.apache.spark.sql.GroupedData <and>
+  (cols: org.apache.spark.sql.Column*)org.apache.spark.sql.GroupedData
+ cannot be applied to (org.apache.spark.sql.Column, String)
+         val groupByOrderDateAndOrderStatus = ordersAndOrderItemsDFWithRelevantColumns.groupBy(to_date(from_unixtime(col("order_date"))).alias("order_date_formatted"),"order_status")
+
+
+3)
+
+hive> select to_date(from_unixtime(1379660400000));
+OK
+45689-09-11
+Time taken: 0.908 seconds, Fetched: 1 row(s)
+hive> select to_date(from_unixtime(1379660400));
+OK
+2013-09-20
+Time taken: 0.17 seconds, Fetched: 1 row(s)
+hive> select to_date(from_unixtime(13796604));
+OK
+1970-06-09
+Time taken: 0.167 seconds, Fetched: 1 row(s)
+hive> select to_date(from_unixtime(137966040));
+OK
+1974-05-16
+Time taken: 0.182 seconds, Fetched: 1 row(s)
+hive> 
+
+
+
+
+
+scala> val groupByOrderDateAndOrderStatusAggregated = groupByOrderDateAndOrderStatus.agg(round(sum("order_item_subtotal"),2).alias("total_amount"),count("order_id").alias("total_orders"))
+groupByOrderDateAndOrderStatusAggregared: org.apache.spark.sql.DataFrame = [order_date_formatted: date, order_status: string, total_amount: double, total_orders: bigint]ll
+            
+
+countDistinct()  ==> counts distinct elements
+
+scala> val groupByOrderDateAndOrderStatusOrdered = groupByOrderDateAndOrderStatusAggregated.orderBy(col("order_date_formatted").desc, col("order_status"),col("total_amount").desc, col("total_orders"))
+groupByOrderDateAndOrderStatusOrdered: org.apache.spark.sql.DataFrame = [order_date_formatted: date, order_status: string, total_amount: double, total_orders: bigint]
+
+
+
+====> Store the result as parquet file into hdfs using gzip compression under folder 
+      /user/cloudera/problem1/result4a-gzip
+
+sqlContext.setConf("spark.sql.parquet.compression.codec", "gzip")
+
+groupByOrderDateAndOrderStatusOrdered.write.parquet("/user/cloudera/problem1/result4a-gzip")
+
+res:
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/problem1/result4a-gzip
+Found 203 items
+-rw-r--r--   1 cloudera cloudera          0 2018-09-24 22:28 /user/cloudera/problem1/result4a-gzip/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        546 2018-09-24 22:28 /user/cloudera/problem1/result4a-gzip/_common_metadata
+-rw-r--r--   1 cloudera cloudera     104742 2018-09-24 22:28 /user/cloudera/problem1/result4a-gzip/_metadata
+-rw-r--r--   1 cloudera cloudera       1423 2018-09-24 22:27 /user/cloudera/problem1/result4a-gzip/part-r-00000-8f6d074c-bbfc-4ed8-9c28-8a291bb47a95.gz.parquet
+-rw-r--r--   1 cloudera cloudera       1426 2018-09-24 22:27 /user/cloudera/problem1/result4a-gzip/part-r-00001-8f6d074c-bbfc-4ed8-9c28-8a291bb47a95.gz.parquet
+-rw-r--r--   1 cloudera cloudera       1427 2018-09-24 22:27 /user/cloudera/problem1/result4a-gzip/part-r-00002-8f6d074c-bbfc-4ed8-9c28-8a291bb47a95.gz.parquet
+-rw-r--r--   1 cloudera cloudera       1418 2018-09-24 22:27 /user/cloudera/problem1/result4a-gzip/part-r-00003-8f6d074c-bbfc-4ed8-9c28-8a291bb47a95.gz.parquet
+-rw-r--r--   1 cloudera cloudera       1458 2018-09-24 22:27 /user/cloudera/problem1/result4a-gzip/part-r-00004-8f6d074c-bbfc-4ed8-9c28-8a291bb47a95.gz.parquet
+-rw-r--r--   1 cloudera cloudera       1416 2018-09-24 22:27 /user/cloudera/problem1/result4a-gzip/part-r-00005-8f6d074c-bbfc-4ed8-9c28-8a291bb47a95.gz.parquet
+-rw-r--r--   1 cloudera cloudera       1426 2018-09-24 22:27 /user/cloudera/problem1/result4a-gzip/part-r-00006-8f6d074c-bbfc-4ed8-9c28-8a291bb47a95.gz.parquet
+-rw-r--r--   1 cloudera cloudera       1431 2018-09-24 22:27 /user/cloudera/problem1/result4a-gzip/part-r-00007-8f6d074c-bbfc-4ed8-9c28-8a291bb47a95.gz.parquet
+-rw-r--r--   1 cloudera cloudera       1426 2018-09-24 22:27 /user/cloudera/problem1/result4a-gzip/part-r-00008-8f6d074c-bbfc-4ed8-9c28-8a291bb47a95.gz.parquet
+-rw-r--r--   1 cloudera cloudera       1457 2018-09-24 22:27 /user/cloudera/problem1/result4a-gzip/part-r-00009-8f6d074c-bbfc-4ed8-9c28-8a291bb47a95.gz.parquet
+-rw-r--r--   1 cloudera cloudera       1428 2018-09-24 22:27 /user/cloudera/problem1/result4a-gzip/part-r-00010-8f6d074c-bbfc-4ed8-9c28-8a291bb47a95.gz.parquet
+-rw-r--r--   1 cloudera cloudera       1412 2018-09-24 22:27 /user/cloudera/problem1/result4a-gzip/part-r-00011-8f6d074c-bbfc-4ed8-9c28-8a291bb47a95.gz.parquet
+-rw-r--r--   1 cloudera cloudera       1423 2018-09-24 22:27 /user/cloudera/problem1/result4a-gzip/part-r-00012-8f6d074c-bbfc-4ed8-9c28-8a291bb47a95.gz.parquet
+-rw-r--r--   1 cloudera cloudera       1462 2018-09-24 22:27 /user/cloudera/problem1/result4a-gzip/part-r-00013-8f6d074c-bbfc-4ed8-9c28-8a291bb47a95.gz.parquet
+
+
+
+sqlContext.setConf("spark.sql.parquet.compression.codec", "snappy")
+
+groupByOrderDateAndOrderStatusOrdered.write.parquet("/user/cloudera/problem1/result4a-snappy")
+
+scala> val finalDF = groupByOrderDateAndOrderStatusOrdered.map(x => x(0)+","+x(1)+","+x(2)+","+x(3))
+finalDF: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[413] at map at <console>:47
+
+scala> finalDF.first()
+res19: String = 2014-07-24,COMPLETE,34552.03,173
+
+val finalDF = groupByOrderDateAndOrderStatusOrdered.map(x => x(0)+","+x(1)+","+x(2)+","+x(3)).saveAsTextFile("/user/cloudera/problem1/result4a-csv")
+
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/problem1/result4a-snappy
+Found 203 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-04 13:18 /user/cloudera/problem1/result4a-snappy/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        546 2018-10-04 13:18 /user/cloudera/problem1/result4a-snappy/_common_metadata
+-rw-r--r--   1 cloudera cloudera     107938 2018-10-04 13:18 /user/cloudera/problem1/result4a-snappy/_metadata
+-rw-r--r--   1 cloudera cloudera       1398 2018-10-04 13:18 /user/cloudera/problem1/result4a-snappy/part-r-00000-bbf7b9ce-416b-42e1-b587-192b227aef7f.snappy.parquet
+-rw-r--r--   1 cloudera cloudera       1404 2018-10-04 13:18 /user/cloudera/problem1/result4a-snappy/part-r-00001-bbf7b9ce-416b-42e1-b587-192b227aef7f.snappy.parquet
+-rw-r--r--   1 cloudera cloudera       1397 2018-10-04 13:18 /user/cloudera/problem1/result4a-snappy/part-r-00002-bbf7b9ce-416b-42e1-b587-192b227aef7f.snappy.parquet
+-rw-r--r--   1 cloudera cloudera       1385 2018-10-04 13:18 /user/cloudera/problem1/result4a-snappy/part-r-00003-bbf7b9ce-416b-42e1-b587-192b227aef7f.snappy.parquet
+
+
+
+===================================================================================================================================================================
+
+
+
+ordersAndOrderItemsDF.registerTempTable("orders_orderItems_joined")
+
+var sqlResult = sqlContext.sql("""select to_date(from_unixtime(order_date/1000)) as order_date_formatted, order_status, round(sum(order_item_subtotal),2) as  total_amount, count(order_id) as total_orders
+from orders_orderItems_joined                                                     
+group by to_date(from_unixtime(order_date/1000)),order_status
+order by order_date_formatted desc,order_status,total_amount desc,total_orders""")  (use triple quotes to print in multiple lines)
+
+
+res:
+
+scala> var sqlResult = sqlContext.sql("""select to_date(from_unixtime(order_date/1000)) as order_date_formatted, order_status, round(sum(order_item_subtotal),2) as  total_amount, count(order_id) as total_orders
+     | from orders_orderItems_joined
+     | group by to_date(from_unixtime(order_date/1000)),order_status
+     | order by order_date_formatted desc,order_status,total_amount desc,total_orders""")
+sqlResult: org.apache.spark.sql.DataFrame = [order_date_formatted: date, order_status: string, total_amount: double, total_orders: bigint]
+
+
+scala> sqlResult.show(10)
++--------------------+---------------+------------+------------+                
+|order_date_formatted|   order_status|total_amount|total_orders|
++--------------------+---------------+------------+------------+
+|          2014-07-24|       CANCELED|     1254.92|           6|
+|          2014-07-24|         CLOSED|    16333.16|          86|
+|          2014-07-24|       COMPLETE|    34552.03|         173|
+|          2014-07-24|        ON_HOLD|     1709.74|           8|
+|          2014-07-24| PAYMENT_REVIEW|      499.95|           1|
+|          2014-07-24|        PENDING|    12729.49|          67|
+|          2014-07-24|PENDING_PAYMENT|     17680.7|          96|
+|          2014-07-24|     PROCESSING|     9964.74|          46|
+|          2014-07-24|SUSPECTED_FRAUD|     2351.61|          12|
+|          2014-07-23|       CANCELED|     5777.33|          25|
++--------------------+---------------+------------+------------+
+only showing top 10 rows
+
+
+sqlContext.setConf("spark.sql.parquet.compression.codec", "gzip")
+
+sqlResult.write.parquet("/user/cloudera/problem1/result4b-gzip")
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/problem1/result4b-gzip
+Found 203 items
+-rw-r--r--   1 cloudera cloudera          0 2018-09-24 23:10 /user/cloudera/problem1/result4b-gzip/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        546 2018-09-24 23:10 /user/cloudera/problem1/result4b-gzip/_common_metadata
+-rw-r--r--   1 cloudera cloudera     104738 2018-09-24 23:10 /user/cloudera/problem1/result4b-gzip/_metadata
+-rw-r--r--   1 cloudera cloudera       1456 2018-09-24 23:09 /user/cloudera/problem1/result4b-gzip/part-r-00000-77c96981-5faf-4437-9616-3fe3dced6f14.gz.parquet
+-rw-r--r--   1 cloudera cloudera       1425 2018-09-24 23:09 /user/cloudera/problem1/result4b-gzip/part-r-00001-77c96981-5faf-4437-9616-3fe3dced6f14.gz.parquet
+-rw-r--r--   1 cloudera cloudera       1427 2018-09-24 23:09 /user/cloudera/problem1/result4b-gzip/part-r-00002-77c96981-5faf-4437-9616-3fe3dced6f14.gz.parquet
+-rw-r--r--   1 cloudera cloudera       1414 2018-09-24 23:09 /user/cloudera/problem1/result4b-gzip/part-r-00003-77c96981-5faf-4437-9616-3fe3dced6f14.gz.parquet
+-rw-r--r--   1 cloudera cloudera       1419 2018-09-24 23:09 /user/cloudera/problem1/result4b-gzip/part-r-00004-77c96981-5faf-4437-9616-3fe3dced6f14.gz.parquet
+-rw-r--r--   1 cloudera cloudera       1418 2018-09-24 23:09 /user/cloudera/problem1/result4b-gzip/part-r-00005-77c96981-5faf-4437-9616-3fe3dced6f14.gz.parquet
+-rw-r--r--   1 cloudera cloudera       1419 2018-09-24 23:09 /user/cloudera/problem1/result4b-gzip/part-r-00006-77c96981-5faf-4437-9616-3fe3dced6f14.gz.parquet
+-rw-r--r--   1 cloudera cloudera       1428 2018-09-24 23:09 /user/cloudera/problem1/result4b-gzip/part-r-00007-77c96981-5faf-4437-9616-3fe3dced6f14.gz.parquet
+-rw-r--r--   1 cloudera cloudera       1417 2018-09-24 23:09 /user/cloudera/problem1/result4b-gzip/part-r-00008-77c96981-5faf-4437-9616-3fe3dced6f14.gz.parquet
+
+
+sqlContext.setConf("spark.sql.parquet.compression.codec", "snappy")
+
+sqlResult.write.parquet("/user/cloudera/problem1/result4b-snappy")
+
+
+val finalsqlResult = sqlresult.map(x => x(0)+","+x(1)+","+x(2)+","+x(3)).saveAsTextFile("/user/cloudera/problem1/result4b-csv")
+===============================================================================================================================================================
+
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/problem1/result4a-csv/part-00000 | head
+2014-07-24,COMPLETE,34552.03,173
+2014-07-24,PENDING_PAYMENT,17680.7,96
+2014-07-24,CLOSED,16333.16,86
+2014-07-24,PENDING,12729.49,67
+2014-07-24,PROCESSING,9964.74,46
+2014-07-24,SUSPECTED_FRAUD,2351.61,12
+2014-07-24,ON_HOLD,1709.74,8
+2014-07-24,CANCELED,1254.92,6
+2014-07-24,PAYMENT_REVIEW,499.95,1
+2014-07-23,COMPLETE,25482.51,120
+
+
+
+sqoop export \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table result \
+--export-dir "/user/cloudera/problem1/result4a-csv" \
+--columns "order_date,order_status,total_amount,total_orders"  
+
+
+Note:
+
+by default sqoop assumes that hdfs has same number and ordering of columns as the table you are exporting into.
+--columns is used to specify eihter reordering of columns or only a subset of columns is present in input file.
+prior running this command table should exist in MySQL
+
+mysql> use retail_db;
+
+mysql> create table result( order_date varchar(255), order_status varchar(100), total_orders int, total_amount decimal(10,2));
+Query OK, 0 rows affected (0.09 sec)
+
+
+mysql> select * from result limit 10;
++------------+-----------------+--------------+--------------+
+| order_date | order_status    | total_orders | total_amount |
++------------+-----------------+--------------+--------------+
+| 2014-07-24 | COMPLETE        |          173 |     34552.03 |
+| 2014-01-23 | ON_HOLD         |           36 |      7053.24 |
+| 2014-01-23 | SUSPECTED_FRAUD |           16 |      3069.61 |
+| 2014-01-23 | CANCELED        |            8 |      1709.85 |
+| 2014-01-23 | PAYMENT_REVIEW  |            4 |       569.92 |
+| 2014-01-22 | COMPLETE        |          165 |     33530.81 |
+| 2014-01-22 | PENDING_PAYMENT |           93 |     17777.70 |
+| 2014-01-22 | CLOSED          |           82 |     15829.13 |
+| 2014-01-22 | PENDING         |           76 |     15204.82 |
+| 2014-01-22 | PROCESSING      |           57 |     11674.48 |
++------------+-----------------+--------------+--------------+
+10 rows in set (0.01 sec)
+=================================================================================================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    

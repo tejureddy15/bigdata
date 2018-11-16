@@ -1,0 +1,151 @@
+sqoop import-all-tables \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--as-avrodatafile \
+--compress \
+--compression-codec org.apache.hadoop.io.compress.SnappyCodec \
+--warehouse-dir retail_stage.db \                                      (gets stoerd in /user/cloudera/retail_stage.db)
+-m 1
+
+mysql> show tables;
++---------------------+
+| Tables_in_retail_db |
++---------------------+
+| categories          |
+| customers           |
+| departments         |
+| order_items         |
+| orders              |
+| products            |
+| products_external   |
+| products_replica    |
+| result              |
++---------------------+
+9 rows in set (0.22 sec)
+
+
+products_external doesn't have primary key. Therefore we need to to sequential import i.e, -m 1 or we can specify --split-by parameter 
+
+res:
+
+[cloudera@quickstart ~]$ hadoop fs -find retail_stage.db
+retail_stage.db
+retail_stage.db/categories
+retail_stage.db/categories/_SUCCESS
+retail_stage.db/categories/part-m-00000.avro
+retail_stage.db/categories/part-m-00001.avro
+retail_stage.db/categories/part-m-00002.avro
+retail_stage.db/categories/part-m-00003.avro
+retail_stage.db/customers
+retail_stage.db/customers/_SUCCESS
+retail_stage.db/customers/part-m-00000.avro
+retail_stage.db/customers/part-m-00001.avro
+retail_stage.db/customers/part-m-00002.avro
+retail_stage.db/customers/part-m-00003.avro
+retail_stage.db/departments
+retail_stage.db/departments/_SUCCESS
+retail_stage.db/departments/part-m-00000.avro
+retail_stage.db/departments/part-m-00001.avro
+retail_stage.db/departments/part-m-00002.avro
+retail_stage.db/departments/part-m-00003.avro
+retail_stage.db/order_items
+retail_stage.db/order_items/_SUCCESS
+retail_stage.db/order_items/part-m-00000.avro
+retail_stage.db/order_items/part-m-00001.avro
+retail_stage.db/order_items/part-m-00002.avro
+retail_stage.db/order_items/part-m-00003.avro
+retail_stage.db/orders
+retail_stage.db/orders/_SUCCESS
+retail_stage.db/orders/part-m-00000.avro
+retail_stage.db/orders/part-m-00001.avro
+retail_stage.db/orders/part-m-00002.avro
+retail_stage.db/orders/part-m-00003.avro
+retail_stage.db/products
+retail_stage.db/products/_SUCCESS
+retail_stage.db/products/part-m-00000.avro
+retail_stage.db/products/part-m-00001.avro
+retail_stage.db/products/part-m-00002.avro
+retail_stage.db/products/part-m-00003.avro
+
+scala> val ordersDF = sqlContext.read.avro("retail_stage.db/orders")
+
+scala> val orderDFGrouped = ordersDF.groupBy(to_date(from_unixtime(col("order_date")/1000)).alias("order_date_formatted")).
+     | agg(count("order_id").alias("total_orders")).orderBy(col("total_orders").desc)
+orderDFGrouped: org.apache.spark.sql.DataFrame = [order_date_formatted: date, total_orders: bigint]
+
+scala> orderDFGrouped.show()
++--------------------+------------+                                             
+|order_date_formatted|total_orders|
++--------------------+------------+
+|          2013-11-03|         347|
+|          2013-11-24|         292|
+|          2013-10-04|         287|
+|          2013-11-14|         287|
+|          2013-12-26|         286|
+|          2014-07-20|         285|
+|          2014-01-11|         281|
+|          2013-11-05|         278|
+|          2014-02-01|         278|
+|          2013-09-25|         277|
+|          2013-10-13|         277|
+|          2013-09-14|         276|
+|          2014-06-19|         276|
+|          2013-09-06|         276|
+|          2014-07-15|         274|
+|          2013-08-10|         270|
+|          2013-07-26|         269|
+|          2014-06-09|         269|
+|          2014-02-19|         268|
+|          2014-01-05|         266|
++--------------------+------------+
+only showing top 20 rows
+
+scala> val finalResult = orderDFGrouped.join(ordersDF, col("order_date_formatted") === to_date(from_unixtime(col("order_date")/1000)))
+finalResult: org.apache.spark.sql.DataFrame = [order_date_formatted: date, total_orders: bigint, order_id: int, order_date: bigint, order_customer_id: int, order_status: string]
+
+scala> finalResult.show(10)
++--------------------+------------+--------+-------------+-----------------+---------------+
+|order_date_formatted|total_orders|order_id|   order_date|order_customer_id|   order_status|
++--------------------+------------+--------+-------------+-----------------+---------------+
+|          2013-11-03|         347|   15793|1383462000000|             6471|       COMPLETE|
+|          2013-11-03|         347|   15794|1383462000000|             5323|     PROCESSING|
+|          2013-11-03|         347|   15795|1383462000000|            10096|         CLOSED|
+|          2013-11-03|         347|   15796|1383462000000|            11665|       COMPLETE|
+|          2013-11-03|         347|   15797|1383462000000|             6249|PENDING_PAYMENT|
+|          2013-11-03|         347|   15798|1383462000000|            10736|       COMPLETE|
+|          2013-11-03|         347|   15799|1383462000000|             5475|       COMPLETE|
+|          2013-11-03|         347|   15800|1383462000000|             7417|     PROCESSING|
+|          2013-11-03|         347|   15801|1383462000000|             4021|       COMPLETE|
+|          2013-11-03|         347|   15802|1383462000000|             2284|         CLOSED|
++--------------------+------------+--------+-------------+-----------------+---------------+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

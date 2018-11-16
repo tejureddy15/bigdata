@@ -1,0 +1,638 @@
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table products_replica \
+--fields-terminated-by '|' \
+--lines-terminated-by '\n' \
+--null-string 'NOT-AVAILABLE' \
+--null-non-string '-1' \
+--num-mappers 3 \
+--as-textfile \
+--target-dir "/user/cloudera/problem5/products-text" \
+--where "product_id between 1 and 1000" \
+--boundary-query "select min(product_id),max(product_id) from products_replica where product_id between 1 and 1000"
+
+
+
+res:
+
+
+mysql> select * from products_replica limit 10;
++------------+---------------------+-----------------------------------------------+---------------------+---------------+-----------------------------------------------------------------------------------------+---------------+-------------------+
+| product_id | product_category_id | product_name                                  | product_description | product_price | product_image                                                                           | product_grade | product_sentiment |
++------------+---------------------+-----------------------------------------------+---------------------+---------------+-----------------------------------------------------------------------------------------+---------------+-------------------+
+|          1 |                   2 | Quest Q64 10 FT. x 10 FT. Slant Leg Instant U |                     |         59.98 | http://images.acmesports.sports/Quest+Q64+10+FT.+x+10+FT.+Slant+Leg+Instant+Up+Canopy   |          NULL | NULL              |
+|          2 |                   2 | Under Armour Men's Highlight MC Football Clea |                     |        129.99 | http://images.acmesports.sports/Under+Armour+Men%27s+Highlight+MC+Football+Cleat        |          NULL | NULL              |
+|          3 |                   2 | Under Armour Men's Renegade D Mid Football Cl |                     |         89.99 | http://images.acmesports.sports/Under+Armour+Men%27s+Renegade+D+Mid+Football+Cleat      |          NULL | NULL              |
+|          4 |                   2 | Under Armour Men's Renegade D Mid Football Cl |                     |         89.99 | http://images.acmesports.sports/Under+Armour+Men%27s+Renegade+D+Mid+Football+Cleat      |          NULL | NULL              |
+|          5 |                   2 | Riddell Youth Revolution Speed Custom Footbal |                     |        199.99 | http://images.acmesports.sports/Riddell+Youth+Revolution+Speed+Custom+Football+Helmet   |          NULL | NULL              |
+|          6 |                   2 | Jordan Men's VI Retro TD Football Cleat       |                     |        134.99 | http://images.acmesports.sports/Jordan+Men%27s+VI+Retro+TD+Football+Cleat               |          NULL | NULL              |
+|          7 |                   2 | Schutt Youth Recruit Hybrid Custom Football H |                     |         99.99 | http://images.acmesports.sports/Schutt+Youth+Recruit+Hybrid+Custom+Football+Helmet+2014 |          NULL | NULL              |
+|          8 |                   2 | Nike Men's Vapor Carbon Elite TD Football Cle |                     |        129.99 | http://images.acmesports.sports/Nike+Men%27s+Vapor+Carbon+Elite+TD+Football+Cleat       |          NULL | NULL              |
+|          9 |                   2 | Nike Adult Vapor Jet 3.0 Receiver Gloves      |                     |            50 | http://images.acmesports.sports/Nike+Adult+Vapor+Jet+3.0+Receiver+Gloves                |          NULL | NULL              |
+|         10 |                   2 | Under Armour Men's Highlight MC Football Clea |                     |        129.99 | http://images.acmesports.sports/Under+Armour+Men%27s+Highlight+MC+Football+Cleat        |          NULL | NULL              |
++------------+---------------------+-----------------------------------------------+---------------------+---------------+-----------------------------------------------------------------------------------------+---------------+-------------------+
+10 rows in set (0.00 sec)
+
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/problem5/products-text
+Found 4 items
+-rw-r--r--   1 cloudera cloudera          0 2018-09-26 02:47 /user/cloudera/problem5/products-text/_SUCCESS
+-rw-r--r--   1 cloudera cloudera      46511 2018-09-26 02:47 /user/cloudera/problem5/products-text/part-m-00000
+-rw-r--r--   1 cloudera cloudera      48847 2018-09-26 02:47 /user/cloudera/problem5/products-text/part-m-00001
+-rw-r--r--   1 cloudera cloudera      47434 2018-09-26 02:47 /user/cloudera/problem5/products-text/part-m-00002
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/problem5/products-text/part-m-00000 | head
+1|2|Quest Q64 10 FT. x 10 FT. Slant Leg Instant U||59.98|http://images.acmesports.sports/Quest+Q64+10+FT.+x+10+FT.+Slant+Leg+Instant+Up+Canopy|-1|NOT-AVAILABLE
+2|2|Under Armour Men's Highlight MC Football Clea||129.99|http://images.acmesports.sports/Under+Armour+Men%27s+Highlight+MC+Football+Cleat|-1|NOT-AVAILABLE
+3|2|Under Armour Men's Renegade D Mid Football Cl||89.99|http://images.acmesports.sports/Under+Armour+Men%27s+Renegade+D+Mid+Football+Cleat|-1|NOT-AVAILABLE
+4|2|Under Armour Men's Renegade D Mid Football Cl||89.99|http://images.acmesports.sports/Under+Armour+Men%27s+Renegade+D+Mid+Football+Cleat|-1|NOT-AVAILABLE
+5|2|Riddell Youth Revolution Speed Custom Footbal||199.99|http://images.acmesports.sports/Riddell+Youth+Revolution+Speed+Custom+Football+Helmet|-1|NOT-AVAILABLE
+6|2|Jordan Men's VI Retro TD Football Cleat||134.99|http://images.acmesports.sports/Jordan+Men%27s+VI+Retro+TD+Football+Cleat|-1|NOT-AVAILABLE
+7|2|Schutt Youth Recruit Hybrid Custom Football H||99.99|http://images.acmesports.sports/Schutt+Youth+Recruit+Hybrid+Custom+Football+Helmet+2014|-1|NOT-AVAILABLE
+8|2|Nike Men's Vapor Carbon Elite TD Football Cle||129.99|http://images.acmesports.sports/Nike+Men%27s+Vapor+Carbon+Elite+TD+Football+Cleat|-1|NOT-AVAILABLE
+9|2|Nike Adult Vapor Jet 3.0 Receiver Gloves||50.0|http://images.acmesports.sports/Nike+Adult+Vapor+Jet+3.0+Receiver+Gloves|-1|NOT-AVAILABLE
+10|2|Under Armour Men's Highlight MC Football Clea||129.99|http://images.acmesports.sports/Under+Armour+Men%27s+Highlight+MC+Football+Cleat|-1|NOT-AVAILABLE
+cat: Unable to write to output stream.
+
+
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/problem5/products-text/part-m-00002
+d Blackout 7 MP G||99.99|http://images.acmesports.sports/Primos+Truth+Cam+Supercharged+Blackout+7+MP+Game+Camera|-1|NOT-AVAILABLE
+995|45|Bushnell 2014 Tour V3 Slope Patriot Pack Lase||399.99|http://images.acmesports.sports/Bushnell+2014+Tour+V3+Slope+Patriot+Pack+Laser+Rangefinder|-1|WEAK
+996|45|Bushnell Golf Tour v3 Patriot Pack Laser Rang||299.99|http://images.acmesports.sports/Bushnell+Golf+Tour+v3+Patriot+Pack+Laser+Rangefinder|-1|NOT-AVAILABLE
+997|45|Under Armour Men's Highlight MC Football Clea||129.99|http://images.acmesports.sports/Under+Armour+Men%27s+Highlight+MC+Football+Cleat|-1|NOT-AVAILABLE
+998|45|Bushnell NEO-X Golf GPS Watch||179.99|http://images.acmesports.sports/Bushnell+NEO-X+Golf+GPS+Watch|-1|NOT-AVAILABLE
+999|45|Timberland PRO Men's Pit Boss 6" Steel Toe Wo||99.99|http://images.acmesports.sports/Timberland+PRO+Men%27s+Pit+Boss+6%22+Steel+Toe+Work+Boot|-1|NOT-AVAILABLE
+1000|45|Nikon Monarch 5 10x42 Binoculars||329.99|http://images.acmesports.sports/Nikon+Monarch+5+10x42+Binoculars|-1|WEAK
+
+Therefore 1 to 1000 records got imported
+
+Expl:
+
+for a table based import 
+
+select min(primary_key_col), max(primary_key_col) will be generated internally
+
+but in this case we need to import records only from 1 to 1000. So, we need to write a query to select required records.
+
+--where " "  ==> this query will be aggregated to all the generated queries
+
+ex: --where "country = 'USA'" makes difference
+
+In this case writing --where doesnot make any difference because we are already importing records with product_id >=1 and <= 1000  which is mentioned in --boundary-query
+
+the limits that we mention in --boundary-query are inclusive and they will also be imported.
+
+==========================================================================================================================================================
+
+
+2) 
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table products_replica \
+--fields-terminated-by '*' \
+--lines-terminated-by '\n' \
+--null-string 'NA' \
+--null-non-string '-1000' \
+--num-mappers 2 \
+--boundary-query "select min(product_id),1111 from products_replica" \
+--target-dir "/user/cloudera/problem5/products-text-part1" \
+--as-textfile
+
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/problem5/products-text-part1
+Found 3 items
+-rw-r--r--   1 cloudera cloudera          0 2018-09-26 05:55 /user/cloudera/problem5/products-text-part1/_SUCCESS
+-rw-r--r--   1 cloudera cloudera      74453 2018-09-26 05:55 /user/cloudera/problem5/products-text-part1/part-m-00000
+-rw-r--r--   1 cloudera cloudera      75571 2018-09-26 05:55 /user/cloudera/problem5/products-text-part1/part-m-00001
+
+
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/problem5/products-text-part1/part-m-00001
+ICS+Women%27s+GEL-Nimbus+15+Running+Shoe*-1000*NA
+1106*50*Majestic Youth 2014 All-Star Game Andrew McCu**60.0*http://images.acmesports.sports/Majestic+Youth+2014+All-Star+Game+Andrew+McCutchen+%2322...*-1000*NA
+1107*50*Majestic Youth 2014 All-Star Game Yadier Moli**60.0*http://images.acmesports.sports/Majestic+Youth+2014+All-Star+Game+Yadier+Molina+%234+National...*-1000*NA
+1108*50*Majestic Youth 2014 All-Star Game Troy Tulowi**60.0*http://images.acmesports.sports/Majestic+Youth+2014+All-Star+Game+Troy+Tulowitzki+%232...*-1000*NA
+1109*50*Majestic Youth 2014 All-Star Game Yasiel Puig**60.0*http://images.acmesports.sports/Majestic+Youth+2014+All-Star+Game+Yasiel+Puig+%2366+National...*-1000*NA
+1110*50*Majestic Youth 2014 All-Star Game Freddie Fre**60.0*http://images.acmesports.sports/Majestic+Youth+2014+All-Star+Game+Freddie+Freeman+%235...*-1000*NA
+1111*50*Majestic Youth 2014 All-Star Game Mike Trout **60.0*http://images.acmesports.sports/Majestic+Youth+2014+All-Star+Game+Mike+Trout+%2327+American...*-1000*NA
+
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/problem5/products-text-part1/part-m-00000 | head
+1*2*Quest Q64 10 FT. x 10 FT. Slant Leg Instant U**59.98*http://images.acmesports.sports/Quest+Q64+10+FT.+x+10+FT.+Slant+Leg+Instant+Up+Canopy*-1000*NA
+2*2*Under Armour Men's Highlight MC Football Clea**129.99*http://images.acmesports.sports/Under+Armour+Men%27s+Highlight+MC+Football+Cleat*-1000*NA
+3*2*Under Armour Men's Renegade D Mid Football Cl**89.99*http://images.acmesports.sports/Under+Armour+Men%27s+Renegade+D+Mid+Football+Cleat*-1000*NA
+4*2*Under Armour Men's Renegade D Mid Football Cl**89.99*http://images.acmesports.sports/Under+Armour+Men%27s+Renegade+D+Mid+Football+Cleat*-1000*NA
+5*2*Riddell Youth Revolution Speed Custom Footbal**199.99*http://images.acmesports.sports/Riddell+Youth+Revolution+Speed+Custom+Football+Helmet*-1000*NA
+6*2*Jordan Men's VI Retro TD Football Cleat**134.99*http://images.acmesports.sports/Jordan+Men%27s+VI+Retro+TD+Football+Cleat*-1000*NA
+7*2*Schutt Youth Recruit Hybrid Custom Football H**99.99*http://images.acmesports.sports/Schutt+Youth+Recruit+Hybrid+Custom+Football+Helmet+2014*-1000*NA
+8*2*Nike Men's Vapor Carbon Elite TD Football Cle**129.99*http://images.acmesports.sports/Nike+Men%27s+Vapor+Carbon+Elite+TD+Football+Cleat*-1000*NA
+9*2*Nike Adult Vapor Jet 3.0 Receiver Gloves**50.0*http://images.acmesports.sports/Nike+Adult+Vapor+Jet+3.0+Receiver+Gloves*-1000*NA
+10*2*Under Armour Men's Highlight MC Football Clea**129.99*http://images.acmesports.sports/Under+Armour+Men%27s+Highlight+MC+Football+Cleat*-1000*NA
+cat: Unable to write to output stream.
+
+
+
+================================================================================================================================================================
+3)
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table products_replica \
+--fields-terminated-by '*' \
+--lines-terminated-by '\n' \
+--null-string 'NA' \
+--null-non-string '-1000' \
+--num-mappers 4 \
+--boundary-query "select 1111,max(product_id) from products_replica" \  ("select min(product_id),max(product_id) from products_replica where product_id >1111")
+--where "product_id > 1111" \  (since 1111, max(product_id) will also be included while importing. i.e; records with product_id >= 1111 and <= max(product_id))
+--target-dir "/user/cloudera/problem5/products-text-part2" \
+--as-textfile
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/products_replica/* | wc -l
+249
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/products_replica
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-28 10:44 /user/cloudera/products_replica/_SUCCESS
+-rw-r--r--   1 cloudera cloudera       9944 2018-10-28 10:44 /user/cloudera/products_replica/part-m-00000
+-rw-r--r--   1 cloudera cloudera       9344 2018-10-28 10:44 /user/cloudera/products_replica/part-m-00001
+-rw-r--r--   1 cloudera cloudera       9120 2018-10-28 10:44 /user/cloudera/products_replica/part-m-00002
+-rw-r--r--   1 cloudera cloudera       8315 2018-10-28 10:44 /user/cloudera/products_replica/part-m-00003
+[cloudera@quickstart ~]$ 
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/products_replica/part-m-00000 | head
+1112*50*Majestic Youth 2014 All-Star Game Miguel Cabr**60.0*http://images.acmesports.sports/Majestic+Youth+2014+All-Star+Game+Miguel+Cabrera+%2324...*-1000*NA
+1113*50*Majestic Youth 2014 All-Star Game Masahiro Ta**60.0*http://images.acmesports.sports/Majestic+Youth+2014+All-Star+Game+Masahiro+Tanaka+%2319...*-1000*NA
+1114*50*Majestic Youth 2014 All-Star Game Derek Jeter**60.0*http://images.acmesports.sports/Majestic+Youth+2014+All-Star+Game+Derek+Jeter+%232+American...*-1000*NA
+1115*50*Majestic Youth 2014 All-Star Game Jose Abreu **60.0*http://images.acmesports.sports/Majestic+Youth+2014+All-Star+Game+Jose+Abreu+%2379+American...*-1000*NA
+1116*50*Majestic Men's 2014 All-Star Game Troy Tulowi**130.0*http://images.acmesports.sports/Majestic+Men%27s+2014+All-Star+Game+Troy+Tulowitzki+%232...*-1000*NA
+1117*50*Majestic Men's 2014 All-Star Game Yasiel Puig**130.0*http://images.acmesports.sports/Majestic+Men%27s+2014+All-Star+Game+Yasiel+Puig+%2366+National...*-1000*NA
+1118*50*Majestic Men's 2014 All-Star Game Andrew McCu**130.0*http://images.acmesports.sports/Majestic+Men%27s+2014+All-Star+Game+Andrew+McCutchen+%2322...*-1000*NA
+1119*50*Majestic Men's 2014 All-Star Game Yadier Moli**130.0*http://images.acmesports.sports/Majestic+Men%27s+2014+All-Star+Game+Yadier+Molina+%234+National...*-1000*NA
+1120*50*Majestic Men's 2014 All-Star Game Freddie Fre**130.0*http://images.acmesports.sports/Majestic+Men%27s+2014+All-Star+Game+Freddie+Freeman+%235...*-1000*NA
+1121*50*Majestic Men's 2014 All-Star Game Mike Trout **130.0*http://images.acmesports.sports/Majestic+Men%27s+2014+All-Star+Game+Mike+Trout+%2327+American...*-1000*NA
+cat: Unable to write to output stream.
+ 
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/products_replica/part-m-00003
+ts/Nike+Men%27s+Home+Game+Jersey+St.+Louis+Rams+Michael+Sam+%2396*-1000*NA
+1344*59*Nike Men's Home Game Jersey St. Louis Rams Aa**100.0*http://images.acmesports.sports/Nike+Men%27s+Home+Game+Jersey+St.+Louis+Rams+Aaron+Donald+%2399*-1000*NA
+1345*59*Nike Men's Home Game Jersey St. Louis Rams Gr**100.0*http://images.acmesports.sports/Nike+Men%27s+Home+Game+Jersey+St.+Louis+Rams+Greg+Robinson...*-1000*NA
+1346*60*Time1**1345.0*firstImage*0*NULL
+1347*60*Time1**1123.0*secondImage*0*NULL
+1348*60*Time1**1143.0*thirdImage*0*NULL
+1349*61*Time2**1443.0*fourthImage*0*NULL
+1350*61*Time2**1043.0*fifthImage*0*NULL
+1351*61*Time2**1443.0*sixthImage*0*NULL
+1352*61*Time2**1043.0*seventhImage*0*NULL
+1354*61*Time2**1443.0*eigthImage*0*NULL
+1355*61*Time2**1043.0*ninthImage*0*NULL
+1356*61*Time2**1443.0*tenthImage*0*NULL
+1357*61*Time2**1043.0*eleventhImage*0*NULL
+1358*61*Time2**1443.0*twelthImage*0*NULL
+1359*61*Time2**1043.0*thirteenthImage*0*NULL
+1360*61*Time2**1443.0*twelthImage*0*NULL
+1361*61*Time2**1043.0*thirteenthImage*0*NULL
+
+
+================================================================================================================================================================
+
+
+columns:  product_id,product_category_id ,product_name,product_description,product_price,product_image,product_grade,product_sentiment 
+
+
+mysql> INSERT INTO products_replica(product_id,product_category_id,product_name,product_price,product_image,product_grade,product_sentiment) VALUES (1346,60,'Time1',1345.00,'firstImage','NULL','NULL');
+
+
+INSERT INTO products_replica(product_id,product_category_id,product_name,product_price,product_image,product_grade,product_sentiment) VALUES (1347,60,'Time1',1123.00,'secondImage','NULL','NULL');
+
+INSERT INTO products_replica(product_id,product_category_id,product_name,product_price,product_image,product_grade,product_sentiment) VALUES (1348,60,'Time1',1143.00,'thirdImage','NULL','NULL');
+
+INSERT INTO products_replica(product_id,product_category_id,product_name,product_price,product_image,product_grade,product_sentiment) VALUES (1349,61,'Time2',1443.00,'fourthImage','NULL','NULL'),
+(1350,61,'Time2',1043.00,'fifthImage','NULL','NULL');
+
+
+sqoop job --create FrstJob \
+-- import \                                     (remember -- import not --import)
+--connect "jdbc:mysql://localhost/retail_db" \
+--username "root" \
+--password "cloudera" \
+--table products_replica \
+--incremental append \
+--check-column product_id \
+--last-value 0 \
+--target-dir /user/cloudera/problem/5/products-incremental
+
+sqoop job --exec FrstJob
+
+sqoop job --exec FrstJob -- --last-value 1350
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/problem/5/products-incremental
+Found 4 items
+-rw-r--r--   1 cloudera cloudera      45032 2018-09-26 05:37 /user/cloudera/problem/5/products-incremental/part-m-00000
+-rw-r--r--   1 cloudera cloudera      47045 2018-09-26 05:37 /user/cloudera/problem/5/products-incremental/part-m-00001
+-rw-r--r--   1 cloudera cloudera      45767 2018-09-26 05:37 /user/cloudera/problem/5/products-incremental/part-m-00002
+-rw-r--r--   1 cloudera cloudera      49717 2018-09-26 05:37 /user/cloudera/problem/5/products-incremental/part-m-00003
+
+
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/problem/5/products-incremental/part-m-00003
+Nike Women's Cleveland Browns Johnny Football,,34.0,http://images.acmesports.sports/Nike+Women%27s+Cleveland+Browns+Johnny+Football+Orange+T-Shirt,null,null
+1342,59,Nike Men's St. Louis Rams Michael Sam #96 Nam,,32.0,http://images.acmesports.sports/Nike+Men%27s+St.+Louis+Rams+Michael+Sam+%2396+Name+and+Number...,null,null
+1343,59,Nike Men's Home Game Jersey St. Louis Rams Mi,,100.0,http://images.acmesports.sports/Nike+Men%27s+Home+Game+Jersey+St.+Louis+Rams+Michael+Sam+%2396,null,null
+1344,59,Nike Men's Home Game Jersey St. Louis Rams Aa,,100.0,http://images.acmesports.sports/Nike+Men%27s+Home+Game+Jersey+St.+Louis+Rams+Aaron+Donald+%2399,null,null
+1345,59,Nike Men's Home Game Jersey St. Louis Rams Gr,,100.0,http://images.acmesports.sports/Nike+Men%27s+Home+Game+Jersey+St.+Louis+Rams+Greg+Robinson...,null,null
+1346,60,Time1,,1345.0,firstImage,0,NULL
+1347,60,Time1,,1123.0,secondImage,0,NULL
+1348,60,Time1,,1143.0,thirdImage,0,NULL
+1349,61,Time2,,1443.0,fourthImage,0,NULL
+1350,61,Time2,,1043.0,fifthImage,0,NULL
+
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/problem/5/products-incremental/part-m-00000 | head
+1,2,Quest Q64 10 FT. x 10 FT. Slant Leg Instant U,,59.98,http://images.acmesports.sports/Quest+Q64+10+FT.+x+10+FT.+Slant+Leg+Instant+Up+Canopy,null,null
+2,2,Under Armour Men's Highlight MC Football Clea,,129.99,http://images.acmesports.sports/Under+Armour+Men%27s+Highlight+MC+Football+Cleat,null,null
+3,2,Under Armour Men's Renegade D Mid Football Cl,,89.99,http://images.acmesports.sports/Under+Armour+Men%27s+Renegade+D+Mid+Football+Cleat,null,null
+4,2,Under Armour Men's Renegade D Mid Football Cl,,89.99,http://images.acmesports.sports/Under+Armour+Men%27s+Renegade+D+Mid+Football+Cleat,null,null
+5,2,Riddell Youth Revolution Speed Custom Footbal,,199.99,http://images.acmesports.sports/Riddell+Youth+Revolution+Speed+Custom+Football+Helmet,null,null
+6,2,Jordan Men's VI Retro TD Football Cleat,,134.99,http://images.acmesports.sports/Jordan+Men%27s+VI+Retro+TD+Football+Cleat,null,null
+7,2,Schutt Youth Recruit Hybrid Custom Football H,,99.99,http://images.acmesports.sports/Schutt+Youth+Recruit+Hybrid+Custom+Football+Helmet+2014,null,null
+8,2,Nike Men's Vapor Carbon Elite TD Football Cle,,129.99,http://images.acmesports.sports/Nike+Men%27s+Vapor+Carbon+Elite+TD+Football+Cleat,null,null
+9,2,Nike Adult Vapor Jet 3.0 Receiver Gloves,,50.0,http://images.acmesports.sports/Nike+Adult+Vapor+Jet+3.0+Receiver+Gloves,null,null
+10,2,Under Armour Men's Highlight MC Football Clea,,129.99,http://images.acmesports.sports/Under+Armour+Men%27s+Highlight+MC+Football+Cleat,null,null
+cat: Unable to write to output stream.
+
+
+INSERT INTO products_replica(product_id,product_category_id,product_name,product_price,product_image,product_grade,product_sentiment) VALUES (1351,61,'Time2',1443.00,'sixthImage','NULL','NULL'),
+(1352,61,'Time2',1043.00,'seventhImage','NULL','NULL');
+
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/problem/5/products-incremental/part-m-00000 | head
+1,2,Quest Q64 10 FT. x 10 FT. Slant Leg Instant U,,59.98,http://images.acmesports.sports/Quest+Q64+10+FT.+x+10+FT.+Slant+Leg+Instant+Up+Canopy,null,null
+2,2,Under Armour Men's Highlight MC Football Clea,,129.99,http://images.acmesports.sports/Under+Armour+Men%27s+Highlight+MC+Football+Cleat,null,null
+3,2,Under Armour Men's Renegade D Mid Football Cl,,89.99,http://images.acmesports.sports/Under+Armour+Men%27s+Renegade+D+Mid+Football+Cleat,null,null
+4,2,Under Armour Men's Renegade D Mid Football Cl,,89.99,http://images.acmesports.sports/Under+Armour+Men%27s+Renegade+D+Mid+Football+Cleat,null,null
+5,2,Riddell Youth Revolution Speed Custom Footbal,,199.99,http://images.acmesports.sports/Riddell+Youth+Revolution+Speed+Custom+Football+Helmet,null,null
+6,2,Jordan Men's VI Retro TD Football Cleat,,134.99,http://images.acmesports.sports/Jordan+Men%27s+VI+Retro+TD+Football+Cleat,null,null
+7,2,Schutt Youth Recruit Hybrid Custom Football H,,99.99,http://images.acmesports.sports/Schutt+Youth+Recruit+Hybrid+Custom+Football+Helmet+2014,null,null
+8,2,Nike Men's Vapor Carbon Elite TD Football Cle,,129.99,http://images.acmesports.sports/Nike+Men%27s+Vapor+Carbon+Elite+TD+Football+Cleat,null,null
+9,2,Nike Adult Vapor Jet 3.0 Receiver Gloves,,50.0,http://images.acmesports.sports/Nike+Adult+Vapor+Jet+3.0+Receiver+Gloves,null,null
+10,2,Under Armour Men's Highlight MC Football Clea,,129.99,http://images.acmesports.sports/Under+Armour+Men%27s+Highlight+MC+Football+Cleat,null,null
+cat: Unable to write to output stream.
+
+
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/problem/5/products-incremental/part-m-00005
+1352,61,Time2,,1043.0,seventhImage,0,NULL
+
+
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/problem/5/products-incremental/part-m-00004
+1351,61,Time2,,1443.0,sixthImage,0,NULL
+
+
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/problem/5/products-incremental/part-m-00003
+Nike Women's Cleveland Browns Johnny Football,,34.0,http://images.acmesports.sports/Nike+Women%27s+Cleveland+Browns+Johnny+Football+Orange+T-Shirt,null,null
+1342,59,Nike Men's St. Louis Rams Michael Sam #96 Nam,,32.0,http://images.acmesports.sports/Nike+Men%27s+St.+Louis+Rams+Michael+Sam+%2396+Name+and+Number...,null,null
+1343,59,Nike Men's Home Game Jersey St. Louis Rams Mi,,100.0,http://images.acmesports.sports/Nike+Men%27s+Home+Game+Jersey+St.+Louis+Rams+Michael+Sam+%2396,null,null
+1344,59,Nike Men's Home Game Jersey St. Louis Rams Aa,,100.0,http://images.acmesports.sports/Nike+Men%27s+Home+Game+Jersey+St.+Louis+Rams+Aaron+Donald+%2399,null,null
+1345,59,Nike Men's Home Game Jersey St. Louis Rams Gr,,100.0,http://images.acmesports.sports/Nike+Men%27s+Home+Game+Jersey+St.+Louis+Rams+Greg+Robinson...,null,null
+1346,60,Time1,,1345.0,firstImage,0,NULL
+1347,60,Time1,,1123.0,secondImage,0,NULL
+1348,60,Time1,,1143.0,thirdImage,0,NULL
+1349,61,Time2,,1443.0,fourthImage,0,NULL
+1350,61,Time2,,1043.0,fifthImage,0,NULL
+
+
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/problem/5/products-incremental/part-m-00002
+nite+Edge+RTH+Compound+Bow+Package+-+Mossy+Oak...,null,WEAK
+1006,45,O'Brien Neoprene Pet Life Vest,,39.99,http://images.acmesports.sports/O%27Brien+Neoprene+Pet+Life+Vest,null,null
+1007,45,Realtree Outfitters Men's Cobra Realtree Xtra,,49.99,http://images.acmesports.sports/Realtree+Outfitters+Men%27s+Cobra+Realtree+Xtra+Hiking+Shoe,null,null
+1008,45,Cuddeback Ambush IR Scouting Camera,,119.99,http://images.acmesports.sports/Cuddeback+Ambush+IR+Scouting+Camera,null,null
+1009,45,Diamond Fear No Evil Compound Bow Package,,599.99,http://images.acmesports.sports/Diamond+Fear+No+Evil+Compound+Bow+Package,1,null
+1010,46,DBX Vector Series Men's Nylon Life Vest,,19.98,http://images.acmesports.sports/DBX+Vector+Series+Men%27s+Nylon+Life+Vest,null,null
+1011,46,Old Town Canoe Saranac 146 Canoe,,499.99,http://images.acmesports.sports/Old+Town+Canoe+Saranac+146+Canoe,null,WEAK
+1012,46,Pelican Trailblazer 100 Angler Fishing Kayak,,299.99,http://images.acmesports.sports/Pelican+Trailblazer+100+Angler+Fishing+Kayak,null,null
+
+
+INSERT INTO products_replica(product_id,product_category_id,product_name,product_price,product_image,product_grade,product_sentiment) VALUES (1354,61,'Time2',1443.00,'eigthImage','NULL','NULL'),
+(1355,61,'Time2',1043.00,'ninthImage','NULL','NULL');
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/problem/5/products-incremental
+Found 8 items
+-rw-r--r--   1 cloudera cloudera      45032 2018-09-26 05:37 /user/cloudera/problem/5/products-incremental/part-m-00000
+-rw-r--r--   1 cloudera cloudera      47045 2018-09-26 05:37 /user/cloudera/problem/5/products-incremental/part-m-00001
+-rw-r--r--   1 cloudera cloudera      45767 2018-09-26 05:37 /user/cloudera/problem/5/products-incremental/part-m-00002
+-rw-r--r--   1 cloudera cloudera      49717 2018-09-26 05:37 /user/cloudera/problem/5/products-incremental/part-m-00003
+-rw-r--r--   1 cloudera cloudera         40 2018-09-26 05:40 /user/cloudera/problem/5/products-incremental/part-m-00004
+-rw-r--r--   1 cloudera cloudera         42 2018-09-26 05:40 /user/cloudera/problem/5/products-incremental/part-m-00005
+-rw-r--r--   1 cloudera cloudera         40 2018-09-26 05:46 /user/cloudera/problem/5/products-incremental/part-m-00006
+-rw-r--r--   1 cloudera cloudera         40 2018-09-26 05:46 /user/cloudera/problem/5/products-incremental/part-m-00007
+
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/problem/5/products-incremental/part-m-00006
+1354,61,Time2,,1443.0,eigthImage,0,NULL
+
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/problem/5/products-incremental/part-m-00007
+1355,61,Time2,,1043.0,ninthImage,0,NULL
+
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/problem/5/products-incremental/part-m-00005
+1352,61,Time2,,1043.0,seventhImage,0,NULL
+
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/problem/5/products-incremental/part-m-00004
+1351,61,Time2,,1443.0,sixthImage,0,NULL
+
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/problem/5/products-incremental/part-m-00003
+Nike Women's Cleveland Browns Johnny Football,,34.0,http://images.acmesports.sports/Nike+Women%27s+Cleveland+Browns+Johnny+Football+Orange+T-Shirt,null,null
+1342,59,Nike Men's St. Louis Rams Michael Sam #96 Nam,,32.0,http://images.acmesports.sports/Nike+Men%27s+St.+Louis+Rams+Michael+Sam+%2396+Name+and+Number...,null,null
+1343,59,Nike Men's Home Game Jersey St. Louis Rams Mi,,100.0,http://images.acmesports.sports/Nike+Men%27s+Home+Game+Jersey+St.+Louis+Rams+Michael+Sam+%2396,null,null
+1344,59,Nike Men's Home Game Jersey St. Louis Rams Aa,,100.0,http://images.acmesports.sports/Nike+Men%27s+Home+Game+Jersey+St.+Louis+Rams+Aaron+Donald+%2399,null,null
+1345,59,Nike Men's Home Game Jersey St. Louis Rams Gr,,100.0,http://images.acmesports.sports/Nike+Men%27s+Home+Game+Jersey+St.+Louis+Rams+Greg+Robinson...,null,null
+1346,60,Time1,,1345.0,firstImage,0,NULL
+1347,60,Time1,,1123.0,secondImage,0,NULL
+1348,60,Time1,,1143.0,thirdImage,0,NULL
+1349,61,Time2,,1443.0,fourthImage,0,NULL
+1350,61,Time2,,1043.0,fifthImage,0,NULL
+
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/problem/5/products-incremental/part-m-00002
+nite+Edge+RTH+Compound+Bow+Package+-+Mossy+Oak...,null,WEAK
+1006,45,O'Brien Neoprene Pet Life Vest,,39.99,http://images.acmesports.sports/O%27Brien+Neoprene+Pet+Life+Vest,null,null
+1007,45,Realtree Outfitters Men's Cobra Realtree Xtra,,49.99,http://images.acmesports.sports/Realtree+Outfitters+Men%27s+Cobra+Realtree+Xtra+Hiking+Shoe,null,null
+1008,45,Cuddeback Ambush IR Scouting Camera,,119.99,http://images.acmesports.sports/Cuddeback+Ambush+IR+Scouting+Camera,null,null
+1009,45,Diamond Fear No Evil Compound Bow Package,,599.99,http://images.acmesports.sports/Diamond+Fear+No+Evil+Compound+Bow+Package,1,null
+1010,46,DBX Vector Series Men's Nylon Life Vest,,19.98,http://images.acmesports.sports/DBX+Vector+Series+Men%27s+Nylon+Life+Vest,null,null
+1011,46,Old Town Canoe Saranac 146 Canoe,,499.99,http://images.acmesports.sports/Old+Town+Canoe+Saranac+146+Canoe,null,WEAK
+1012,46,Pelican Trailblazer 100 Angler Fishing Kayak,,299.99,http://images.acmesports.sports/Pelican+Trailblazer+100+Angler+Fishing+Kayak,null,null
+
+===================================================================================================================================================================
+4)
+
+sqoop merge \
+--class-name products_replica \
+--jar-file /tmp/sqoop-cloudera/compile/88b81bb1faea0e17bec0416d5dc5317b/products_replica.jar \
+--new-data /user/cloudera/problem5/products-text-part2 \
+--onto /user/cloudera/problem5/products-text-part1 \
+--target-dir /user/cloudera/problem5/products-text-both-parts \
+--merge-key product_id
+
+
+==================================================================================================================================================================
+
+hive> show databases;
+OK
+daily_revenue_per_product
+default
+problem5
+retail_db
+retail_db_orc
+sqoop
+Time taken: 1.072 seconds, Fetched: 6 row(s)
+
+hive> use problem5;
+OK
+Time taken: 0.104 seconds
+
+hive> create table products_hive(
+    > product_id int,
+    > product_category_id int,
+    > product_name string,
+    > product_description string,
+    > product_price float,
+    > product_image string,
+    > product_grade int,
+    > product_sentiment string
+    > )
+    > ;
+
+OK
+Time taken: 3.466 seconds
+
+
+sqoop job --create hive_sqoop_job \
+-- import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table products_replica \
+--hive-import \
+--hive-table problem5.products_hive \
+--incremental append \
+--check-column product_id \
+--last-value 0
+
+sqoop job --exec hive_sqoop_job
+
+hive> select max(product_id) from products_hive;
+
+res: 1355
+
+sqoop job --create hive_sqoop_job \
+-- import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table products_replica \
+--hive-import \
+--hive-table problem5.products_hive \
+--incremental append \
+--check-column product_id \
+--last-value 1355
+
+INSERT INTO products_replica(product_id,product_category_id,product_name,product_price,product_image,product_grade,product_sentiment) VALUES (1356,61,'Time2',1443.00,'tenthImage','NULL','NULL'),
+(1357,61,'Time2',1043.00,'eleventhImage','NULL','NULL');
+
+sqoop job --create hive_sqoop_job \
+-- import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table products_replica \
+--hive-import \
+--hive-table problem5.products_hive \
+--incremental append \
+--check-column product_id \
+--last-value 1357
+
+
+INSERT INTO products_replica(product_id,product_category_id,product_name,product_price,product_image,product_grade,product_sentiment) VALUES (1358,61,'Time2',1443.00,'twelthImage','NULL','NULL'),
+(1359,61,'Time2',1043.00,'thirteenthImage','NULL','NULL');
+
+[cloudera@quickstart ~]$ hdfs dfs -ls /user/hive/warehouse/problem5.db/products_hive  
+Found 12 items
+-rw-r--r--   1 cloudera cloudera      44758 2018-09-26 02:45 /user/hive/warehouse/problem5.db/products_hive/part-m-00000
+-rw-r--r--   1 cloudera cloudera         40 2018-09-27 06:24 /user/hive/warehouse/problem5.db/products_hive/part-m-00000_copy_1
+-rw-r--r--   1 cloudera cloudera      47014 2018-09-26 02:45 /user/hive/warehouse/problem5.db/products_hive/part-m-00001
+-rw-r--r--   1 cloudera cloudera         43 2018-09-27 06:24 /user/hive/warehouse/problem5.db/products_hive/part-m-00001_copy_1
+-rw-r--r--   1 cloudera cloudera      45522 2018-09-26 02:45 /user/hive/warehouse/problem5.db/products_hive/part-m-00002
+-rw-r--r--   1 cloudera cloudera         41 2018-09-27 06:24 /user/hive/warehouse/problem5.db/products_hive/part-m-00002_copy_1
+-rw-r--r--   1 cloudera cloudera      50065 2018-09-26 02:45 /user/hive/warehouse/problem5.db/products_hive/part-m-00003
+-rw-r--r--   1 cloudera cloudera         45 2018-09-27 06:24 /user/hive/warehouse/problem5.db/products_hive/part-m-00003_copy_1
+-rw-r--r--   1 cloudera cloudera      45144 2018-09-27 05:47 /user/hive/warehouse/problem5.db/products_hive/part-m-00004
+-rw-r--r--   1 cloudera cloudera      47312 2018-09-27 05:47 /user/hive/warehouse/problem5.db/products_hive/part-m-00005
+-rw-r--r--   1 cloudera cloudera      45912 2018-09-27 05:47 /user/hive/warehouse/problem5.db/products_hive/part-m-00006
+-rw-r--r--   1 cloudera cloudera      49355 2018-09-27 05:47 /user/hive/warehouse/problem5.db/products_hive/part-m-00007
+
+
+[cloudera@quickstart ~]$ hadoop fs -rm -r /user/hive/warehouse/problem5.db/products_hive
+Deleted /user/hive/warehouse/problem5.db/products_hive
+
+===============================================================================================================================================================
+
+sqoop job --create hive_sqoop_job \
+-- import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table products_replica \
+--hive-import \
+--hive-table problem5.products_hive \
+--incremental append \
+--check-column product_id \
+--last-value 0
+
+sqoop job --exec hive_sqoop_job
+
+[cloudera@quickstart ~]$ sqoop job --show hive_sqoop_job
+
+Options:
+----------------------------
+verbose = false
+hcatalog.drop.and.create.table = false
+incremental.last.value = 1359
+db.connect.string = jdbc:mysql://localhost/retail_db
+
+hive> select max(product_id) from products_hive;
+
+OK
+1359
+
+
+mysql> select count(*) from products_replica;
++----------+
+| count(*) |
++----------+
+|     1358 |
++----------+
+1 row in set (0.01 sec)
+
+
+hive> select count(*) from products_hive;
+
+OK
+1358
+
+
+INSERT INTO products_replica(product_id,product_category_id,product_name,product_price,product_image,product_grade,product_sentiment) VALUES (1360,61,'Time2',1443.00,'twelthImage','NULL','NULL'),
+(1361,61,'Time2',1043.00,'thirteenthImage','NULL','NULL');
+
+mysql> INSERT INTO products_replica(product_id,product_category_id,product_name,product_price,product_image,product_grade,product_sentiment) VALUES             
+       (1360,61,'Time2',1443.00,'twelthImage','NULL','NULL'),
+    -> (1361,61,'Time2',1043.00,'thirteenthImage','NULL','NULL');
+Query OK, 2 rows affected, 3 warnings (0.03 sec)
+Records: 2  Duplicates: 0  Warnings: 0
+
+[cloudera@quickstart ~]$ sqoop job --exec hive_sqoop_job -- --last-value 1359   (add -- to ovverride or add any parameter)
+
+hive> select count(*) from products_hive;
+
+OK
+1360
+
+
+Repeat the same for 2 more records
+=================================================================================================================================================================
+
+insert into table products_hive values(1360,61,'Time2','shit',1443.00,'twelthImage','NULL','NULL');
+insert into table products_hive values(1361,61,'Time2','shit',1443.00,'twelthImage','NULL','NULL');
+insert into table products_hive values(1362,61,'Time2','shit',1443.00,'twelthImage','NULL','NULL');
+
+hive> select count(*) from products_hive;
+
+OK
+1363
+
+mysql> create table products_external(
+    -> product_id int,
+    -> product_grade int(11),
+    -> product_category_id int,
+    -> product_name varchar(100),
+    -> product_description varchar(100),
+    -> product_price float,
+    -> product_image varchar(200),
+    -> product_sentiment varchar(100)
+    -> )
+    -> ;
+
+sqoop export \
+--connect "jdbc:mysql://localhost/retail_db" \
+--username root \
+--password cloudera \
+--export-dir /user/hive/warehouse/problem5.db/products_hive \
+--input-fields-terminated-by '\001' \
+--input-null-string "null" \
+--input-null-non-string "null" \
+--columns "product_id,product_category_id,product_name,product_description,product_price,product_image,product_grade,product_sentiment" \
+--table products_external
+
+insert into table products_hive values(1361,61,'Time2','shit',1443.00,'twelthImage','NULL','NULL');
+insert into table products_hive values(1362,61,'Time2','shit',1443.00,'twelthImage','NULL','NULL');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

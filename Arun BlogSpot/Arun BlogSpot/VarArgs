@@ -1,0 +1,30 @@
+
+selecting few column names from many
+
+// make example dataframe 
+
+import org.apache.spark.sql.DataFrame
+
+val df: DataFrame = sc.parallelize(Seq((1, 2, 3), (4, 5, 6), (7, 8, 9))).toDF("a", "b", "c")
+
+
+// desired list of column names in string (making it possible programmatically)
+ val column_names_str = Seq[String]("a", "b")
+
+// construct list of column names in column type
+ import org.apache.spark.sql.functions.col
+ val column_names_col = column_names_str.map(name => col(name)) 
+ val column_names_col = column_names_str.map(name => col(name).as(s"renamed_$name")) // rename if needed
+
+// select specific columns from dataframe using varargs syntax *
+ val df_new = df.select(column_names_col:_*)
+ df_new.show()
+
+import org.apache.spark.sql.DataFrame
+val df = sc.parallelize(Seq((1, 2, 3), (4, 5, 6), (7, 8, 9))).toDF("a", "b", "c")
+val column_names_str = Seq("a", "b")
+import org.apache.spark.sql.functions.col
+val column_names_col = column_names_str.map(name => col(name)) 
+val df_new = df.select(column_names_col:_*)
+df_new.show()
+

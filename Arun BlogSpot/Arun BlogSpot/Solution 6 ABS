@@ -1,0 +1,476 @@
+PS 1,2,3
+
+hive> create database problem6;
+OK
+Time taken: 36.913 seconds
+
+sqoop import-all-tables \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--hive-import \
+--hive-database problem6 \
+-m 1 \
+--direct
+
+scala> val depDF = sqlContext.table("problem6.departments")
+depDF: org.apache.spark.sql.DataFrame = [department_id: int, department_name: string]
+
+scala> depDF.show(4)
++-------------+---------------+
+|department_id|department_name|
++-------------+---------------+
+|            2|        fitness|
+|            3|       footwear|
+|            4|        Apparel|
+|            5|           Golf|
++-------------+---------------+
+only showing top 4 rows
+
+
+scala> val catDF = sqlContext.table("problem6.categories")
+catDF: org.apache.spark.sql.DataFrame = [category_id: int, category_department_id: int, category_name: string]
+
+scala> catDF.show()
++-----------+----------------------+-------------------+
+|category_id|category_department_id|      category_name|
++-----------+----------------------+-------------------+
+|          1|                     2|           Football|
+|          2|                     2|             Soccer|
+|          3|                     2|Baseball & Softball|
+|          4|                     2|         Basketball|
+|          5|                     2|           Lacrosse|
+|          6|                     2|   Tennis & Racquet|
+|          7|                     2|             Hockey|
+|          8|                     2|        More Sports|
+|          9|                     3|   Cardio Equipment|
+|         10|                     3|  Strength Training|
+|         11|                     3|Fitness Accessories|
+|         12|                     3|       Boxing & MMA|
+|         13|                     3|        Electronics|
+|         14|                     3|     Yoga & Pilates|
+|         15|                     3|  Training by Sport|
+|         16|                     3|    As Seen on  TV!|
+|         17|                     4|             Cleats|
+|         18|                     4|     Men's Footwear|
+|         19|                     4|   Women's Footwear|
+|         20|                     4|     Kids' Footwear|
++-----------+----------------------+-------------------+
+only showing top 20 rows
+
+
+scala> val depAndCatDF = depDF.join(catDF, depDF("department_id") === catDF("category_department_id"))
+depAndCatDF: org.apache.spark.sql.DataFrame = [department_id: int, department_name: string, category_id: int, category_department_id: int, category_name: string]
+
+scala> depAndCatDF.show(5)
++-------------+---------------+-----------+----------------------+-------------------+
+|department_id|department_name|category_id|category_department_id|      category_name|
++-------------+---------------+-----------+----------------------+-------------------+
+|            2|        fitness|          1|                     2|           Football|
+|            2|        fitness|          2|                     2|             Soccer|
+|            2|        fitness|          3|                     2|Baseball & Softball|
+|            2|        fitness|          4|                     2|         Basketball|
+|            2|        fitness|          5|                     2|           Lacrosse|
++-------------+---------------+-----------+----------------------+-------------------+
+only showing top 5 rows
+
+
+scala> val depAndCatDF = depDF.join(catDF, depDF("department_id") === catDF("category_department_id")).drop("category_department_id")
+depAndCatDF: org.apache.spark.sql.DataFrame = [department_id: int, department_name: string, category_id: int, category_name: string]
+
+scala> depAndCatDF.show(5)
++-------------+---------------+-----------+-------------------+
+|department_id|department_name|category_id|      category_name|
++-------------+---------------+-----------+-------------------+
+|            2|        fitness|          1|           Football|
+|            2|        fitness|          2|             Soccer|
+|            2|        fitness|          3|Baseball & Softball|
+|            2|        fitness|          4|         Basketball|
+|            2|        fitness|          5|           Lacrosse|
++-------------+---------------+-----------+-------------------+
+only showing top 5 rows
+
+
+scala> val prodDF = sqlContext.table("problem6.products")
+prodDF: org.apache.spark.sql.DataFrame = [product_id: int, product_category_id: int, product_name: string, product_description: string, product_price: double, product_image: string]
+
+scala> prodDF.show(4)
++----------+-------------------+--------------------+-------------------+-------------+--------------------+
+|product_id|product_category_id|        product_name|product_description|product_price|       product_image|
++----------+-------------------+--------------------+-------------------+-------------+--------------------+
+|         1|                  2|Quest Q64 10 FT. ...|                   |        59.98|http://images.acm...|
+|         2|                  2|Under Armour Men'...|                   |       129.99|http://images.acm...|
+|         3|                  2|Under Armour Men'...|                   |        89.99|http://images.acm...|
+|         4|                  2|Under Armour Men'...|                   |        89.99|http://images.acm...|
++----------+-------------------+--------------------+-------------------+-------------+--------------------+
+only showing top 4 rows
+
+
+scala> val joinDF = depAndCatDF.join(prodDF, depAndCatDF("category_id") === prodDF("product_category_id"))
+joinDF: org.apache.spark.sql.DataFrame = [department_id: int, department_name: string, category_id: int, category_name: string, product_id: int, product_category_id: int, product_name: string, product_description: string, product_price: double, product_image: string]
+
+scala> joinDF.show(4)
++-------------+---------------+-----------+-------------+----------+-------------------+--------------------+-------------------+-------------+--------------------+
+|department_id|department_name|category_id|category_name|product_id|product_category_id|        product_name|product_description|product_price|       product_image|
++-------------+---------------+-----------+-------------+----------+-------------------+--------------------+-------------------+-------------+--------------------+
+|            2|        fitness|          2|       Soccer|         1|                  2|Quest Q64 10 FT. ...|                   |        59.98|http://images.acm...|
+|            2|        fitness|          2|       Soccer|         2|                  2|Under Armour Men'...|                   |       129.99|http://images.acm...|
+|            2|        fitness|          2|       Soccer|         3|                  2|Under Armour Men'...|                   |        89.99|http://images.acm...|
+|            2|        fitness|          2|       Soccer|         4|                  2|Under Armour Men'...|                   |        89.99|http://images.acm...|
++-------------+---------------+-----------+-------------+----------+-------------------+--------------------+-------------------+-------------+--------------------+
+only showing top 4 rows
+
+
+scala> val joinDF = depAndCatDF.join(prodDF, depAndCatDF("category_id") === prodDF("product_category_id")).drop("product_category_id")
+joinDF: org.apache.spark.sql.DataFrame = [department_id: int, department_name: string, category_id: int, category_name: string, product_id: int, product_name: string, product_description: string, product_price: double, product_image: string]
+
+scala> joinDF.show(4)
++-------------+---------------+-----------+-------------+----------+--------------------+-------------------+-------------+--------------------+
+|department_id|department_name|category_id|category_name|product_id|        product_name|product_description|product_price|       product_image|
++-------------+---------------+-----------+-------------+----------+--------------------+-------------------+-------------+--------------------+
+|            2|        fitness|          2|       Soccer|         1|Quest Q64 10 FT. ...|                   |        59.98|http://images.acm...|
+|            2|        fitness|          2|       Soccer|         2|Under Armour Men'...|                   |       129.99|http://images.acm...|
+|            2|        fitness|          2|       Soccer|         3|Under Armour Men'...|                   |        89.99|http://images.acm...|
+|            2|        fitness|          2|       Soccer|         4|Under Armour Men'...|                   |        89.99|http://images.acm...|
++-------------+---------------+-----------+-------------+----------+--------------------+-------------------+-------------+--------------------+
+only showing top 4 rows
+
+scala> val query1 = sqlContext.sql("""
+     | select department_id,department_name,product_price,
+     | dense_rank() over (partition by department_id order by product_price) as rank
+     | from wholeData
+     | order by department_id, rank desc
+     | """)
+query1: org.apache.spark.sql.DataFrame = [department_id: int, department_name: string, product_price: double, rank: int]
+
+scala> query1.show()
++-------------+---------------+-------------+----+                              
+|department_id|department_name|product_price|rank|
++-------------+---------------+-------------+----+
+|            2|        fitness|      1799.99|  56|
+|            2|        fitness|       999.99|  55|
+|            2|        fitness|       499.99|  54|
+|            2|        fitness|       399.99|  53|
+|            2|        fitness|       399.99|  53|
+|            2|        fitness|       349.98|  52|
+|            2|        fitness|       329.99|  51|
+|            2|        fitness|       309.99|  50|
+|            2|        fitness|       299.99|  49|
+|            2|        fitness|       299.99|  49|
+|            2|        fitness|       299.99|  49|
+|            2|        fitness|       299.99|  49|
+|            2|        fitness|       299.99|  49|
+|            2|        fitness|       299.99|  49|
+|            2|        fitness|       299.99|  49|
+|            2|        fitness|       299.98|  48|
+|            2|        fitness|       249.99|  47|
+|            2|        fitness|       249.97|  46|
+|            2|        fitness|       209.99|  45|
+|            2|        fitness|       209.99|  45|
++-------------+---------------+-------------+----+
+only showing top 20 rows
+
+PS 5:
+
+scala> val query2= query1.filter(col("product_price") < 100)
+query2: org.apache.spark.sql.DataFrame = [department_id: int, department_name: string, product_price: double, rank: int]
+
+PS 7:
+
+scala> val query2 = sqlContext.sql("create table problem6.uniqueProducts as select * from Dataa where product_price < 100")
+
+scala> query2.count()
+res64: Long = 821 
+
+use problem6;
+
+show tables;
+
+hive> select * from uniqueProducts
+Time taken: 1.571 seconds, Fetched: 821 row(s)
+
+
+======================================================================================================================================================================
+
+PS 4:
+
+scala> val ordersDF = sqlContext.table("retail_db.orders")
+ordersDF: org.apache.spark.sql.DataFrame = [order_id: int, order_date: string, order_customer_id: int, order_status: string]
+
+scala> ordersDF.show(5)
++--------+--------------------+-----------------+---------------+
+|order_id|          order_date|order_customer_id|   order_status|
++--------+--------------------+-----------------+---------------+
+|       1|2013-07-25 00:00:...|            11599|         CLOSED|
+|       2|2013-07-25 00:00:...|              256|PENDING_PAYMENT|
+|       3|2013-07-25 00:00:...|            12111|       COMPLETE|
+|       4|2013-07-25 00:00:...|             8827|         CLOSED|
+|       5|2013-07-25 00:00:...|            11318|       COMPLETE|
++--------+--------------------+-----------------+---------------+
+only showing top 5 rows
+
+
+scala> val orderItemsDF = sqlContext.table("retail_db.order_items")
+orderItemsDF: org.apache.spark.sql.DataFrame = [order_item_id: int, order_item_order_id: int, order_item_product_id: int, order_item_quantity: int, order_item_subtotal: float, order_item_product_price: float]
+
+scala> orderItemsDF.show(5)
++-------------+-------------------+---------------------+-------------------+-------------------+------------------------+
+|order_item_id|order_item_order_id|order_item_product_id|order_item_quantity|order_item_subtotal|order_item_product_price|
++-------------+-------------------+---------------------+-------------------+-------------------+------------------------+
+|            1|                  1|                  957|                  1|             299.98|                  299.98|
+|            2|                  2|                 1073|                  1|             199.99|                  199.99|
+|            3|                  2|                  502|                  5|              250.0|                    50.0|
+|            4|                  2|                  403|                  1|             129.99|                  129.99|
+|            5|                  4|                  897|                  2|              49.98|                   24.99|
++-------------+-------------------+---------------------+-------------------+-------------------+------------------------+
+only showing top 5 rows
+
+
+scala> val ordAndOIDF = ordersDF.join(orderItemsDF, ordersDF("order_id") === orderItemsDF("order_item_order_id"))
+ordAndOIDF: org.apache.spark.sql.DataFrame = [order_id: int, order_date: string, order_customer_id: int, order_status: string, order_item_id: int, order_item_order_id: int, order_item_product_id: int, order_item_quantity: int, order_item_subtotal: float, order_item_product_price: float]
+
+scala> ordAndOIDF.show(5)
++--------+--------------------+-----------------+---------------+-------------+-------------------+---------------------+-------------------+-------------------+------------------------+
+|order_id|          order_date|order_customer_id|   order_status|order_item_id|order_item_order_id|order_item_product_id|order_item_quantity|order_item_subtotal|order_item_product_price|
++--------+--------------------+-----------------+---------------+-------------+-------------------+---------------------+-------------------+-------------------+------------------------+
+|       1|2013-07-25 00:00:...|            11599|         CLOSED|            1|                  1|                  957|                  1|             299.98|                  299.98|
+|       2|2013-07-25 00:00:...|              256|PENDING_PAYMENT|            2|                  2|                 1073|                  1|             199.99|                  199.99|
+|       2|2013-07-25 00:00:...|              256|PENDING_PAYMENT|            3|                  2|                  502|                  5|              250.0|                    50.0|
+|       2|2013-07-25 00:00:...|              256|PENDING_PAYMENT|            4|                  2|                  403|                  1|             129.99|                  129.99|
+|       4|2013-07-25 00:00:...|             8827|         CLOSED|            5|                  4|                  897|                  2|              49.98|                   24.99|
++--------+--------------------+-----------------+---------------+-------------+-------------------+---------------------+-------------------+-------------------+------------------------+
+only showing top 5 rows
+
+
+scala> val ordAndOIDF = ordersDF.join(orderItemsDF, ordersDF("order_id") === orderItemsDF("order_item_order_id")).drop("order_item_order_id")
+ordAndOIDF: org.apache.spark.sql.DataFrame = [order_id: int, order_date: string, order_customer_id: int, order_status: string, order_item_id: int, order_item_product_id: int, order_item_quantity: int, order_item_subtotal: float, order_item_product_price: float]
+
+scala> ordAndOIDF.show(5)
++--------+--------------------+-----------------+---------------+-------------+---------------------+-------------------+-------------------+------------------------+
+|order_id|          order_date|order_customer_id|   order_status|order_item_id|order_item_product_id|order_item_quantity|order_item_subtotal|order_item_product_price|
++--------+--------------------+-----------------+---------------+-------------+---------------------+-------------------+-------------------+------------------------+
+|       1|2013-07-25 00:00:...|            11599|         CLOSED|            1|                  957|                  1|             299.98|                  299.98|
+|       2|2013-07-25 00:00:...|              256|PENDING_PAYMENT|            2|                 1073|                  1|             199.99|                  199.99|
+|       2|2013-07-25 00:00:...|              256|PENDING_PAYMENT|            3|                  502|                  5|              250.0|                    50.0|
+|       2|2013-07-25 00:00:...|              256|PENDING_PAYMENT|            4|                  403|                  1|             129.99|                  129.99|
+|       4|2013-07-25 00:00:...|             8827|         CLOSED|            5|                  897|                  2|              49.98|                   24.99|
++--------+--------------------+-----------------+---------------+-------------+---------------------+-------------------+-------------------+------------------------+
+only showing top 5 rows
+
+scala> val grouped = ordAndOIDF.groupBy("order_customer_id").agg(countDistinct("order_item_product_id").alias("productCount")).orderBy(col("productCount").desc,col("order_customer_id"))
+grouped: org.apache.spark.sql.DataFrame = [order_customer_id: int, productCount: bigint]
+
+scala> grouped.show()
++-----------------+------------+                                                
+|order_customer_id|productCount|
++-----------------+------------+
+|             1288|          17|
+|             1657|          17|
+|             1810|          17|
+|            12226|          17|
+|             2292|          16|
+|             2403|          16|
+|             3161|          16|
+|             5691|          16|
+|             5715|          16|
+|             8766|          16|
+|              329|          15|
+|             2113|          15|
+|             2205|          15|
+|             2229|          15|
+|             3471|          15|
+|             4582|          15|
+|             4832|          15|
+|             5648|          15|
+|             5654|          15|
+|             5828|          15|
++-----------------+------------+
+only showing top 20 rows
+
+scala> val finalDF = grouped.limit(10)
+finalDF: org.apache.spark.sql.DataFrame = [order_customer_id: int, productCount: bigint]
+
+scala> finalDF.show()
++-----------------+------------+                                                
+|order_customer_id|productCount|
++-----------------+------------+
+|             1288|          17|
+|             1657|          17|
+|             1810|          17|
+|            12226|          17|
+|             2292|          16|
+|             2403|          16|
+|             3161|          16|
+|             5691|          16|
+|             5715|          16|
+|             8766|          16|
++-----------------+------------+
+
+
+scala> sqlContext.setConf("spark.sql.parquet.compression.codec","snappy")
+
+scala> finalDF.write.parquet("ABSPS4")
+18/10/29 14:06:24 WARN hdfs.DFSClient: Caught exception                         
+java.lang.InterruptedException
+	at java.lang.Object.wait(Native Method)
+	at java.lang.Thread.join(Thread.java:1281)
+	at java.lang.Thread.join(Thread.java:1355)
+	at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.closeResponder(DFSOutputStream.java:967)
+	at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.endBlock(DFSOutputStream.java:705)
+	at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.run(DFSOutputStream.java:894)
+
+[cloudera@quickstart ~]$ hadoop fs -ls ABSPS4
+Found 4 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-29 14:06 ABSPS4/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        361 2018-10-29 14:06 ABSPS4/_common_metadata
+-rw-r--r--   1 cloudera cloudera        626 2018-10-29 14:06 ABSPS4/_metadata
+-rw-r--r--   1 cloudera cloudera        659 2018-10-29 14:06 ABSPS4/part-r-00000-246231a5-1f72-4c66-83e5-5af80e65187b.snappy.parquet
+
+
+PS 6:
+
+scala> finalDF.registerTempTable("topCustomers")
+
+scala> val query1 = sqlContext.sql("""
+     | select distinct p.*
+     | from products p join order_items oi
+     | on oi.order_item_product_id = p.product_id
+     | join orders o
+     | on o.order_id = oi.order_item_order_id
+     | join topCustomers tc
+     | on tc.order_customer_id = o.order_customer_id
+     | where p.product_price < 100
+     | """)
+
+query1: org.apache.spark.sql.DataFrame = [product_id: int, product_category_id: int, product_name: string, product_description: string, product_price: double, product_image: string]
+
+scala> query1.show()
++----------+-------------------+--------------------+-------------------+-------------+--------------------+
+|product_id|product_category_id|        product_name|product_description|product_price|       product_image|
++----------+-------------------+--------------------+-------------------+-------------+--------------------+
+|      1014|                 46|O'Brien Men's Neo...|                   |        49.98|http://images.acm...|
+|       924|                 41|Glove It Urban Br...|                   |        15.99|http://images.acm...|
+|       116|                  6|Nike Men's Comfor...|                   |        44.99|http://images.acm...|
+|       823|                 37|Titleist Pro V1x ...|                   |        51.99|http://images.acm...|
+|        93|                  5|Under Armour Men'...|                   |        24.99|http://images.acm...|
+|       793|                 36|Hirzl Women's Hyb...|                   |        14.99|http://images.acm...|
+|       885|                 40|Team Golf St. Lou...|                   |        24.99|http://images.acm...|
+|       564|                 26|Nike Men's Deutsc...|                   |         30.0|http://images.acm...|
+|       565|                 26|adidas Youth Germ...|                   |         70.0|http://images.acm...|
+|       778|                 35|Bag Boy Beverage ...|                   |        24.99|http://images.acm...|
+|       804|                 36|Glove It Women's ...|                   |        19.99|http://images.acm...|
+|       835|                 37|Bridgestone e6 St...|                   |        31.99|http://images.acm...|
+|       905|                 40|Team Golf Texas L...|                   |        24.99|http://images.acm...|
+|       818|                 37|Titleist Pro V1x ...|                   |        47.99|http://images.acm...|
+|       886|                 40|Team Golf San Fra...|                   |        24.99|http://images.acm...|
+|       627|                 29|Under Armour Girl...|                   |        39.99|http://images.acm...|
+|       821|                 37|Titleist Pro V1 H...|                   |        51.99|http://images.acm...|
+|       278|                 13|Under Armour Men'...|                   |        44.99|http://images.acm...|
+|        37|                  3|adidas Kids' F5 M...|                   |        34.99|http://images.acm...|
+|       825|                 37|Bridgestone e6 St...|                   |        31.99|http://images.acm...|
++----------+-------------------+--------------------+-------------------+-------------+--------------------+
+only showing top 20 rows
+
+PS 7:
+
+scala> val query2 = sqlContext.sql("create table problem6.uniqueProductPurchase as select distinct p.* from products p join order_items oi on oi.order_item_product_id = p.product_id join orders o on o.order_id = oi.order_item_order_id join topCustomers tc on tc.order_customer_id = o.order_customer_id where p.product_price < 100 ")
+
+
+======================================================================================================================================================================
+
+Ex:
+
+File:
+
+1001,PEN,Pen Red,5000,1.23
+1002,PEN,Pen Blue,8000,1.25
+1003,PEN,Pen Black,2000,1.25
+1004,PEC,Pencil 2B,10000,0.48
+1005,PEC,Pencil 2H,8000,0.49
+1006,PEC,Pencil HB,0,9999.99
+1007,,,,,
+1008,"PeC","Pencil,HA",,
+
+
+mysql> select * from sqoop_inc1;
++------+-------+-----------+-------+---------+          ==> this is the data that was already there in MySQL
+| id   | name  | namesss   | quant | pri     |
++------+-------+-----------+-------+---------+
+| 1001 | PEN   | Pen Red   |  5000 |    1.23 |
+| 1002 | PEN   | Pen Blue  |  8000 |    1.25 |
+| 1003 | PEN   | Pen Black |  2000 |    1.25 |
+| 1004 | PEC   | Pencil 2B | 10000 |    0.48 |
+| 1005 | PEC   | Pencil 2H |  8000 |    0.49 |
+| 1006 | PEC   | Pencil HB |  NULL | 9999.99 |
+| 1007 | Pandi | Kukka     |  NULL |    1000 |
+| 1008 | Dunna | Potu      |     1 |   129.8 |
+| 1009 |       |           |  NULL |    NULL |
++------+-------+-----------+-------+---------+
+9 rows in set (0.00 sec)
+
+
+sqoop export \
+--username root \
+--password cloudera \
+--connect jdbc:mysql://localhost/retail_db \
+--table sqoop_inc1 \
+--export-dir /user/cloudera/prod1.csv/ \
+--input-fields-terminated-by ',' \
+--input-null-string "null" \
+--input-null-non-string 0 \
+-m 1 \
+--update-mode allowinsert \
+--update-key id \
+--input-optionally-enclosed-by '\"'
+
+mysql> select * from sqoop_inc1;
++------+------+-----------+-------+---------+
+| id   | name | namesss   | quant | pri     |
++------+------+-----------+-------+---------+
+| 1001 | PEN  | Pen Red   |  5000 |    1.23 |
+| 1002 | PEN  | Pen Blue  |  8000 |    1.25 |
+| 1003 | PEN  | Pen Black |  2000 |    1.25 |
+| 1004 | PEC  | Pencil 2B | 10000 |    0.48 |
+| 1005 | PEC  | Pencil 2H |  8000 |    0.49 |
+| 1006 | PEC  | Pencil HB |  NULL | 9999.99 |
+| 1007 |      |           |  NULL |    NULL |
+| 1008 | PeC  | Pencil,HA |  NULL |    NULL |
+| 1009 |      |           |  NULL |    NULL |
++------+------+-----------+-------+---------+
+9 rows in set (0.00 sec)
+
+Ex:
+
+--update-key ==> if id (Primary Key) matches it checks all the values and will update the record
+
+                 if id doesn't match it will insert that new record
+
+--update-mode allowinsert ==> inserts new values and also update values
+
+--update-mode updateonly  ==> updates the records but doesn't insert
+
+--input-null-string "null"  ==> all the string colunms that have null value will be handled but will not be replaced with the values we are specifying 
+
+--input-null-non-string "null"  ==> all the string colunms that have null value will be handled but will not be replaced with the values we are specifying
+
+--input-null-non-string 0  ==> records that has null values will not replaced by 0
+
+all the string columns will be blank and all the non-string values will be NULL no matter what you give
+
+| 1008 | PeC  | Pencil,HA |  NULL |    NULL |
+| 1009 |      |           |  NULL |    NULL |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
