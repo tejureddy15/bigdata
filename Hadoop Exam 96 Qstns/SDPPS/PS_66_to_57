@@ -1,0 +1,375 @@
+PS 66:
+
+scala> val a = sc.parallelize(List("dog","tiger", "lion", "cat", "spider", "eagle"),2)
+a: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[1096] at parallelize at <console>:33
+
+scala> a.collect()
+res165: Array[String] = Array(dog, tiger, lion, cat, spider, eagle)
+
+scala> val b = a.keyBy(_.length)    or (val b = a.keyBy(rec => rec.length))
+b: org.apache.spark.rdd.RDD[(Int, String)] = MapPartitionsRDD[1092] at keyBy at <console>:35
+
+scala> b.collect()
+res166: Array[(Int, String)] = Array((3,dog), (5,tiger), (4,lion), (3,cat), (6,spider), (5,eagle))
+
+scala> val b = a.keyBy(rec => rec.length)
+b: org.apache.spark.rdd.RDD[(Int, String)] = MapPartitionsRDD[1093] at keyBy at <console>:35
+
+scala> b.collect()
+res167: Array[(Int, String)] = Array((3,dog), (5,tiger), (4,lion), (3,cat), (6,spider), (5,eagle))
+
+scala> val c = sc.parallelize(List("ant","falcon", "squid"),2)
+c: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[1095] at parallelize at <console>:33
+
+scala> val d = c.keyBy(_.length)
+d: org.apache.spark.rdd.RDD[(Int, String)] = MapPartitionsRDD[1098] at keyBy at <console>:35
+
+scala> b.collect()
+res168: Array[(Int, String)] = Array((3,dog), (5,tiger), (4,lion), (3,cat), (6,spider), (5,eagle))
+
+scala> d.collect()
+res169: Array[(Int, String)] = Array((3,ant), (6,falcon), (5,squid))            
+
+scala> b.subtractByKey(d).collect()
+res170: Array[(Int, String)] = Array((4,lion))  (Subtracts by key)
+
+======================================================================================================================================================================
+
+PS 65:
+
+scala> val a = sc.parallelize(List("dog", "cat", "owl", "gnu", "ant"),2)
+a: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[1100] at parallelize at <console>:33
+
+scala> a.collect()
+res171: Array[String] = Array(dog, cat, owl, gnu, ant)
+
+scala> val b = sc.parallelize(1 to a.count.toInt, 2)
+b: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[1101] at parallelize at <console>:35
+
+scala> b.collect()
+res172: Array[Int] = Array(1, 2, 3, 4, 5)
+
+scala> val c = a.zip(b)
+c: org.apache.spark.rdd.RDD[(String, Int)] = ZippedPartitionsRDD2[1102] at zip at <console>:37
+
+scala> c.collect
+res173: Array[(String, Int)] = Array((dog,1), (cat,2), (owl,3), (gnu,4), (ant,5))
+
+scala> c.sortByKey().collect()                                        =====================> sortByKey()  --> sorts in A.O
+res174: Array[(String, Int)] = Array((ant,5), (cat,2), (dog,1), (gnu,4), (owl,3))
+
+scala> c.sortByKey(false).collect()                                   ======================> sortByKey()  --> sorts in D.O
+res175: Array[(String, Int)] = Array((owl,3), (gnu,4), (dog,1), (cat,2), (ant,5))
+
+======================================================================================================================================================================
+
+PS 64:
+
+scala> val a = sc.parallelize(List("dog", "salmon", "salmon", "rat", "elephant"),3)
+a: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[1109] at parallelize at <console>:33
+
+scala> val b = a.keyBy(_.length)
+b: org.apache.spark.rdd.RDD[(Int, String)] = MapPartitionsRDD[1110] at keyBy at <console>:35
+
+scala> b.collect()
+res176: Array[(Int, String)] = Array((3,dog), (6,salmon), (6,salmon), (3,rat), (8,elephant))
+
+scala> val c = sc.parallelize(List("dog", "cat", "gnu", "salmon", "rabbit", "turkey", "wolf", "bear", "bee"),3)
+c: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[1111] at parallelize at <console>:33
+
+scala> val d = c.keyBy(_.length)
+d: org.apache.spark.rdd.RDD[(Int, String)] = MapPartitionsRDD[1112] at keyBy at <console>:35
+
+scala> d.collect
+res179: Array[(Int, String)] = Array((3,dog), (3,cat), (3,gnu), (6,salmon), (6,rabbit), (6,turkey), (4,wolf), (4,bear), (3,bee))
+
+scala> b.rightOuterJoin(d)
+res177: org.apache.spark.rdd.RDD[(Int, (Option[String], String))] = MapPartitionsRDD[1115] at rightOuterJoin at <console>:42
+
+scala> b.rightOuterJoin(d).collect
+res178: Array[(Int, (Option[String], String))] = Array((6,(Some(salmon),salmon)), (6,(Some(salmon),rabbit)), (6,(Some(salmon),turkey)), (6,(Some(salmon),salmon)), (6,(Some(salmon),rabbit)), (6,(Some(salmon),turkey)), (3,(Some(dog),dog)), (3,(Some(dog),cat)), (3,(Some(dog),gnu)), (3,(Some(dog),bee)), (3,(Some(rat),dog)), (3,(Some(rat),cat)), (3,(Some(rat),gnu)), (3,(Some(rat),bee)), (4,(None,wolf)), (4,(None,bear)))
+
+
+RightOuterJoin:
+
+All the values on the right side will be included definitely and then performs join on the key ...
+
+(3,(Some(rat),bee))  --> when there is a match on key
+
+(4,(None,wolf))   --> when there is no match
+
+
+======================================================================================================================================================================
+
+PS 63:
+
+scala> val a = sc.parallelize(List("dog", "tiger", "lion", "cat", "panther", "eagle"),2)
+a: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[1119] at parallelize at <console>:33
+
+scala> val b = a.map(rec => (rec.length,rec))
+b: org.apache.spark.rdd.RDD[(Int, String)] = MapPartitionsRDD[1120] at map at <console>:35
+
+scala> b.collect()
+res180: Array[(Int, String)] = Array((3,dog), (5,tiger), (4,lion), (3,cat), (7,panther), (5,eagle))
+
+scala> val c = b.reduceByKey(_+_)
+c: org.apache.spark.rdd.RDD[(Int, String)] = ShuffledRDD[1121] at reduceByKey at <console>:37
+
+scala> c.collect()
+res181: Array[(Int, String)] = Array((4,lion), (3,dogcat), (7,panther), (5,tigereagle))
+
+======================================================================================================================================================================
+
+PS 62:
+
+scala> val a = sc.parallelize(List("dog", "tiger", "lion", "cat", "panther", "eagle"),2)
+a: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[1122] at parallelize at <console>:33
+
+scala> val b = a.map(rec => (rec.length,rec))
+b: org.apache.spark.rdd.RDD[(Int, String)] = MapPartitionsRDD[1123] at map at <console>:35
+
+scala> val c = b.mapValues("x" + _ + "x")
+c: org.apache.spark.rdd.RDD[(Int, String)] = MapPartitionsRDD[1124] at mapValues at <console>:37
+
+scala> c.collect()
+res182: Array[(Int, String)] = Array((3,xdogx), (5,xtigerx), (4,xlionx), (3,xcatx), (7,xpantherx), (5,xeaglex))
+
+======================================================================================================================================================================
+
+PS 61:
+
+scala> val a = sc.parallelize(List("dog", "salmon", "salmon", "rat", "elephant"),3)
+a: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[1109] at parallelize at <console>:33
+
+scala> val b = a.keyBy(_.length)
+b: org.apache.spark.rdd.RDD[(Int, String)] = MapPartitionsRDD[1110] at keyBy at <console>:35
+
+scala> b.collect()
+res176: Array[(Int, String)] = Array((3,dog), (6,salmon), (6,salmon), (3,rat), (8,elephant))
+
+scala> val c = sc.parallelize(List("dog", "cat", "gnu", "salmon", "rabbit", "turkey", "wolf", "bear", "bee"),3)
+c: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[1111] at parallelize at <console>:33
+
+scala> val d = c.keyBy(_.length)
+d: org.apache.spark.rdd.RDD[(Int, String)] = MapPartitionsRDD[1112] at keyBy at <console>:35
+
+scala> d.collect
+res179: Array[(Int, String)] = Array((3,dog), (3,cat), (3,gnu), (6,salmon), (6,rabbit), (6,turkey), (4,wolf), (4,bear), (3,bee))
+
+scala> b.leftOuterJoin(d)
+res185: org.apache.spark.rdd.RDD[(Int, (String, Option[String]))] = MapPartitionsRDD[1131] at leftOuterJoin at <console>:42
+
+scala> b.leftOuterJoin(d).collect
+res186: Array[(Int, (String, Option[String]))] = Array((6,(salmon,Some(salmon))), (6,(salmon,Some(rabbit))), (6,(salmon,Some(turkey))), (6,(salmon,Some(salmon))), (6,(salmon,Some(rabbit))), (6,(salmon,Some(turkey))), (3,(dog,Some(dog))), (3,(dog,Some(cat))), (3,(dog,Some(gnu))), (3,(dog,Some(bee))), (3,(rat,Some(dog))), (3,(rat,Some(cat))), (3,(rat,Some(gnu))), (3,(rat,Some(bee))), (8,(elephant,None)))
+
+======================================================================================================================================================================
+
+PS 60:
+
+scala> b.join(d).collect
+res189: Array[(Int, (String, String))] = Array((6,(salmon,salmon)), (6,(salmon,rabbit)), (6,(salmon,turkey)), (6,(salmon,salmon)), (6,(salmon,rabbit)), (6,(salmon,turkey)), (3,(dog,dog)), (3,(dog,cat)), (3,(dog,gnu)), (3,(dog,bee)), (3,(rat,dog)), (3,(rat,cat)), (3,(rat,gnu)), (3,(rat,bee)))
+
+
+All the joins happens on the key
+
+join           (val,value)           val, value can be any name
+leftOuterJoin  (val, Some(value))
+rightOuterJoin (Some(val), value)
+
+======================================================================================================================================================================
+
+PS 59:
+
+scala> val x = sc.parallelize(1 to 20)
+x: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[1144] at parallelize at <console>:33
+
+scala> x.collect()
+res190: Array[Int] = Array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)
+
+scala> val y = sc.parallelize(10 to 30)
+y: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[1145] at parallelize at <console>:33
+
+scala> y.collect
+res191: Array[Int] = Array(10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30)
+
+scala> x.intersection(y).collect
+res193: Array[Int] = Array(13, 19, 15, 16, 11, 14, 17, 12, 18, 20, 10)
+
+======================================================================================================================================================================
+
+PS 58:
+
+scala> val a = sc.parallelize(List("dog", "tiger", "lion", "cat", "spider", "eagle"),2)
+a: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[1158] at parallelize at <console>:33
+
+scala> a.collect()
+res194: Array[String] = Array(dog, tiger, lion, cat, spider, eagle)
+
+scala> val b = a.keyBy(_.length)
+b: org.apache.spark.rdd.RDD[(Int, String)] = MapPartitionsRDD[1159] at keyBy at <console>:35
+
+scala> b.groupByKey().collect
+res195: Array[(Int, Iterable[String])] = Array((4,CompactBuffer(lion)), (6,CompactBuffer(spider)), (3,CompactBuffer(dog, cat)), (5,CompactBuffer(tiger, eagle)))
+
+scala> b.collect()
+res196: Array[(Int, String)] = Array((3,dog), (5,tiger), (4,lion), (3,cat), (6,spider), (5,eagle))
+
+======================================================================================================================================================================
+
+PS 57:
+
+scala> val a = sc.parallelize(1 to 9, 3)
+a: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[1161] at parallelize at <console>:33
+
+scala> a.collect()
+res197: Array[Int] = Array(1, 2, 3, 4, 5, 6, 7, 8, 9)
+
+
+scala> a.map(rec => (rec, {if(rec % 2 == 0) "even" else "odd"}))
+res201: org.apache.spark.rdd.RDD[(Int, String)] = MapPartitionsRDD[1164] at map at <console>:36
+
+scala> val b = a.map(rec => (rec, {if(rec % 2 == 0) "even" else "odd"}))
+b: org.apache.spark.rdd.RDD[(Int, String)] = MapPartitionsRDD[1165] at map at <console>:35
+
+scala> b.collect()
+res202: Array[(Int, String)] = Array((1,odd), (2,even), (3,odd), (4,even), (5,odd), (6,even), (7,odd), (8,even), (9,odd))
+
+(or)
+
+scala> val b = a.map(rec => ({if(rec % 2 == 0) "even" else "odd"}, rec))
+b: org.apache.spark.rdd.RDD[(String, Int)] = MapPartitionsRDD[1166] at map at <console>:35
+
+scala> b.collect()
+res203: Array[(String, Int)] = Array((odd,1), (even,2), (odd,3), (even,4), (odd,5), (even,6), (odd,7), (even,8), (odd,9))
+
+scala> b.groupByKey().collect()
+res204: Array[(String, Iterable[Int])] = Array((even,CompactBuffer(2, 4, 6, 8)), (odd,CompactBuffer(1, 3, 5, 7, 9)))
+
+======================================================================================================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

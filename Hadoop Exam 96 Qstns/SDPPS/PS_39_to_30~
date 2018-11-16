@@ -1,0 +1,766 @@
+PS 39:
+
+scala> val A = sc.textFile("file:/home/cloudera/Documents/SDPPS/P39A")
+A: org.apache.spark.rdd.RDD[String] = file:/home/cloudera/Documents/SDPPS/P39A MapPartitionsRDD[70] at textFile at <console>:28
+
+scala> A.collect()
+res50: Array[String] = Array(1,9,5, 2,7,4, 3,8,3)
+
+scala> val B = sc.textFile("file:/home/cloudera/Documents/SDPPS/P39B")
+B: org.apache.spark.rdd.RDD[String] = file:/home/cloudera/Documents/SDPPS/P39B MapPartitionsRDD[72] at textFile at <console>:28
+
+scala> A.collect()
+res51: Array[String] = Array(1,9,5, 2,7,4, 3,8,3)
+
+scala> B.collect()
+res52: Array[String] = Array(1,g,h, 2,i,j, 3,k,l)
+
+scala> val mapA = A.map(rec => rec.split(','))
+mapA: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[73] at map at <console>:30
+
+scala> mapA.collect()
+res53: Array[Array[String]] = Array(Array(1, 9, 5), Array(2, 7, 4), Array(3, 8, 3))
+
+scala> val mapB = B.map(rec => rec.split(','))
+mapB: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[74] at map at <console>:30
+
+scala> mapB.collect()
+res54: Array[Array[String]] = Array(Array(1, g, h), Array(2, i, j), Array(3, k, l))
+
+scala> val mappedA = mapA.map(rec => (rec(0),(rec(1),rec(2))))
+mappedA: org.apache.spark.rdd.RDD[(String, (String, String))] = MapPartitionsRDD[75] at map at <console>:32
+
+scala> mappedA.collect()
+res55: Array[(String, (String, String))] = Array((1,(9,5)), (2,(7,4)), (3,(8,3)))
+
+scala> val mappedB = mapB.map(rec => (rec(0),(rec(1),rec(2))))
+mappedB: org.apache.spark.rdd.RDD[(String, (String, String))] = MapPartitionsRDD[76] at map at <console>:32
+
+scala> mappedB.collect()
+res56: Array[(String, (String, String))] = Array((1,(g,h)), (2,(i,j)), (3,(k,l)))
+
+scala> val joinRDD = mappedA.join(mappedB)
+joinRDD: org.apache.spark.rdd.RDD[(String, ((String, String), (String, String)))] = MapPartitionsRDD[79] at join at <console>:40
+
+scala> joinRDD.collect()
+res57: Array[(String, ((String, String), (String, String)))] = Array((2,((7,4),(i,j))), (3,((8,3),(k,l))), (1,((9,5),(g,h))))
+
+scala> val finalRDD = joinRDD.map(rec => rec._2._1._2)  ==> It's givilng string
+finalRDD: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[80] at map at <console>:42
+
+scala> finalRDD.collect()
+res58: Array[String] = Array(4, 3, 5)
+
+scala> finalRDD.reduce(_+_)  --> Therefore answer is 435
+res60: String = 435
+
+scala> val finalRDD = joinRDD.map(rec => rec._2._1._2.toInt)  => .toInt converts it to Intl
+finalRDD: org.apache.spark.rdd.RDD[Int] = MapPartitionsRDD[81] at map at <console>:42
+
+scala> finalRDD.collect()
+res61: Array[Int] = Array(4, 3, 5)
+
+scala> finalRDD.reduce(_+_)
+res62: Int = 12
+
+======================================================================================================================================================================
+PS 38:
+
+A = NullWritable
+B = BytesWritable
+
+======================================================================================================================================================================
+PS 37:
+
+scala> val fileRDD = sc.textFile("file:/home/cloudera/Documents/SDPPS/dateProblem.txt")
+fileRDD: org.apache.spark.rdd.RDD[String] = file:/home/cloudera/Documents/SDPPS/dateProblem.txt MapPartitionsRDD[56] at textFile at <console>:27
+
+scala> fileRDD.collect()
+res37: Array[String] = Array("Christopher|Jan 11, 2017|5 ", "Justin|11 Jan, 2017|5 ", "Thomas|6/17/2017|5 ", "John|11-08-2017|5 ", "Neli|2016|5 ", Bilu||5)
+
+scala> val fileRDDMap = fileRDD.map(rec => rec.split('|'))
+fileRDDMap: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[57] at map at <console>:29
+
+scala> fileRDDMap.collect()
+res38: Array[Array[String]] = Array(Array(Christopher, Jan 11, 2017, "5 "), Array(Justin, 11 Jan, 2017, "5 "), Array(Thomas, 6/17/2017, "5 "), Array(John, 11-08-2017, "5 "), Array(Neli, 2016, "5 "), Array(Bilu, "", 5))
+
+scala> val regExp = """\w{3}\s\d{2},\s\d{4}|\d{2}\s\w{3},\s\d{4}|\d{1}\/\d{2}\/\d{4}|\d{2}-\d{2}-\d{4}""" ==> without.r is a string
+regExp: String = \w{3}\s\d{2},\s\d{4}|\d{2}\s\w{3},\s\d{4}|\d{1}\/\d{2}\/\d{4}|\d{2}-\d{2}-\d
+
+scala> val regExp = """\w{3}\s\d{2},\s\d{4}|\d{2}\s\w{3},\s\d{4}|\d{1}\/\d{2}\/\d{4}|\d{2}-\d{2}-\d{4}""".r  ==> with .r gives regular expression
+regExp: scala.util.matching.Regex = \w{3}\s\d{2},\s\d{4}|\d{2}\s\w{3},\s\d{4}|\d{1}\/\d{2}\/\d{4}|\d{2}-\d{2}-\d{4}
+
+scala> val regExp = """\w{3}\s\d{2},\s\d{4}|     ****Do not do it in multiple lines. It doesn't give proper result****
+     | \d{2}\s\w{3},\s\d{4}|
+     | \d{2}\/\d{2}\/\d{4}|
+     | \d{2}-\d{2}-\d{4}
+     | """.r
+regExp: scala.util.matching.Regex = 
+\w{3}\s\d{2},\s\d{4}|
+\d{2}\s\w{3},\s\d{4}|
+\d{2}\/\d{2}\/\d{4}|
+\d{2}-\d{2}-\d{4}
+
+
+scala> val goodSingleRecords = fileRDDMap.filter(rec => (regExp.pattern.matcher(rec(1)).matches))
+goodSingleRecords: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[60] at filter at <console>:33
+
+scala> goodSingleRecords.collect()
+res41: Array[Array[String]] = Array(Array(Christopher, Jan 11, 2017, "5 "), Array(Justin, 11 Jan, 2017, "5 "), Array(Thomas, 6/17/2017, "5 "), Array(John, 11-08-2017, "5 "))
+
+scala> val badSingleRecords = fileRDDMap.filter(rec => !(regExp.pattern.matcher(rec(1)).matches))
+badSingleRecords: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[61] at filter at <console>:33
+
+scala> badSingleRecords.collect()
+res42: Array[Array[String]] = Array(Array(Neli, 2016, "5 "), Array(Bilu, "", 5))
+
+scala> val goodRecords = goodSingleRecords.map(rec => (rec(0),rec(1),rec(2)))
+goodRecords: org.apache.spark.rdd.RDD[(String, String, String)] = MapPartitionsRDD[62] at map at <console>:35
+
+scala> goodRecords.collect()
+res43: Array[(String, String, String)] = Array((Christopher,Jan 11, 2017,"5 "), (Justin,11 Jan, 2017,"5 "), (Thomas,6/17/2017,"5 "), (John,11-08-2017,"5 "))
+
+scala> val goodRecords = goodSingleRecords.map(rec => (rec(0),rec(1),rec(2).trim)) ==> removes the trailing spaces around the word. ex: "5 "
+goodRecords: org.apache.spark.rdd.RDD[(String, String, String)] = MapPartitionsRDD[64] at map at <console>:35
+
+scala> goodRecords.collect()
+res44: Array[(String, String, String)] = Array((Christopher,Jan 11, 2017,5), (Justin,11 Jan, 2017,5), (Thomas,6/17/2017,5), (John,11-08-2017,5))
+
+scala> val badRecords = badSingleRecords.map(rec => (rec(0),rec(1),rec(2).trim))
+badRecords: org.apache.spark.rdd.RDD[(String, String, String)] = MapPartitionsRDD[65] at map at <console>:35
+
+scala> goodRecords.saveAsTextFile("goodRecords")
+
+scala> badRecords.saveAsTextFile("baddRecords")
+18/10/21 03:33:03 WARN hdfs.DFSClient: Caught exception 
+java.lang.InterruptedException
+	at java.lang.Object.wait(Native Method)
+	at java.lang.Thread.join(Thread.java:1281)
+	at java.lang.Thread.join(Thread.java:1355)
+	at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.closeResponder(DFSOutputStream.java:967)
+	at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.endBlock(DFSOutputStream.java:705)
+	at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.run(DFSOutputStream.java:894)
+
+[cloudera@quickstart ~]$ hadoop fs -ls goodRecords
+Found 2 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-21 03:32 goodRecords/_SUCCESS
+-rw-r--r--   1 cloudera cloudera         94 2018-10-21 03:32 goodRecords/part-00000
+[cloudera@quickstart ~]$ hadoop fs -cat goodRecords/part-00000
+(Christopher,Jan 11, 2017,5)
+(Justin,11 Jan, 2017,5)
+(Thomas,6/17/2017,5)
+(John,11-08-2017,5)
+[cloudera@quickstart ~]$ hadoop fs -cat baddRecords/part-00000
+(Neli,2016,5)
+(Bilu,,5)
+
+
+======================================================================================================================================================================
+
+PS 36:
+
+scala> val empName = sc.textFile("file:/home/cloudera/Documents/SDPPS/PS36Data.csv")
+empName: org.apache.spark.rdd.RDD[String] = file:/home/cloudera/Documents/SDPPS/PS36Data.csv MapPartitionsRDD[37] at textFile at <console>:27
+
+scala> empName.collect()
+res23: Array[String] = Array(1,Lokesh, 2,Bhupesh, 2,Amit, 2,Ratan, 2,Dinesh, 1,Pavan, 1,Tejas, 2,Sheela, 1,Kumar, 1,Venkat)
+
+scala> val empNameMap = empName.map(rec => rec.split(',')).map(rec => (rec(0),rec(1)))
+empNameMap: org.apache.spark.rdd.RDD[(String, String)] = MapPartitionsRDD[39] at map at <console>:29
+
+scala> empNameMap.collect()
+res24: Array[(String, String)] = Array((1,Lokesh), (2,Bhupesh), (2,Amit), (2,Ratan), (2,Dinesh), (1,Pavan), (1,Tejas), (2,Sheela), (1,Kumar), (1,Venkat))
+
+scala> val grouped = empNameMap.groupByKey()
+grouped: org.apache.spark.rdd.RDD[(String, Iterable[String])] = ShuffledRDD[40] at groupByKey at <console>:31
+
+scala> grouped.collect()
+res25: Array[(String, Iterable[String])] = Array((2,CompactBuffer(Bhupesh, Amit, Ratan, Dinesh, Sheela)), (1,CompactBuffer(Lokesh, Pavan, Tejas, Kumar, Venkat)))
+
+scala> val groupedMap = grouped.map(rec => (rec._1,rec._2.toList))
+groupedMap: org.apache.spark.rdd.RDD[(String, List[String])] = MapPartitionsRDD[41] at map at <console>:33
+
+scala> groupedMap.collect()
+res26: Array[(String, List[String])] = Array((2,List(Bhupesh, Amit, Ratan, Dinesh, Sheela)), (1,List(Lokesh, Pavan, Tejas, Kumar, Venkat)))
+
+scala> val groupedMap = grouped.map{case(a,b) => (a,b.toList)}
+groupedMap: org.apache.spark.rdd.RDD[(String, List[String])] = MapPartitionsRDD[42] at map at <console>:33
+
+scala> groupedMap.collect()
+res27: Array[(String, List[String])] = Array((2,List(Bhupesh, Amit, Ratan, Dinesh, Sheela)), (1,List(Lokesh, Pavan, Tejas, Kumar, Venkat)))
+
+scala> groupedMap.partitions.size  ==> to find no of partitions. you can't find partitions on data frame. you need to convert to rdd and then find
+res28: Int = 1
+
+scala> groupedMap.repartition(1).saveAsTextFile("idNameProb") =>given in qstn that result should be saved in 1 file only.therefore there'll be only 1 part file in o/p
+
+Found 2 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-21 01:50 idNameProb/_SUCCESS
+-rw-r--r--   1 cloudera cloudera         93 2018-10-21 01:50 idNameProb/part-00000
+[cloudera@quickstart ~]$ hadoop fs -cat idNameProb/part-00000  => only 1 part file
+(2,List(Bhupesh, Amit, Ratan, Dinesh, Sheela))
+(1,List(Lokesh, Pavan, Tejas, Kumar, Venkat))
+
+
+======================================================================================================================================================================
+PS 35:
+
+scala> val empName = sc.textFile("/user/cloudera/EmpName.txt")
+empName: org.apache.spark.rdd.RDD[String] = /user/cloudera/EmpName.txt MapPartitionsRDD[25] at textFile at <console>:27
+
+scala> empName.collect()
+res16: Array[String] = Array(E01,Lokesh, E02,Bhupesh, E03,Amit, E04,Ratan, E05,Dinesh, E06,Pavan, E07,Tejas, E08,Sheela, E09,Kumar, E10,Venkat)
+
+scala> val empNameMap = empName.map(rec => rec.split(',')).map(rec => (rec(0),rec(1)))
+empNameMap: org.apache.spark.rdd.RDD[(String, String)] = MapPartitionsRDD[27] at map at <console>:29
+
+scala> empNameMap.collect()
+res17: Array[(String, String)] = Array((E01,Lokesh), (E02,Bhupesh), (E03,Amit), (E04,Ratan), (E05,Dinesh), (E06,Pavan), (E07,Tejas), (E08,Sheela), (E09,Kumar), (E10,Venkat))
+
+scala> val swap = empNameMap.map(rec => rec.swap)
+swap: org.apache.spark.rdd.RDD[(String, String)] = MapPartitionsRDD[28] at map at <console>:31
+
+scala> swap.collect()
+res18: Array[(String, String)] = Array((Lokesh,E01), (Bhupesh,E02), (Amit,E03), (Ratan,E04), (Dinesh,E05), (Pavan,E06), (Tejas,E07), (Sheela,E08), (Kumar,E09), (Venkat,E10))
+
+scala> val sort = swap.sortByKey()
+sort: org.apache.spark.rdd.RDD[(String, String)] = ShuffledRDD[29] at sortByKey at <console>:33
+
+scala> sort.collect()
+res19: Array[(String, String)] = Array((Amit,E03), (Bhupesh,E02), (Dinesh,E05), (Kumar,E09), (Lokesh,E01), (Pavan,E06), (Ratan,E04), (Sheela,E08), (Tejas,E07), (Venkat,E10))
+
+scala> val swapAgain = sort.map(rec => rec.swap)
+swapAgain: org.apache.spark.rdd.RDD[(String, String)] = MapPartitionsRDD[30] at map at <console>:35
+
+scala> swapAgain.collect()
+res20: Array[(String, String)] = Array((E03,Amit), (E02,Bhupesh), (E05,Dinesh), (E09,Kumar), (E01,Lokesh), (E06,Pavan), (E04,Ratan), (E08,Sheela), (E07,Tejas), (E10,Venkat))
+
+scala> swapAgain.partitions.size
+res21: Int = 1
+
+scala> swapAgain.repartition(1).saveAsTextFile("swapAndSortProb")
+
+[cloudera@quickstart ~]$ hadoop fs -ls swapAndSortProb
+Found 2 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-21 01:43 swapAndSortProb/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        125 2018-10-21 01:43 swapAndSortProb/part-00000
+[cloudera@quickstart ~]$ hadoop fs -cat swapAndSortProb/part-00000
+(E03,Amit)
+(E02,Bhupesh)
+(E05,Dinesh)
+(E09,Kumar)
+(E01,Lokesh)
+(E06,Pavan)
+(E04,Ratan)
+(E08,Sheela)
+(E07,Tejas)
+(E10,Venkat)
+
+======================================================================================================================================================================
+
+PS 34:
+
+scala> val topics = sc.textFile("file:/home/cloudera/Documents/SDPPS/PS34Data.txt")
+topics: org.apache.spark.rdd.RDD[String] = file:/home/cloudera/Documents/SDPPS/PS34Data.txt MapPartitionsRDD[16] at textFile at <console>:27
+
+scala> topics.collect()
+res9: Array[String] = Array(id,topic,hits, Rahul,Scala,120, Nikita,Spark,80, Mithun,Spark,1, myself,cca175,180)
+
+scala> val topicsRDD = topics.map(rec => rec.split(','))
+topicsRDD: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[17] at map at <console>:29
+
+scala> topicsRDD.collect()
+res10: Array[Array[String]] = Array(Array(id, topic, hits), Array(Rahul, Scala, 120), Array(Nikita, Spark, 80), Array(Mithun, Spark, 1), Array(myself, cca175, 180))
+
+scala> val topicsRDDMap = topicsRDD.map(rec => (rec(0),rec(1),rec(2)))
+topicsRDDMap: org.apache.spark.rdd.RDD[(String, String, String)] = MapPartitionsRDD[18] at map at <console>:31
+
+scala> val header = topicsRDD.first
+header: Array[String] = Array(id, topic, hits)
+
+scala> val filterRDD = topicsRDD.filter(rec => rec.deep != header.deep)
+filterRDD: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[19] at filter at <console>:33
+
+scala> filterRDD.collect()
+res11: Array[Array[String]] = Array(Array(Rahul, Scala, 120), Array(Nikita, Spark, 80), Array(Mithun, Spark, 1), Array(myself, cca175, 180))
+
+scala> val filterAgain = filterRDD.filter(rec => rec(0) != "myself")
+filterAgain: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[20] at filter at <console>:35
+
+scala> filterAgain.collect()
+res12: Array[Array[String]] = Array(Array(Rahul, Scala, 120), Array(Nikita, Spark, 80), Array(Mithun, Spark, 1))
+
+scala> val zipping = filterAgain.map(rec => header.zip(rec))
+zipping: org.apache.spark.rdd.RDD[Array[(String, String)]] = MapPartitionsRDD[21] at map at <console>:37
+
+scala> zipping.collect()
+res13: Array[Array[(String, String)]] = Array(Array((id,Rahul), (topic,Scala), (hits,120)), Array((id,Nikita), (topic,Spark), (hits,80)), Array((id,Mithun), (topic,Spark), (hits,1)))
+
+scala> val zipping = filterAgain.map(rec => header.zip(rec).toMap)
+zipping: org.apache.spark.rdd.RDD[scala.collection.immutable.Map[String,String]] = MapPartitionsRDD[22] at map at <console>:37
+
+scala> zipping.collect()
+res14: Array[scala.collection.immutable.Map[String,String]] = Array(Map(id -> Rahul, topic -> Scala, hits -> 120), Map(id -> Nikita, topic -> Spark, hits -> 80), Map(id -> Mithun, topic -> Spark, hits -> 1))
+
+scala> zipping.saveAsTextFile("zippingProb")
+
+[cloudera@quickstart ~]$ hadoop fs -ls zippingProb
+Found 2 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-21 01:36 zippingProb/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        137 2018-10-21 01:36 zippingProb/part-00000
+[cloudera@quickstart ~]$ hadoop fs -cat zippingProb/part-00000
+Map(id -> Rahul, topic -> Scala, hits -> 120)
+Map(id -> Nikita, topic -> Spark, hits -> 80)
+Map(id -> Mithun, topic -> Spark, hits -> 1)
+
+======================================================================================================================================================================
+
+PS 32:
+
+Cltr + Z  => stops spark-shell
+
+scala> val files = sc.textFile("file:/home/cloudera/Documents/SDPPS/PS32")
+files: org.apache.spark.rdd.RDD[String] = file:/home/cloudera/Documents/SDPPS/PS32 MapPartitionsRDD[1] at textFile at <console>:27
+
+scala> files.collect().foreach(println)
+his approach takes advantage of data locality nodes manipulating the data they have access to to allow the dataset to be processed faster and more efficiently than it would be in a more conventional supercomputer architecture that relies on a parallel file system where computation and data are distributed via high-speed networking
+Apache Hadoop is an open-source software framework written in Java for distributed storage and distributed processing of very large data sets on computer clusters built from commodity hardware. All the modules in Hadoop are designed with a fundamental assumption that hardware failures are common and should be automatically handled by the framework
+The core of Apache Hadoop consists of a storage part known as Hadoop Distributed File System (HDFS) and a processing part called MapReduce. Hadoop splits files into large Question No : 13 CORRECT TEXT blocks and distributes them across nodes in a cluster. To process data, Hadoop transfers packaged code for nodes to process in parallel based on the data that needs to be processed.
+
+scala> val removeRDD = sc.parallelize(List("a", "the", "an", "as", "a", "with", "this", "these", "is", "are", "in", "for", "to", "and", "the", "of"))
+removeRDD: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[2] at parallelize at <console>:27
+
+scala> removeRDD.collect()
+res1: Array[String] = Array(a, the, an, as, a, with, this, these, is, are, in, for, to, and, the, of)
+
+scala> val filesRDD = files.flatMap(rec => rec.split(' '))
+filesRDD: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[3] at flatMap at <console>:29
+
+scala> filesRDD.collect()
+res2: Array[String] = Array(his, approach, takes, advantage, of, data, locality, nodes, manipulating, the, data, they, have, access, to, to, allow, the, dataset, to, be, processed, faster, and, more, efficiently, than, it, would, be, in, a, more, conventional, supercomputer, architecture, that, relies, on, a, parallel, file, system, where, computation, and, data, are, distributed, via, high-speed, networking, Apache, Hadoop, is, an, open-source, software, framework, written, in, Java, for, distributed, storage, and, distributed, processing, of, very, large, data, sets, on, computer, clusters, built, from, commodity, hardware., All, the, modules, in, Hadoop, are, designed, with, a, fundamental, assumption, that, hardware, failures, are, common, and, should, be, automatically, handled, by...
+
+scala> val finalRDD = filesRDD.subtract(removeRDD)
+finalRDD: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[7] at subtract at <console>:33
+
+scala> finalRDD.collect()
+res3: Array[String] = Array(hardware, allow, MapReduce., common, have, high-speed, by, manipulating, packaged, more, more, would, his, hardware., Question, written, sets, consists, CORRECT, open-source, files, To, File, code, No, should, cluster., clusters, commodity, conventional, nodes, nodes, nodes, called, locality, approach, computation, modules, storage, storage, relies, they, architecture, from, 13, supercomputer, The, software, splits, TEXT, processing, processing, built, be, be, be, be, data,, networking, transfers, into, efficiently, blocks, access, that, that, that, system, advantage, dataset, them, than, assumption, :, fundamental, part, part, based, large, large, very, computer, via, distributed, distributed, distributed, data, data, data, data, data, All, where, across, Ja...
+
+scala> val finalRDDMap = finalRDD.map(rec => (rec,1))
+finalRDDMap: org.apache.spark.rdd.RDD[(String, Int)] = MapPartitionsRDD[8] at map at <console>:35
+
+scala> finalRDDMap.collect()
+res4: Array[(String, Int)] = Array((hardware,1), (allow,1), (MapReduce.,1), (common,1), (have,1), (high-speed,1), (by,1), (manipulating,1), (packaged,1), (more,1), (more,1), (would,1), (his,1), (hardware.,1), (Question,1), (written,1), (sets,1), (consists,1), (CORRECT,1), (open-source,1), (files,1), (To,1), (File,1), (code,1), (No,1), (should,1), (cluster.,1), (clusters,1), (commodity,1), (conventional,1), (nodes,1), (nodes,1), (nodes,1), (called,1), (locality,1), (approach,1), (computation,1), (modules,1), (storage,1), (storage,1), (relies,1), (they,1), (architecture,1), (from,1), (13,1), (supercomputer,1), (The,1), (software,1), (splits,1), (TEXT,1), (processing,1), (processing,1), (built,1), (be,1), (be,1), (be,1), (be,1), (data,,1), (networking,1), (transfers,1), (into,1), (efficien...
+
+scala> val finalRDDReduced = finalRDDMap.reduceByKey(_+_)
+finalRDDReduced: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[9] at reduceByKey at <console>:37
+
+scala> finalRDDReduced.collect()
+res5: Array[(String, Int)] = Array((his,1), (hardware.,1), (consists,1), (Question,1), (cluster.,1), (files,1), (hardware,1), (allow,1), (commodity,1), (packaged,1), (have,1), (computation,1), (MapReduce.,1), (nodes,3), (conventional,1), (sets,1), (would,1), (written,1), (code,1), (common,1), (No,1), (more,2), (CORRECT,1), (by,1), (File,1), (storage,2), (modules,1), (should,1), (To,1), (clusters,1), (approach,1), (open-source,1), (locality,1), (manipulating,1), (high-speed,1), (called,1), (splits,1), (fundamental,1), (supercomputer,1), (dataset,1), (part,2), (The,1), (than,1), (blocks,1), (that,3), (data,,1), (networking,1), (be,4), (built,1), (large,2), (processing,2), (into,1), (architecture,1), (efficiently,1), (very,1), (access,1), (they,1), (software,1), (assumption,1), (13,1), (th...
+
+scala> val finalRDDSwap = finalRDDReduced.map(rec => rec.swap)
+finalRDDSwap: org.apache.spark.rdd.RDD[(Int, String)] = MapPartitionsRDD[10] at map at <console>:39
+
+scala> finalRDDSwap.collect()
+res6: Array[(Int, String)] = Array((1,his), (1,hardware.), (1,consists), (1,Question), (1,cluster.), (1,files), (1,hardware), (1,allow), (1,commodity), (1,packaged), (1,have), (1,computation), (1,MapReduce.), (3,nodes), (1,conventional), (1,sets), (1,would), (1,written), (1,code), (1,common), (1,No), (2,more), (1,CORRECT), (1,by), (1,File), (2,storage), (1,modules), (1,should), (1,To), (1,clusters), (1,approach), (1,open-source), (1,locality), (1,manipulating), (1,high-speed), (1,called), (1,splits), (1,fundamental), (1,supercomputer), (1,dataset), (2,part), (1,The), (1,than), (1,blocks), (3,that), (1,data,), (1,networking), (4,be), (1,built), (2,large), (2,processing), (1,into), (1,architecture), (1,efficiently), (1,very), (1,access), (1,they), (1,software), (1,assumption), (1,13), (1,...
+
+scala> val finalRDDSorted = finalRDDSwap.sortByKey(false)
+finalRDDSorted: org.apache.spark.rdd.RDD[(Int, String)] = ShuffledRDD[13] at sortByKey at <console>:41
+
+scala> finalRDDSorted.collect()
+res7: Array[(Int, String)] = Array((6,Hadoop), (5,data), (4,be), (3,nodes), (3,that), (3,on), (3,distributed), (2,more), (2,storage), (2,part), (2,large), (2,processing), (2,process), (2,parallel), (2,Apache), (2,framework), (1,his), (1,hardware.), (1,consists), (1,Question), (1,cluster.), (1,files), (1,hardware), (1,allow), (1,commodity), (1,packaged), (1,have), (1,computation), (1,MapReduce.), (1,conventional), (1,sets), (1,would), (1,written), (1,code), (1,common), (1,No), (1,CORRECT), (1,by), (1,File), (1,modules), (1,should), (1,To), (1,clusters), (1,approach), (1,open-source), (1,locality), (1,manipulating), (1,high-speed), (1,called), (1,splits), (1,fundamental), (1,supercomputer), (1,dataset), (1,The), (1,than), (1,blocks), (1,data,), (1,networking), (1,built), (1,into), (1,arch...
+
+scala> import org.apache.hadoop.io.compress.GzipCodec
+import org.apache.hadoop.io.compress.GzipCodec
+
+df.write.format("com.databricks.spark.csv").save("/problem2/sol.csv")
+val df = sqlContext.read.avro("problem1/orders")
+import com.databricks.spark.avro._
+
+
+scala> finalRDDSorted.saveAsTextFile("sortingProb",classOf[GzipCodec])
+
+[cloudera@quickstart ~]$ hadoop fs -ls sortingProb
+Found 4 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-21 03:43 sortingProb/_SUCCESS
+-rw-r--r--   1 cloudera cloudera         76 2018-10-21 03:43 sortingProb/part-00000.gz
+-rw-r--r--   1 cloudera cloudera         88 2018-10-21 03:43 sortingProb/part-00001.gz
+-rw-r--r--   1 cloudera cloudera        458 2018-10-21 03:43 sortingProb/part-00002.gz
+[cloudera@quickstart ~]$ hadoop fs -cat sortingProb/part-00000.gz
+�0��HL��/���0�II,I2Lt�R���N^~Jj1�U��Xf�灩��⒢̤Ғ�M.�.�E[cloudera@quickstart ~]$ 
+
+======================================================================================================================================================================
+
+PS 33:
+
+[cloudera@quickstart ~]$ hadoop fs -put /home/cloudera/Documents/SDPPS/EmpName.txt /user/cloudera
+[cloudera@quickstart ~]$ hadoop fs -put /home/cloudera/Documents/SDPPS/EmpSalary.txt /user/cloudera
+
+scala> val empName = sc.textFile("/user/cloudera/EmpName.txt")
+empName: org.apache.spark.rdd.RDD[String] = /user/cloudera/EmpName.txt MapPartitionsRDD[39] at textFile at <console>:27
+
+scala> val empSalary = sc.textFile("/user/cloudera/EmpSalary.txt")
+empSalary: org.apache.spark.rdd.RDD[String] = /user/cloudera/EmpSalary.txt MapPartitionsRDD[41] at textFile at <console>:27
+
+scala> empName.collect()
+res30: Array[String] = Array(E01,Lokesh, E02,Bhupesh, E03,Amit, E04,Ratan, E05,Dinesh, E06,Pavan, E07,Tejas, E08,Sheela, E09,Kumar, E10,Venkat)
+
+scala> empSalary.collect()
+res31: Array[String] = Array(E01,50000, E02,50000, E03,45000, E04,45000, E05,50000, E06,45000, E07,50000, E08,10000, E09,10000, E10,10000)
+
+scala> val empNameMap = empName.map(rec => rec.split(',')).map(rec => (rec(0),rec(1)))
+empNameMap: org.apache.spark.rdd.RDD[(String, String)] = MapPartitionsRDD[43] at map at <console>:29
+
+scala> empNameMap.collect()
+res32: Array[(String, String)] = Array((E01,Lokesh), (E02,Bhupesh), (E03,Amit), (E04,Ratan), (E05,Dinesh), (E06,Pavan), (E07,Tejas), (E08,Sheela), (E09,Kumar), (E10,Venkat))
+
+scala> val empSalaryMap = empSalary.map(rec => rec.split(',')).map(rec => (rec(0),rec(1)))
+empSalaryMap: org.apache.spark.rdd.RDD[(String, String)] = MapPartitionsRDD[45] at map at <console>:29
+
+scala> empSalaryMap.collect()
+res33: Array[(String, String)] = Array((E01,50000), (E02,50000), (E03,45000), (E04,45000), (E05,50000), (E06,45000), (E07,50000), (E08,10000), (E09,10000), (E10,10000))
+
+scala> val joinRDD = empNameMap.join(empSalaryMap)
+joinRDD: org.apache.spark.rdd.RDD[(String, (String, String))] = MapPartitionsRDD[48] at join at <console>:35
+
+scala> joinRDD.collect()
+res34: Array[(String, (String, String))] = Array((E09,(Kumar,10000)), (E06,(Pavan,45000)), (E02,(Bhupesh,50000)), (E03,(Amit,45000)), (E07,(Tejas,50000)), (E08,(Sheela,10000)), (E05,(Dinesh,50000)), (E10,(Venkat,10000)), (E04,(Ratan,45000)), (E01,(Lokesh,50000)))
+
+scala> val joinRDDMap = joinRDD.map(rec => rec._1)
+joinRDDMap: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[49] at map at <console>:37
+
+scala> joinRDDMap.collect()
+res35: Array[String] = Array(E09, E06, E02, E03, E07, E08, E05, E10, E04, E01)
+
+scala> val joinRDDMap = joinRDD.map(rec => rec._2)
+joinRDDMap: org.apache.spark.rdd.RDD[(String, String)] = MapPartitionsRDD[50] at map at <console>:37
+
+scala> joinRDDMap.collect()
+res36: Array[(String, String)] = Array((Kumar,10000), (Pavan,45000), (Bhupesh,50000), (Amit,45000), (Tejas,50000), (Sheela,10000), (Dinesh,50000), (Venkat,10000), (Ratan,45000), (Lokesh,50000))
+
+scala> val joinSwap = joinRDDMap(rec => rec.swap)
+<console>:39: error: org.apache.spark.rdd.RDD[(String, String)] does not take parameters
+         val joinSwap = joinRDDMap(rec => rec.swap)
+                                  ^
+
+scala> val joinSwap = joinRDDMap.map(rec => rec.swap)
+joinSwap: org.apache.spark.rdd.RDD[(String, String)] = MapPartitionsRDD[51] at map at <console>:39
+
+scala> joinSwap.collect()
+res37: Array[(String, String)] = Array((10000,Kumar), (45000,Pavan), (50000,Bhupesh), (45000,Amit), (50000,Tejas), (10000,Sheela), (50000,Dinesh), (10000,Venkat), (45000,Ratan), (50000,Lokesh))
+
+scala> val grouped = joinSwap.groupByKey()
+grouped: org.apache.spark.rdd.RDD[(String, Iterable[String])] = ShuffledRDD[52] at groupByKey at <console>:41
+
+scala> grouped.collect()
+res38: Array[(String, Iterable[String])] = Array((45000,CompactBuffer(Pavan, Amit, Ratan)), (10000,CompactBuffer(Kumar, Sheela, Venkat)), (50000,CompactBuffer(Bhupesh, Tejas, Dinesh, Lokesh)))
+
+scala> val groupedMap = grouped.map(rec => (rec._1, rec._2.toList)) ==> this gives RDD[(String, List[String])]
+groupedMap: org.apache.spark.rdd.RDD[(String, List[String])] = MapPartitionsRDD[53] at map at <console>:43
+
+scala> groupedMap.collect()
+res81: Array[(String, List[String])] = Array((45000,List(Pavan, Amit, Ratan)), (10000,List(Kumar, Sheela, Venkat)), (50000,List(Bhupesh, Tejas, Dinesh, Lokesh)))
+ 
+scala> val groupedCollect = groupedMap.collect() ==> this gives Array[(String, List[String])]
+groupedCollect: Array[(String, List[String])] = Array((45000,List(Pavan, Amit, Ratan)), (10000,List(Kumar, Sheela, Venkat)), (50000,List(Bhupesh, Tejas, Dinesh, Lokesh)))
+
+scala> val saving = groupedCollect.map{case (k,v) => k-> sc.makeRDD(v.toList)}  => requires Array[(String, List[String])] but not RDD[(String, List[String])]
+saving: Array[(String, org.apache.spark.rdd.RDD[String])] = Array((45000,ParallelCollectionRDD[102] at makeRDD at <console>:47), (10000,ParallelCollectionRDD[103] at makeRDD at <console>:47), (50000,ParallelCollectionRDD[104] at makeRDD at <console>:47))
+
+scala> val finalRDD = saving.foreach{case(k,v) => v.saveAsTextFile("salPartUsingRDD" + k)}
+18/10/21 00:38:06 WARN hdfs.DFSClient: Caught exception 
+java.lang.InterruptedException
+	at java.lang.Object.wait(Native Method)
+	at java.lang.Thread.join(Thread.java:1281)
+	at java.lang.Thread.join(Thread.java:1355)
+	at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.closeResponder(DFSOutputStream.java:967)
+	at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.endBlock(DFSOutputStream.java:705)
+	at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.run(DFSOutputStream.java:894)
+18/10/21 00:38:06 WARN hdfs.DFSClient: Caught exception 
+java.lang.InterruptedException
+	at java.lang.Object.wait(Native Method)
+	at java.lang.Thread.join(Thread.java:1281)
+	at java.lang.Thread.join(Thread.java:1355)
+	at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.closeResponder(DFSOutputStream.java:967)
+	at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.endBlock(DFSOutputStream.java:705)
+	at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.run(DFSOutputStream.java:894)
+finalRDD: Unit = ()
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera
+
+drwxr-xr-x   - cloudera cloudera          0 2018-10-21 13:08 /user/cloudera/salPartUsingRDD10000
+drwxr-xr-x   - cloudera cloudera          0 2018-10-21 13:08 /user/cloudera/salPartUsingRDD45000
+drwxr-xr-x   - cloudera cloudera          0 2018-10-21 13:08 /user/cloudera/salPartUsingRDD50000
+
+[cloudera@quickstart ~]$ hadoop fs -ls  /user/cloudera/salPartUsingRDD10000
+Found 2 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-21 13:08 /user/cloudera/salPartUsingRDD10000/_SUCCESS
+-rw-r--r--   1 cloudera cloudera         20 2018-10-21 13:08 /user/cloudera/salPartUsingRDD10000/part-00000
+[cloudera@quickstart ~]$ hadoop fs -cat  /user/cloudera/salPartUsingRDD10000/part-00000
+Kumar
+Sheela
+Venkat
+[cloudera@quickstart ~]$ hadoop fs -ls  /user/cloudera/salPartUsingRDD45000
+Found 2 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-21 13:08 /user/cloudera/salPartUsingRDD45000/_SUCCESS
+-rw-r--r--   1 cloudera cloudera         17 2018-10-21 13:08 /user/cloudera/salPartUsingRDD45000/part-00000
+[cloudera@quickstart ~]$ hadoop fs -cat  /user/cloudera/salPartUsingRDD45000/part-00000
+Pavan
+Amit
+Ratan
+[cloudera@quickstart ~]$ hadoop fs -cat  /user/cloudera/salPartUsingRDD50000/part-00000
+Bhupesh
+Tejas
+Dinesh
+Lokesh
+
+Using dataframes:
+
+scala> val df1 = groupedMap.toDF("salary", "names")
+df1: org.apache.spark.sql.DataFrame = [salary: string, names: array<string>]
+
+scala> df1.show()
++------+--------------------+
+|salary|               names|
++------+--------------------+
+| 45000|[Pavan, Amit, Ratan]|
+| 10000|[Kumar, Sheela, V...|
+| 50000|[Bhupesh, Tejas, ...|
++------+--------------------+
+
+
+scala> val df2 = df1.withColumn("names", concat_ws(",", col("names")))
+df2: org.apache.spark.sql.DataFrame = [salary: string, names: string]
+
+scala> df2.show()
++------+--------------------+
+|salary|               names|
++------+--------------------+
+| 45000|    Pavan,Amit,Ratan|
+| 10000| Kumar,Sheela,Venkat|
+| 50000|Bhupesh,Tejas,Din...|
++------+--------------------+
+
+scala> val df2 = df1.withColumn("names", concat_ws(",", col("names")))
+df2: org.apache.spark.sql.DataFrame = [salary: string, names: string]
+
+scala> df2.write.partitionBy("salary").save("salSolUsingDF")
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/usr/lib/parquet/lib/parquet-format-2.1.0-cdh5.13.0.jar!/shaded/parquet/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/usr/lib/parquet/lib/parquet-hadoop-bundle-1.5.0-cdh5.13.0.jar!/shaded/parquet/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/usr/lib/parquet/lib/parquet-pig-bundle-1.5.0-cdh5.13.0.jar!/shaded/parquet/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/usr/lib/hive/lib/hive-jdbc-1.1.0-cdh5.13.0-standalone.jar!/shaded/parquet/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/usr/lib/hive/lib/hive-exec-1.1.0-cdh5.13.0.jar!/shaded/parquet/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual binding is of type [shaded.parquet.org.slf4j.helpers.NOPLoggerFactory]
+18/10/21 00:11:06 WARN hdfs.DFSClient: Caught exception 
+java.lang.InterruptedException
+	at java.lang.Object.wait(Native Method)
+	at java.lang.Thread.join(Thread.java:1281)
+	at java.lang.Thread.join(Thread.java:1355)
+	at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.closeResponder(DFSOutputStream.java:967)
+	at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.endBlock(DFSOutputStream.java:705)
+	at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.run(DFSOutputStream.java:894)
+
+scala> import com.databricks.spark.csv
+<console>:25: error: object csv is not a member of package com.databricks.spark
+         import com.databricks.spark.csv
+                ^
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/salSolUsingDF
+Found 6 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-21 00:11 /user/cloudera/salSolUsingDF/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        250 2018-10-21 00:11 /user/cloudera/salSolUsingDF/_common_metadata
+-rw-r--r--   1 cloudera cloudera        743 2018-10-21 00:11 /user/cloudera/salSolUsingDF/_metadata
+drwxr-xr-x   - cloudera cloudera          0 2018-10-21 00:11 /user/cloudera/salSolUsingDF/salary=10000
+drwxr-xr-x   - cloudera cloudera          0 2018-10-21 00:11 /user/cloudera/salSolUsingDF/salary=45000
+drwxr-xr-x   - cloudera cloudera          0 2018-10-21 00:11 /user/cloudera/salSolUsingDF/salary=50000
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/salSolUsingDF/salary=10000
+Found 1 items
+-rw-r--r--   1 cloudera cloudera        446 2018-10-21 00:11 /user/cloudera/salSolUsingDF/salary=10000/part-r-00000-b7666b69-5b1c-4e1b-b0c0-96859d713ff7.gz.parquet
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/salSolUsingDF/salary=10000/part-r-00000-b7666b69-5b1c-4e1b-b0c0-96859d713ff7.gz.parquet
+PAR1:^,Kumar,Sheela,VenkatKumar,Sheela,Venkatcb```f�ޥ��E:���9�:a�yى%���f,H
+                                                                                                spark_schema
+                                                                                                               %names%
+                                                                                                                                names��<Kumar,Sheela,VenkatKumar,Sheela,Venkat�)org.apache.spark.sql.parquet.row.metadata[{"type":"struct","fields":[{"name":"names","type":"string","nullable":true,"metadata":{}}]}9parquet-mr version 1.5.0-cdh5.13.0 (build ${buildNumber})DPAR1
+
+======================================================================================================================================================================
+PS 31:
+
+scala> val content = sc.textFile("file:/home/cloudera/Documents/SDPPS/PS31Content.txt")
+content: org.apache.spark.rdd.RDD[String] = file:/home/cloudera/Documents/SDPPS/PS31Content.txt MapPartitionsRDD[1] at textFile at <console>:27
+
+scala> val remove = sc.textFile("file:/home/cloudera/Documents/SDPPS/PS31Remove.txt")
+remove: org.apache.spark.rdd.RDD[String] = file:/home/cloudera/Documents/SDPPS/PS31Remove.txt MapPartitionsRDD[3] at textFile at <console>:27
+
+scala> val removeRDD = remove.map(rec => rec.split(','))  ==> Map function creates RDD[Array[String]]
+removeRDD: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[4] at map at <console>:29
+
+scala> content.collect()
+res0: Array[String] = Array(Hello this is HadoopExam.com, This is QuickTechie.com, Apache Spark Training, This is Spark Learning Session, Spark is faster than MapReduce)
+
+scala> remove.collect()
+res1: Array[String] = Array(Hello, is, this, the)
+
+scala> removeRDD.collect()
+res2: Array[Array[String]] = Array(Array(Hello, " is", " this", " the"))
+
+scala> removeRDD.map(rec => rec.trim)        ==> since it creates RDD[Array[String]] we cannot apply trim on it. we need to rec(0).trim, rec(1).trim....
+<console>:32: error: value trim is not a member of Array[String]
+              removeRDD.map(rec => rec.trim)
+                                       ^
+
+scala> val removeRDD = remove.flatMap(rec => rec.split(','))  => flatMap creates RDD[String] unlike Map
+removeRDD: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[5] at flatMap at <console>:29
+
+scala> removeRDD.collect()
+res4: Array[String] = Array(Hello, " is", " this", " the")  => (" is". since there is space already in the Remove.txt file it created string of space+is i.e, " is")
+
+scala> removeRDD.map(rec => rec.trim)  ==> trim is used to remove trailing spaces around the word
+res5: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[6] at map at <console>:32
+
+scala> removeRDD.map(rec => rec.trim).collect()
+res6: Array[String] = Array(Hello, is, this, the)
+
+Note:
+
+Basically it returns Array[String] = Array(A, B, C, D) i.e, after comma there will be space.
+But in res4: Array[String] = Array(Hello, " is", " this", " the")
+file had Hello, is, this, the
+i.e, it has space after , Therefore it is considering space also as a string
+
+scala> val remRDD = removeRDD.map(rec => rec.trim)
+remRDD: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[8] at map at <console>:31
+
+scala> remRDD.collect()
+res7: Array[String] = Array(Hello, is, this, the)
+
+scala> val bVariable = sc.broadcast(remRDD.collect()) ==> It should be Array of Strings. since rem.RDD.collect() is Array[String] I didn't write .toList
+bVariable: org.apache.spark.broadcast.Broadcast[Array[String]] = Broadcast(9)
+
+scala> bVariable.
+asInstanceOf   destroy        id             isInstanceOf   toString       unpersist      value          
+
+scala> bVariable.value
+res9: Array[String] = Array(Hello, is, this, the)
+
+scala> val bVariable = sc.broadcast(remRDD.collect().toList)  ==> for safety write .toList
+bVariable: org.apache.spark.broadcast.Broadcast[List[String]] = Broadcast(11)
+
+scala> bVariable.value
+res10: List[String] = List(Hello, is, this, the)
+
+scala> val bVariable = sc.broadcast(remRDD.collect())
+bVariable: org.apache.spark.broadcast.Broadcast[Array[String]] = Broadcast(13)
+
+scala> val contentRDD = content.flatMap(rec => rec.split(' '))
+contentRDD: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[9] at flatMap at <console>:29
+
+scala> contentRDD.collect()
+res11: Array[String] = Array(Hello, this, is, HadoopExam.com, This, is, QuickTechie.com, Apache, Spark, Training, This, is, Spark, Learning, Session, Spark, is, faster, than, MapReduce)
+
+scala> val filtered = contentRDD.filter(rec => bVariable.value.contains(rec))
+filtered: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[10] at filter at <console>:39
+
+scala> filtered.collect()
+res12: Array[String] = Array(Hello, this, is, is, is, is)
+
+scala> val filtered = contentRDD.filter(rec => !bVariable.value.contains(rec))
+filtered: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[11] at filter at <console>:39
+
+scala> filtered.collect()
+res13: Array[String] = Array(HadoopExam.com, This, QuickTechie.com, Apache, Spark, Training, This, Spark, Learning, Session, Spark, faster, than, MapReduce)
+
+scala> val filterMap = filtered.map(rec => (rec,1))
+filterMap: org.apache.spark.rdd.RDD[(String, Int)] = MapPartitionsRDD[12] at map at <console>:41
+
+scala> filterMap.collect()
+res14: Array[(String, Int)] = Array((HadoopExam.com,1), (This,1), (QuickTechie.com,1), (Apache,1), (Spark,1), (Training,1), (This,1), (Spark,1), (Learning,1), (Session,1), (Spark,1), (faster,1), (than,1), (MapReduce,1))
+
+scala> val filterReduce = filterMap.reduceByKey(_+_)
+filterReduce: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[13] at reduceByKey at <console>:43
+
+scala> filterReduce.collect()
+res15: Array[(String, Int)] = Array((Spark,3), (faster,1), (than,1), (Apache,1), (MapReduce,1), (Session,1), (This,2), (QuickTechie.com,1), (HadoopExam.com,1), (Training,1), (Learning,1))
+
+scala> filterReduce.saveAsTextFile("/user/cloudera/PS31Sol")
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/PS31Sol
+Found 2 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-20 22:33 /user/cloudera/PS31Sol/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        141 2018-10-20 22:33 /user/cloudera/PS31Sol/part-00000
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/PS31Sol/part-00000
+(Spark,3)
+(faster,1)
+(than,1)
+(Apache,1)
+(MapReduce,1)
+(Session,1)
+(This,2)
+(QuickTechie.com,1)
+(HadoopExam.com,1)
+(Training,1)
+(Learning,1)
+
+======================================================================================================================================================================
+
+PS 30:
+
+scala> val empName = sc.textFile("file:/home/cloudera/Documents/SDPPS/EmpName.txt")
+empName: org.apache.spark.rdd.RDD[String] = file:/home/cloudera/Documents/SDPPS/EmpName.txt MapPartitionsRDD[18] at textFile at <console>:27
+
+scala> empName.collect()
+res18: Array[String] = Array(E01,Lokesh, E02,Bhupesh, E03,Amit, E04,Ratan, E05,Dinesh, E06,Pavan, E07,Tejas, E08,Sheela, E09,Kumar, E10,Venkat)
+
+scala> val empManager = sc.textFile("file:/home/cloudera/Documents/SDPPS/EmpManager.txt")
+empManager: org.apache.spark.rdd.RDD[String] = file:/home/cloudera/Documents/SDPPS/EmpManager.txt MapPartitionsRDD[20] at textFile at <console>:27
+
+scala> empManager.collect()
+res20: Array[String] = Array(E01,Teju, E02,Shekhar, E03,Sai, E04,Sravya, E05,John, E06,Pallavi, E07,Tanvir, E08,Raahi, E09,Vinod, E10,Jitendra)
+
+scala> val empSalary = sc.textFile("file:/home/cloudera/Documents/SDPPS/EmpSalary.txt")
+empSalary: org.apache.spark.rdd.RDD[String] = file:/home/cloudera/Documents/SDPPS/EmpSalary.txt MapPartitionsRDD[22] at textFile at <console>:27
+
+scala> empSalary.collect()
+res21: Array[String] = Array(E01,50000, E02,50000, E03,45000, E04,45000, E05,50000, E06,45000, E07,50000, E08,10000, E09,10000, E10,10000)
+
+scala> val empNameMap = empName.map(rec => rec.split(',')).map(rec => (rec(0),rec(1)))
+empNameMap: org.apache.spark.rdd.RDD[(String, String)] = MapPartitionsRDD[24] at map at <console>:29
+
+scala> empNameMap.collect()
+res22: Array[(String, String)] = Array((E01,Lokesh), (E02,Bhupesh), (E03,Amit), (E04,Ratan), (E05,Dinesh), (E06,Pavan), (E07,Tejas), (E08,Sheela), (E09,Kumar), (E10,Venkat))
+
+scala> val empManagerMap = empManager.map(rec => rec.split(',')).map(rec => (rec(0),rec(1)))
+empManagerMap: org.apache.spark.rdd.RDD[(String, String)] = MapPartitionsRDD[26] at map at <console>:29
+
+scala> empManagerMap.collect()
+res23: Array[(String, String)] = Array((E01,Teju), (E02,Shekhar), (E03,Sai), (E04,Sravya), (E05,John), (E06,Pallavi), (E07,Tanvir), (E08,Raahi), (E09,Vinod), (E10,Jitendra))
+
+scala> val empSalaryMap = empSalary.map(rec => rec.split(',')).map(rec => (rec(0),rec(1)))
+empSalaryMap: org.apache.spark.rdd.RDD[(String, String)] = MapPartitionsRDD[28] at map at <console>:29
+
+scala> empSalaryMap.collect()
+res24: Array[(String, String)] = Array((E01,50000), (E02,50000), (E03,45000), (E04,45000), (E05,50000), (E06,45000), (E07,50000), (E08,10000), (E09,10000), (E10,10000))
+
+scala> val joinRDD = empNameMap.join(empManagerMap)
+joinRDD: org.apache.spark.rdd.RDD[(String, (String, String))] = MapPartitionsRDD[31] at join at <console>:35
+
+scala> joinRDD.collect()
+res25: Array[(String, (String, String))] = Array((E09,(Kumar,Vinod)), (E06,(Pavan,Pallavi)), (E02,(Bhupesh,Shekhar)), (E03,(Amit,Sai)), (E07,(Tejas,Tanvir)), (E08,(Sheela,Raahi)), (E05,(Dinesh,John)), (E10,(Venkat,Jitendra)), (E04,(Ratan,Sravya)), (E01,(Lokesh,Teju)))
+
+scala> val joinRDD1 = joinRDD.join(empSalaryMap)
+joinRDD1: org.apache.spark.rdd.RDD[(String, ((String, String), String))] = MapPartitionsRDD[34] at join at <console>:41
+
+scala> joinRDD1.collect()
+res26: Array[(String, ((String, String), String))] = Array((E09,((Kumar,Vinod),10000)), (E06,((Pavan,Pallavi),45000)), (E02,((Bhupesh,Shekhar),50000)), (E03,((Amit,Sai),45000)), (E07,((Tejas,Tanvir),50000)), (E08,((Sheela,Raahi),10000)), (E05,((Dinesh,John),50000)), (E10,((Venkat,Jitendra),10000)), (E04,((Ratan,Sravya),45000)), (E01,((Lokesh,Teju),50000)))
+
+scala> val joinRDDMap = joinRDD1.map{case (x,((y,z),a)) => (x,y,z,a)}
+joinRDDMap: org.apache.spark.rdd.RDD[(String, String, String, String)] = MapPartitionsRDD[35] at map at <console>:43
+
+scala> joinRDDMap.collect()
+res27: Array[(String, String, String, String)] = Array((E09,Kumar,Vinod,10000), (E06,Pavan,Pallavi,45000), (E02,Bhupesh,Shekhar,50000), (E03,Amit,Sai,45000), (E07,Tejas,Tanvir,50000), (E08,Sheela,Raahi,10000), (E05,Dinesh,John,50000), (E10,Venkat,Jitendra,10000), (E04,Ratan,Sravya,45000), (E01,Lokesh,Teju,50000))
+
+======================================================================================================================================================================
+
+
+
+

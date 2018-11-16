@@ -1,0 +1,1790 @@
+PS 91:
+
+scala> val employeeData = sqlContext.read.json("/user/cloudera/employee.json")
+employeeData: org.apache.spark.sql.DataFrame = [first_name: string, last_name: string]
+
+scala> employeeData.registerTempTable("employees_data")
+
+scala> val saveEmployeesDataInJsonFormat = sqlContext.sql("""
+     | select * from employees_data
+     | """)
+saveEmployeesDataInJsonFormat: org.apache.spark.sql.DataFrame = [first_name: string, last_name: string]
+
+scala> saveEmployeesDataInJsonFormat.write.json("/user/cloudera/employeein_json.json")
+
+[cloudera@quickstart java_output]$ hadoop fs -ls /user/cloudera/employeein_json.json
+Found 2 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-11 00:11 /user/cloudera/employeein_json.json/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        290 2018-10-11 00:11 /user/cloudera/employeein_json.json/part-r-00000-b2ef5e17-26b7-41ef-bcd3-5819c1a17ee0
+
+[cloudera@quickstart java_output]$ hadoop fs -tail /user/cloudera/employeein_json.json/part-r-00000-b2ef5e17-26b7-41ef-bcd3-5819c1a17ee0
+{"first_name":"Katamreddy","last_name":"Tejaswini"}
+{"first_name":"Chilli","last_name":"Shekhar"}
+{"first_name":"Sudheer","last_name":"Singuluri"}
+{"first_name":"Abhijeet","last_name":"Kaushik"}
+{"first_name":"Srinivas","last_name":"Challa"}
+{"first_name":"Ashok","last_name":"Srinivasan"}
+
+======================================================================================================================================================================
+PS 90:
+
+1)l
+
+scala> coursesDF.show()
++---+------+
+| id|course|
++---+------+
+|  1|Hadoop|
+|  2| Spark|
+|  3| HBase|
++---+------+
+
+
+scala> val feeDF = fee.
+     | map(rec => rec.split(',')).
+     | map(rec => Fee(rec(0).toInt,rec(1).toInt)).
+     | toDF("id", "fee")
+feeDF: org.apache.spark.sql.DataFrame = [id: int, fee: int]
+
+scala> feeDF.show()
++---+----+
+| id| fee|
++---+----+
+|  2|3900|
+|  3|4200|
+|  4|2900|
++---+----+
+
+scala> val coursesAndTheirFee = coursesDF.join(feeDF, Seq("id"), "left_outer")
+coursesAndTheirFee: org.apache.spark.sql.DataFrame = [id: int, course: string, fee: int]
+
+scala> coursesAndTheirFee.show()
++---+------+----+
+| id|course| fee|
++---+------+----+
+|  1|Hadoop|null|
+|  3| HBase|4200|
+|  2| Spark|3900|
++---+------+----+
+
+2)
+
+scala> val feeAndTheirCourse = feeDF.join(coursesDF, Seq("id"), "left_outer")
+feeAndTheirCourse: org.apache.spark.sql.DataFrame = [id: int, fee: int, course: string]
+
+scala> feeAndTheirCourse.show()
++---+----+------+
+| id| fee|course|
++---+----+------+
+|  3|4200| HBase|
+|  2|3900| Spark|
+|  4|2900|  null|
++---+----+------+
+
+3)
+
+scala> val cousesAndThierFee1 = coursesDF.join(feeDF, Seq("id"))
+cousesAndThierFee1: org.apache.spark.sql.DataFrame = [id: int, course: string, fee: int]
+
+scala> cousesAndThierFee1.show()
++---+------+----+
+| id|course| fee|
++---+------+----+
+|  3| HBase|4200|
+|  2| Spark|3900|
++---+------+----+
+
+
+Correct answer:
+
+coursesAndTheirFee.filter("fee is not null")
+
+scala> coursesAndTheirFee.filter("fee is not null").show()
++---+------+----+                                                               
+| id|course| fee|
++---+------+----+
+|  2| Spark|3900|
+|  3| HBase|4200|
++---+------+----+
+
+
+scala> coursesAndTheirFee.filter("fee is null").show()
++---+------+----+                                                               
+| id|course| fee|
++---+------+----+
+|  1|Hadoop|null|
++---+------+----+
+
+
+
+======================================================================================================================================================================
+
+PS 89:
+
+
+scala> val patientsRDD = sc.textFile("file:/home/cloudera/Documents/SDPPS/patients.csv")
+patientsRDD: org.apache.spark.rdd.RDD[String] = file:/home/cloudera/Documents/SDPPS/patients.csv MapPartitionsRDD[103] at textFile at <console>:27
+
+scala> case class Patients(
+     | patientId : Int,
+     | name : String,
+     | dateOfBirth : String,
+     | lastVisitDate : String
+     | )
+defined class Patients
+
+scala> val patientsDF = patientsRDD.
+     | map(rec => rec.split(',')).
+     | map(rec => Patients(rec(0).toInt,rec(1),rec(2),rec(3))).
+     | toDF("patientId","name","dateOfBirth","lastVisitDate")
+patientsDF: org.apache.spark.sql.DataFrame = [patientId: int, name: string, dateOfBirth: string, lastVisitDate: string]
+
+scala> patientsDF.show()
++---------+-------+-----------+-------------+
+|patientId|   name|dateOfBirth|lastVisitDate|
++---------+-------+-----------+-------------+
+|     1001|Ah Tech| 1991-12-31|   2012-01-20|
+|     1002|  Kumar| 2011-10-29|   2012-09-20|
+|     1003|    Ali| 2011-01-30|   2012-10-21|
++---------+-------+-----------+-------------+
+
+scala> val finalPatientsDF = patientsDF.withColumn("current_date", current_date())
+finalPatientsDF: org.apache.spark.sql.DataFrame = [patientId: int, name: string, dateOfBirth: string, lastVisitDate: string, current_date: date]
+
+scala> finalPatientsDF.show()
++---------+-------+-----------+-------------+------------+
+|patientId|   name|dateOfBirth|lastVisitDate|current_date|
++---------+-------+-----------+-------------+------------+
+|     1001|Ah Tech| 1991-12-31|   2012-01-20|  2018-10-11|
+|     1002|  Kumar| 2011-10-29|   2012-09-20|  2018-10-11|
+|     1003|    Ali| 2011-01-30|   2012-10-21|  2018-10-11|
++---------+-------+-----------+-------------+------------+
+
+
+
+finalPatientsDF.registerTempTable("patients")
+
+scala> val lastVisitQuery = sqlContext.sql("""
+     | select * from patients
+     | where lastVisitDate between "2012-09-15" and current_date
+     | """)
+lastVisitQuery: org.apache.spark.sql.DataFrame = [patientId: int, name: string, dateOfBirth: string, lastVisitDate: string, current_date: date]
+
+scala> lastVisitQuery.show()
++---------+-----+-----------+-------------+------------+
+|patientId| name|dateOfBirth|lastVisitDate|current_date|
++---------+-----+-----------+-------------+------------+
+|     1002|Kumar| 2011-10-29|   2012-09-20|  2018-10-11|
+|     1003|  Ali| 2011-01-30|   2012-10-21|  2018-10-11|
++---------+-----+-----------+-------------+------------+
+
+2)
+
+scala> val bornQuery = sqlContext.sql("""
+     | select * from patients
+     | where year(dateOfBirth) = 2011
+     | """)
+bornQuery: org.apache.spark.sql.DataFrame = [patientId: int, name: string, dateOfBirth: string, lastVisitDate: string, current_date: date]
+
+scala> bornQuery.show()
++---------+-----+-----------+-------------+------------+
+|patientId| name|dateOfBirth|lastVisitDate|current_date|
++---------+-----+-----------+-------------+------------+
+|     1002|Kumar| 2011-10-29|   2012-09-20|  2018-10-11|
+|     1003|  Ali| 2011-01-30|   2012-10-21|  2018-10-11|
++---------+-----+-----------+-------------+------------+
+
+3)
+
+val addingAgeColumn = finalPatientsDF.withColumn("age", current_date - dateOfBirth)
+
+
+scala> import java.sql.Date
+import java.sql.Date
+
+scala> case class Patients(
+     | patientId : Int,
+     | name : String,
+     | dateOfBirth : Date,
+     | lastVisitDate : Date
+     | )
+defined class Patients
+
+
+scala> val patientsDF = patientsRDD.
+     | map(rec => rec.split(',')).
+     | map(rec => Patients(rec(0).toInt,rec(1),Date.valueOf(rec(2)),Date.valueOf(rec(3)))).
+     | toDF("patientId","name","dateOfBirth","lastVisitDate")
+patientsDF: org.apache.spark.sql.DataFrame = [patientId: int, name: string, dateOfBirth: date, lastVisitDate: date]
+
+
+scala> val finalPatientsDF = patientsDF.withColumn("current_date", current_date())
+finalPatientsDF: org.apache.spark.sql.DataFrame = [patientId: int, name: string, dateOfBirth: date, lastVisitDate: date, current_date: date]
+
+
+scala> val agedDF = finalPatientsDF.
+     | withColumn("age", unix_timestamp(current_date) - unix_timestamp(col("dateOfBirth")))   ==> diff in timestamps gives result in seconds
+
+agedDF: org.apache.spark.sql.DataFrame = [patientId: int, name: string, dateOfBirth: date, lastVisitDate: date, current_date: date, age: bigint]
+
+
+scala> agedDF.show()
++---------+-------+-----------+-------------+------------+---------+
+|patientId|   name|dateOfBirth|lastVisitDate|current_date|      age|
++---------+-------+-----------+-------------+------------+---------+
+|     1001|Ah Tech| 1991-12-31|   2012-01-20|  2018-10-11|845074800|
+|     1002|  Kumar| 2011-10-29|   2012-09-20|  2018-10-11|219369600|
+|     1003|    Ali| 2011-01-30|   2012-10-21|  2018-10-11|242866800|
++---------+-------+-----------+-------------+------------+---------+
+
+
+scala> val ageInYears = agedDF.
+     | withColumn("age_in_years", col("age")/86400/365)
+ageInYears: org.apache.spark.sql.DataFrame = [patientId: int, name: string, dateOfBirth: date, lastVisitDate: date, current_date: date, age: bigint, age_in_years: double]
+
+scala> ageInYears.show()
++---------+-------+-----------+-------------+------------+---------+------------------+
+|patientId|   name|dateOfBirth|lastVisitDate|current_date|      age|      age_in_years|
++---------+-------+-----------+-------------+------------+---------+------------------+
+|     1001|Ah Tech| 1991-12-31|   2012-01-20|  2018-10-11|845074800|26.797146118721464|
+|     1002|  Kumar| 2011-10-29|   2012-09-20|  2018-10-11|219369600| 6.956164383561644|
+|     1003|    Ali| 2011-01-30|   2012-10-21|  2018-10-11|242866800| 7.701255707762558|
++---------+-------+-----------+-------------+------------+---------+------------------+
+
+
+scala> val ageInYears = agedDF.
+     | withColumn("age_in_years", col("age")/86400/365)
+ageInYears: org.apache.spark.sql.DataFrame = [patientId: int, name: string, dateOfBirth: date, lastVisitDate: date, current_date: date, age: bigint, age_in_years: double]
+
+scala> val finalDF = ageInYears.drop("age")
+finalDF: org.apache.spark.sql.DataFrame = [patientId: int, name: string, dateOfBirth: date, lastVisitDate: date, current_date: date, age_in_years: double]
+
+scala> finalDF.show()
++---------+-------+-----------+-------------+------------+------------------+
+|patientId|   name|dateOfBirth|lastVisitDate|current_date|      age_in_years|
++---------+-------+-----------+-------------+------------+------------------+
+|     1001|Ah Tech| 1991-12-31|   2012-01-20|  2018-10-11|26.797146118721464|
+|     1002|  Kumar| 2011-10-29|   2012-09-20|  2018-10-11| 6.956164383561644|
+|     1003|    Ali| 2011-01-30|   2012-10-21|  2018-10-11| 7.701255707762558|
++---------+-------+-----------+-------------+------------+------------------+
+*********************************** IN 1 GO *********************************************************
+NOTE:
+
+IN 1 GO:
+
+scala> val agedDF = finalPatientsDF.
+     | withColumn("age", unix_timestamp(current_date) - unix_timestamp(col("dateOfBirth"))).
+     | withColumn("age_in_years", col("age")/86400/365).
+     | drop("age")
+agedDF: org.apache.spark.sql.DataFrame = [patientId: int, name: string, dateOfBirth: date, lastVisitDate: date, current_date: date, age_in_years: double]
+
+scala> agedDF.show()
++---------+-------+-----------+-------------+------------+------------------+
+|patientId|   name|dateOfBirth|lastVisitDate|current_date|      age_in_years|
++---------+-------+-----------+-------------+------------+------------------+
+|     1001|Ah Tech| 1991-12-31|   2012-01-20|  2018-10-11|26.797146118721464|
+|     1002|  Kumar| 2011-10-29|   2012-09-20|  2018-10-11| 6.956164383561644|
+|     1003|    Ali| 2011-01-30|   2012-10-21|  2018-10-11| 7.701255707762558|
++---------+-------+-----------+-------------+------------+------------------+
+
+4)
+
+scala> val lastVisitedDF = finalPatientsDF.
+     | withColumn("LVG60", (unix_timestamp(current_date) - unix_timestamp(col("lastVisitDate")))/86400/365)
+lastVisitedDF: org.apache.spark.sql.DataFrame = [patientId: int, name: string, dateOfBirth: date, lastVisitDate: date, current_date: date, LVG60: double]
+
+scala> lastVisitedDF.show()
++---------+-------+-----------+-------------+------------+-----------------+
+|patientId|   name|dateOfBirth|lastVisitDate|current_date|            LVG60|
++---------+-------+-----------+-------------+------------+-----------------+
+|     1001|Ah Tech| 1991-12-31|   2012-01-20|  2018-10-11| 6.72865296803653|
+|     1002|  Kumar| 2011-10-29|   2012-09-20|  2018-10-11| 6.06027397260274|
+|     1003|    Ali| 2011-01-30|   2012-10-21|  2018-10-11|5.975342465753425|
++---------+-------+-----------+-------------+------------+-----------------+
+
+
+Given question asks to find last visited is more than 60 days ago. I changed the question to more than 6 years ago since the data set is older one (2012)
+
+obviously all the patients would have visited 60 days ago.
+
+
+scala> lastVisitedDF.registerTempTable("lastVisited")
+
+scala> val lastVisitedResult = sqlContext.sql("""
+     | select * from lastVisited 
+     | where LVG60 > 6
+     | """)
+lastVisitedResult: org.apache.spark.sql.DataFrame = [patientId: int, name: string, dateOfBirth: date, lastVisitDate: date, current_date: date, LVG60: double]
+
+scala> lastVisitedResult.show()
++---------+-------+-----------+-------------+------------+----------------+
+|patientId|   name|dateOfBirth|lastVisitDate|current_date|           LVG60|
++---------+-------+-----------+-------------+------------+----------------+
+|     1001|Ah Tech| 1991-12-31|   2012-01-20|  2018-10-11|6.72865296803653|
+|     1002|  Kumar| 2011-10-29|   2012-09-20|  2018-10-11|6.06027397260274|
++---------+-------+-----------+-------------+------------+----------------+
+
+
+4)
+
+scala> ageInYears.registerTempTable("agesTable")
+
+scala> val ageResult = sqlContext.sql("""
+     | select * from agesTable
+     | where age_in_years <= 18
+     | """)
+ageResult: org.apache.spark.sql.DataFrame = [patientId: int, name: string, dateOfBirth: date, lastVisitDate: date, current_date: date, age: bigint, age_in_years: double]
+
+scala> ageResult.show()
++---------+-----+-----------+-------------+------------+---------+-----------------+
+|patientId| name|dateOfBirth|lastVisitDate|current_date|      age|     age_in_years|
++---------+-----+-----------+-------------+------------+---------+-----------------+
+|     1002|Kumar| 2011-10-29|   2012-09-20|  2018-10-11|219369600|6.956164383561644|
+|     1003|  Ali| 2011-01-30|   2012-10-21|  2018-10-11|242866800|7.701255707762558|
++---------+-----+-----------+-------------+------------+---------+-----------------+
+
+======================================================================================================================================================================
+
+PS 88:
+
+scala> case class Product(
+     | productId : Int,
+     | productCode : String,
+     | 
+     | name : String,
+     | quantity : Int,
+     | price : Float,
+     | supplierId : Int
+     | )
+defined class Product
+
+scala> case class Supplier(
+     | supplierId : Int,
+     | name : String,
+     | phone : Long
+     | )
+defined class Supplier
+
+scala> val productsDF = sc.textFile("file:/home/cloudera/Documents/SDPPS/product.csv").
+     | map(rec => rec.split(',')).
+     | map(rec => Product(rec(0).toInt,rec(1),rec(2),rec(3).toInt,rec(4).toFloat,rec(5).toInt)).
+     | toDF("productId","productCode", "name", "quantity", "price", "supplierId")
+productsDF: org.apache.spark.sql.DataFrame = [productId: int, productCode: string, name: string, quantity: int, price: float, supplierId: int]
+
+
+scala> val suppliersDF = sc.textFile("file:/home/cloudera/Documents/SDPPS/supplier.csv").
+     | map(rec => rec.split(',')).
+     | map(rec => Supplier(rec(0).toInt,rec(1),rec(2).toLong)).
+     | toDF("supplierId", "name", "phone")
+suppliersDF: org.apache.spark.sql.DataFrame = [supplierId: int, name: string, phone: bigint]
+
+scala> productsDF.show()
++---------+-----------+---------+--------+-------+----------+
+|productId|productCode|     name|quantity|  price|supplierId|
++---------+-----------+---------+--------+-------+----------+
+|     1001|        PEN|  Pen Red|    5000|   1.23|       501|
+|     1002|        PEN| Pen Blue|    8000|   1.25|       501|
+|     1003|        PEN|Pen Black|    2000|   1.25|       501|
+|     1004|        PEC|Pencil 2B|   10000|   0.48|       502|
+|     1005|        PEC|Pencil 2H|    8000|   0.49|       502|
+|     1006|        PEC|Pencil HB|       0|9999.99|       502|
+|     2001|        PEC|Pencil 3B|     500|   0.52|       501|
+|     2002|        PEC|Pencil 4B|     200|   0.62|       501|
+|     2003|        PEC|Pencil 5B|     100|   0.73|       501|
+|     2004|        PEC|Pencil 6B|     500|   0.47|       502|
++---------+-----------+---------+--------+-------+----------+
+
+
+scala> suppliersDF.show()
++----------+-----------+--------+
+|supplierId|       name|   phone|
++----------+-----------+--------+
+|       501|ABC Traders|88881111|
+|       502|XYZ Company|88882222|
+|       503|    QQ Corp|88883333|
++----------+-----------+--------+
+
+scala> case class Products_Suppliers(
+     | productId : Int,
+     | supplierId : Int
+     | )
+defined class Products_Suppliers
+
+scala> val productsAndSuppliersDF = sc.textFile("file:/home/cloudera/Documents/SDPPS/products_suppliers.csv").
+     | map(rec => rec.split(',')).
+     | map(rec => Products_Suppliers(rec(0).toInt,rec(1).toInt)).
+     | toDF()
+productsAndSuppliersDF: org.apache.spark.sql.DataFrame = [productId: int, supplierId: int]
+
+scala> productsAndSuppliersDF.show()
++---------+----------+
+|productId|supplierId|
++---------+----------+
+|     2001|       501|
+|     2002|       501|
+|     2003|       501|
+|     2004|       502|
+|     2001|       503|
++---------+----------+
+
+-----------------------------------------------------------------------
+-----------------------------------------------------------------------
+
+
+scala> val suppAndprodsuppDF = suppliersDF.join(productsAndSuppliersDF, Seq("supplierId"))
+suppAndprodsuppDF: org.apache.spark.sql.DataFrame = [supplierId: int, name: string, phone: bigint, productId: int]
+
+scala> suppAndprodsuppDF.show()
++----------+-----------+--------+---------+
+|supplierId|       name|   phone|productId|
++----------+-----------+--------+---------+
+|       501|ABC Traders|88881111|     2001|
+|       501|ABC Traders|88881111|     2002|
+|       501|ABC Traders|88881111|     2003|
+|       503|    QQ Corp|88883333|     2001|
+|       502|XYZ Company|88882222|     2004|
++----------+-----------+--------+---------+
+
+scala> val productsAndSuppliersJoin = productsDF.
+     | join(suppliersDF, Seq("supplierId"))
+productsAndSuppliersJoin: org.apache.spark.sql.DataFrame = [supplierId: int, productId: int, productCode: string, name: string, quantity: int, price: float, name: string, phone: bigint]
+
+scala> productsAndSuppliersJoin.show()
++----------+---------+-----------+---------+--------+-------+-----------+--------+
+|supplierId|productId|productCode|     name|quantity|  price|       name|   phone|
++----------+---------+-----------+---------+--------+-------+-----------+--------+
+|       501|     1001|        PEN|  Pen Red|    5000|   1.23|ABC Traders|88881111|
+|       501|     1002|        PEN| Pen Blue|    8000|   1.25|ABC Traders|88881111|
+|       501|     1003|        PEN|Pen Black|    2000|   1.25|ABC Traders|88881111|
+|       501|     2001|        PEC|Pencil 3B|     500|   0.52|ABC Traders|88881111|
+|       501|     2002|        PEC|Pencil 4B|     200|   0.62|ABC Traders|88881111|
+|       501|     2003|        PEC|Pencil 5B|     100|   0.73|ABC Traders|88881111|
+|       502|     1004|        PEC|Pencil 2B|   10000|   0.48|XYZ Company|88882222|
+|       502|     1005|        PEC|Pencil 2H|    8000|   0.49|XYZ Company|88882222|
+|       502|     1006|        PEC|Pencil HB|       0|9999.99|XYZ Company|88882222|
+|       502|     2004|        PEC|Pencil 6B|     500|   0.47|XYZ Company|88882222|
++----------+---------+-----------+---------+--------+-------+-----------+--------+
+
+
+=================================
+=================================
+
+case class Product(
+productId : Int,
+productCode : String, 
+name : String,
+quantity : Int,
+price : Float,
+supplier_id : Int
+)
+
+
+case class Supplier(
+supplier_id : Int,
+name : String,
+phone : Long
+)
+
+defined class Supplier
+
+val productsDF = sc.textFile("file:/home/cloudera/Documents/SDPPS/product.csv").
+map(rec => rec.split(',')).
+map(rec => Product(rec(0).toInt,rec(1),rec(2),rec(3).toInt,rec(4).toFloat,rec(5).toInt)).
+toDF("productId","productCode", "name", "quantity", "price", "supplier_id")
+productsDF: org.apache.spark.sql.DataFrame = [productId: int, productCode: string, name: string, quantity: int, price: float, supplierId: int]
+
+
+val suppliersDF = sc.textFile("file:/home/cloudera/Documents/SDPPS/supplier.csv").
+map(rec => rec.split(',')).
+map(rec => Supplier(rec(0).toInt,rec(1),rec(2).toLong)).
+toDF("supplier_id", "name", "phone")
+suppliersDF: org.apache.spark.sql.DataFrame = [supplierId: int, name: string, phone: bigint]
+
+scala> productsDF.show()
++---------+-----------+---------+--------+-------+----------+
+|productId|productCode|     name|quantity|  price|supplierId|
++---------+-----------+---------+--------+-------+----------+
+|     1001|        PEN|  Pen Red|    5000|   1.23|       501|
+|     1002|        PEN| Pen Blue|    8000|   1.25|       501|
+|     1003|        PEN|Pen Black|    2000|   1.25|       501|
+|     1004|        PEC|Pencil 2B|   10000|   0.48|       502|
+|     1005|        PEC|Pencil 2H|    8000|   0.49|       502|
+|     1006|        PEC|Pencil HB|       0|9999.99|       502|
+|     2001|        PEC|Pencil 3B|     500|   0.52|       501|
+|     2002|        PEC|Pencil 4B|     200|   0.62|       501|
+|     2003|        PEC|Pencil 5B|     100|   0.73|       501|
+|     2004|        PEC|Pencil 6B|     500|   0.47|       502|
++---------+-----------+---------+--------+-------+----------+
+
+
+scala> suppliersDF.show()
++----------+-----------+--------+
+|supplierId|       name|   phone|
++----------+-----------+--------+
+|       501|ABC Traders|88881111|
+|       502|XYZ Company|88882222|
+|       503|    QQ Corp|88883333|
++----------+-----------+--------+
+
+scala> case class Products_Suppliers(
+     | productId : Int,
+     | supplierId : Int
+     | )
+defined class Products_Suppliers
+
+scala> val productsAndSuppliersDF = sc.textFile("file:/home/cloudera/Documents/SDPPS/products_suppliers.csv").
+     | map(rec => rec.split(',')).
+     | map(rec => Products_Suppliers(rec(0).toInt,rec(1).toInt)).
+     | toDF()
+productsAndSuppliersDF: org.apache.spark.sql.DataFrame = [productId: int, supplierId: int]
+
+scala> productsAndSuppliersDF.show()
++---------+----------+
+|productId|supplierId|
++---------+----------+
+|     2001|       501|
+|     2002|       501|
+|     2003|       501|
+|     2004|       502|
+|     2001|       503|
++---------+----------+
+
+----------------------------------------------------------------------- Final ----------------------------------------------
+ 
+scala> case class Product(
+     | productId : Int,
+     | productCode : String, 
+     | name : String,
+     | quantity : Int,
+     | price : Float,
+     | supplier_id : Int
+     | )
+defined class Product
+
+scala> 
+
+scala> 
+
+scala> case class Supplier(
+     | supplier_id : Int,
+     | name : String,
+     | phone : Long
+     | )
+defined class Supplier
+
+scala> 
+
+scala> val productsDF = sc.textFile("file:/home/cloudera/Documents/SDPPS/product.csv").
+     | map(rec => rec.split(',')).
+     | map(rec => Product(rec(0).toInt,rec(1),rec(2),rec(3).toInt,rec(4).toFloat,rec(5).toInt)).
+     | toDF("productId","productCode", "name", "quantity", "price", "supplier_id")
+productsDF: org.apache.spark.sql.DataFrame = [productId: int, productCode: string, name: string, quantity: int, price: float, supplier_id: int]
+
+scala> val suppliersDF = sc.textFile("file:/home/cloudera/Documents/SDPPS/supplier.csv").
+     | map(rec => rec.split(',')).
+     | map(rec => Supplier(rec(0).toInt,rec(1),rec(2).toLong)).
+     | toDF("supplier_id", "name", "phone")
+suppliersDF: org.apache.spark.sql.DataFrame = [supplier_id: int, name: string, phone: bigint]
+
+
+scala> case class Products_Suppliers(
+     | productId : Int,
+     | supplierId : Int
+     | )
+defined class Products_Suppliers
+
+scala> val productsAndSuppliersDF = sc.textFile("file:/home/cloudera/Documents/SDPPS/products_suppliers.csv").
+     | map(rec => rec.split(',')).
+     | map(rec => Products_Suppliers(rec(0).toInt,rec(1).toInt)).
+     | toDF("productId", "supplierId")
+productsAndSuppliersDF: org.apache.spark.sql.DataFrame = [productId: int, supplierId: int]
+
+scala> productsAndSuppliersDF.show()
++---------+----------+
+|productId|supplierId|
++---------+----------+
+|     2001|       501|
+|     2002|       501|
+|     2003|       501|
+|     2004|       502|
+|     2001|       503|
++---------+----------+
+
+
+scala> val productsAndSuppliersJoinDF = productsDF.join(suppliersDF, Seq("supplier_id"))
+productsAndSuppliersJoinDF: org.apache.spark.sql.DataFrame = [supplier_id: int, productId: int, productCode: string, name: string, quantity: int, price: float, name: string, phone: bigint]
+
+scala> productsAndSuppliersJoinDF.show()
++-----------+---------+-----------+---------+--------+-------+-----------+--------+
+|supplier_id|productId|productCode|     name|quantity|  price|       name|   phone|
++-----------+---------+-----------+---------+--------+-------+-----------+--------+
+|        501|     1001|        PEN|  Pen Red|    5000|   1.23|ABC Traders|88881111|
+|        501|     1002|        PEN| Pen Blue|    8000|   1.25|ABC Traders|88881111|
+|        501|     1003|        PEN|Pen Black|    2000|   1.25|ABC Traders|88881111|
+|        501|     2001|        PEC|Pencil 3B|     500|   0.52|ABC Traders|88881111|
+|        501|     2002|        PEC|Pencil 4B|     200|   0.62|ABC Traders|88881111|
+|        501|     2003|        PEC|Pencil 5B|     100|   0.73|ABC Traders|88881111|
+|        502|     1004|        PEC|Pencil 2B|   10000|   0.48|XYZ Company|88882222|
+|        502|     1005|        PEC|Pencil 2H|    8000|   0.49|XYZ Company|88882222|
+|        502|     1006|        PEC|Pencil HB|       0|9999.99|XYZ Company|88882222|
+|        502|     2004|        PEC|Pencil 6B|     500|   0.47|XYZ Company|88882222|
++-----------+---------+-----------+---------+--------+-------+-----------+--------+
+
+
+
+
+scala> val suppliersAndProdSuppDF = suppliersDF.join(productsAndSuppliersDF, suppliersDF("supplier_id") === productsAndSuppliersDF("supplierId")).drop("supplierId")
+suppliersAndProdSuppDF: org.apache.spark.sql.DataFrame = [supplier_id: int, name: string, phone: bigint, productId: int, supplierId: int]
+
+scala> suppliersAndProdSuppDF.show()
++-----------+-----------+--------+---------+----------+
+|supplier_id|       name|   phone|productId|supplierId|
++-----------+-----------+--------+---------+----------+
+|        501|ABC Traders|88881111|     2001|       501|
+|        501|ABC Traders|88881111|     2002|       501|
+|        501|ABC Traders|88881111|     2003|       501|
+|        503|    QQ Corp|88883333|     2001|       503|
+|        502|XYZ Company|88882222|     2004|       502|
++-----------+-----------+--------+---------+----------+
+
+
+
+scala> val suppliersAndProdSuppDF = suppliersDF.join(productsAndSuppliersDF, suppliersDF("supplier_id") === productsAndSuppliersDF("supplierId")).drop("supplier_id")
+suppliersAndProdSuppDF: org.apache.spark.sql.DataFrame = [name: string, phone: bigint, productId: int, supplierId: int]
+
+scala> suppliersAndProdSuppDF.show()
++-----------+--------+---------+----------+
+|       name|   phone|productId|supplierId|
++-----------+--------+---------+----------+
+|ABC Traders|88881111|     2001|       501|
+|ABC Traders|88881111|     2002|       501|
+|ABC Traders|88881111|     2003|       501|
+|    QQ Corp|88883333|     2001|       503|
+|XYZ Company|88882222|     2004|       502|
++-----------+--------+---------+----------+
+
+
++-----------+---------+-----------+---------+--------+-------+-----------+--------+
+|supplier_id|productId|productCode|     name|quantity|  price|       name|   phone|
++-----------+---------+-----------+---------+--------+-------+-----------+--------+
+|        501|     1001|        PEN|  Pen Red|    5000|   1.23|ABC Traders|88881111|
+|        501|     1002|        PEN| Pen Blue|    8000|   1.25|ABC Traders|88881111|
+|        501|     1003|        PEN|Pen Black|    2000|   1.25|ABC Traders|88881111|
+|        501|     2001|        PEC|Pencil 3B|     500|   0.52|ABC Traders|88881111|
+|        501|     2002|        PEC|Pencil 4B|     200|   0.62|ABC Traders|88881111|
+|        501|     2003|        PEC|Pencil 5B|     100|   0.73|ABC Traders|88881111|
+|        502|     1004|        PEC|Pencil 2B|   10000|   0.48|XYZ Company|88882222|
+|        502|     1005|        PEC|Pencil 2H|    8000|   0.49|XYZ Company|88882222|
+|        502|     1006|        PEC|Pencil HB|       0|9999.99|XYZ Company|88882222|
+|        502|     2004|        PEC|Pencil 6B|     500|   0.47|XYZ Company|88882222|
++-----------+---------+-----------+---------+--------+-------+-----------+--------+
+
+
+======================================================================================================================================================================
+
+PS 87:
+
+scala> case class ProductQ87(
+     | productId : Int,
+     | productCode : String, 
+     | name : String,
+     | quantity : Int,
+     | price : Float
+     | )
+defined class ProductQ87
+
+scala> case class SupplierQ87(
+     | supplierId : Int,
+     | name : String,
+     | phone : Long
+     | )
+defined class SupplierQ87
+
+scala> case class Products_SuppliersQ87(
+     | productId : Int,
+     | supplierId : Int
+     | )
+defined class Products_SuppliersQ87
+ 
+
+scala> val productsQ87DF = sc.textFile("file:/home/cloudera/Documents/SDPPS/productQ87").
+     | map(rec => rec.split(',')).
+     | map(rec => ProductQ87(rec(0).toInt,rec(1),rec(2),rec(3).toInt,rec(4).toFloat)).
+     | toDF("productId","productCode", "name", "quantity", "price")
+productsQ87DF: org.apache.spark.sql.DataFrame = [productId: int, productCode: string, name: string, quantity: int, price: float]
+
+scala> productsQ87DF.show()
++---------+-----------+---------+--------+-----+
+|productId|productCode|     name|quantity|price|
++---------+-----------+---------+--------+-----+
+|     2001|        PEC|Pencil 3B|     500| 0.52|
+|     2002|        PEC|Pencil 4B|     200| 0.62|
+|     2003|        PEC|Pencil 5B|     100| 0.73|
+|     2004|        PEC|Pencil 6B|     500| 0.47|
++---------+-----------+---------+--------+-----+
+
+
+scala> val suppliersQ87DF = sc.textFile("file:/home/cloudera/Documents/SDPPS/supplierQ87").
+     | map(rec => rec.split(',')).
+     | map(rec => SupplierQ87(rec(0).toInt,rec(1),rec(2).toLong)).
+     | toDF("supplierId", "name", "phone")
+suppliersQ87DF: org.apache.spark.sql.DataFrame = [supplierId: int, name: string, phone: bigint]
+
+scala> suppliersQ87DF.show()
++----------+-----------+--------+
+|supplierId|       name|   phone|
++----------+-----------+--------+
+|       501|ABC Traders|88881111|
+|       502|XYZ Company|88882222|
+|       503|    QQ Corp|88883333|
++----------+-----------+--------+
+
+
+
+val productAndSupplierQ87DF = sc.textFile("file:/home/cloudera/Documents/SDPPS/product_supplierQ87").
+map(rec => rec.split(',')).
+map(rec => Products_SuppliersQ87(rec(0).toInt,rec(1).toInt)).
+toDF("productId", "supplierId")
+
+
+scala> val productAndSupplierQ87DF = sc.textFile("file:/home/cloudera/Documents/SDPPS/product_supplierQ87").
+     | map(rec => rec.split(',')).
+     | map(rec => Products_SuppliersQ87(rec(0).toInt,rec(1).toInt)).
+     | toDF("productId", "supplierId")
+productAndSupplierQ87DF: org.apache.spark.sql.DataFrame = [productId: int, supplierId: int]
+
+scala> productAndSupplierQ87DF.show()
++---------+----------+
+|productId|supplierId|
++---------+----------+
+|     2001|       501|
+|     2002|       501|
+|     2003|       501|
+|     2004|       502|
+|     2001|       503|
++---------+----------+
+
+scala> val prodAndPSDF = productAndSupplierQ87DF.join(productsQ87DF, Seq("productId")).withColumnRenamed("name", "productName")
+prodAndPSDF: org.apache.spark.sql.DataFrame = [productId: int, supplierId: int, productCode: string, productName: string, quantity: int, price: float]
+
+scala> prodAndPSDF.show()
++---------+----------+-----------+-----------+--------+-----+
+|productId|supplierId|productCode|productName|quantity|price|
++---------+----------+-----------+-----------+--------+-----+
+|     2001|       501|        PEC|  Pencil 3B|     500| 0.52|
+|     2001|       503|        PEC|  Pencil 3B|     500| 0.52|
+|     2003|       501|        PEC|  Pencil 5B|     100| 0.73|
+|     2002|       501|        PEC|  Pencil 4B|     200| 0.62|
+|     2004|       502|        PEC|  Pencil 6B|     500| 0.47|
++---------+----------+-----------+-----------+--------+-----+
+
+
+
+scala> val finalDF = prodAndPSDF.join(suppliersQ87DF, Seq("supplierId"))
+finalDF: org.apache.spark.sql.DataFrame = [supplierId: int, productId: int, productCode: string, productName: string, quantity: int, price: float, name: string, phone: bigint]
+
+scala> finalDF.show()
++----------+---------+-----------+-----------+--------+-----+-----------+--------+
+|supplierId|productId|productCode|productName|quantity|price|       name|   phone|
++----------+---------+-----------+-----------+--------+-----+-----------+--------+
+|       501|     2001|        PEC|  Pencil 3B|     500| 0.52|ABC Traders|88881111|
+|       501|     2003|        PEC|  Pencil 5B|     100| 0.73|ABC Traders|88881111|
+|       501|     2002|        PEC|  Pencil 4B|     200| 0.62|ABC Traders|88881111|
+|       503|     2001|        PEC|  Pencil 3B|     500| 0.52|    QQ Corp|88883333|
+|       502|     2004|        PEC|  Pencil 6B|     500| 0.47|XYZ Company|88882222|
++----------+---------+-----------+-----------+--------+-----+-----------+--------+
+
+scala> finalDF.registerTempTable("Q87data")
+
+scala> val finalResult = sqlContext.sql("""
+     | select productId,productName,name,price
+     | from Q87data
+     | """)
+finalResult: org.apache.spark.sql.DataFrame = [productId: int, productName: string, name: string, price: float]
+
+scala> finalResult.show()
++---------+-----------+-----------+-----+
+|productId|productName|       name|price|
++---------+-----------+-----------+-----+
+|     2001|  Pencil 3B|ABC Traders| 0.52|
+|     2003|  Pencil 5B|ABC Traders| 0.73|
+|     2002|  Pencil 4B|ABC Traders| 0.62|
+|     2001|  Pencil 3B|    QQ Corp| 0.52|
+|     2004|  Pencil 6B|XYZ Company| 0.47|
++---------+-----------+-----------+-----+
+
+1)
+
+val query1 = finalDF.select("productName", "name", "price").where(col("price") < 0.6)
+
+2)
+
+val query2 = finalDF.select("name", "productName").where(col("productName") === "Pencil 3B")
+
+In this case output would be 2 colunms productName, price. Just 1 column is not possible in dataframe coz, the columns we are using in where clause must be present in select clause else throes error.
+
+Through Spark SQL
+
+scala> val query3 = sqlContext.sql("""
+     | select name from Q87data
+     | where productName = "Pencil 3B"
+     | """)
+query3: org.apache.spark.sql.DataFrame = [supplierName: string]
+
+scala> query3.show()
++------------+                                                                  
+|name        |
++------------+
+| ABC Traders|
+|     QQ Corp|
++------------+
+
+
+3)
+
+scala> finalDF.alias("fd").select("fd.*").where(col("name") === "ABC Traders").show()
++---------+----------+------------+--------+-----------+---------+--------+-----+
+|productId|supplierId|        name|   phone|productCode|productName|quantity|price|
++---------+----------+------------+--------+-----------+---------+--------+-----+
+|     2001|       501| ABC Traders|88881111|        PEC|Pencil 3B|     500| 0.52|
+|     2002|       501| ABC Traders|88881111|        PEC|Pencil 4B|     200| 0.62|
+|     2003|       501| ABC Traders|88881111|        PEC|Pencil 5B|     100| 0.73|
++---------+----------+------------+--------+-----------+---------+--------+-----+
+
+
+scala> val query2 = sqlContext.sql("""
+     | select productName from Q87data
+     | where name = "ABC Traders"
+     | """)
+query2: org.apache.spark.sql.DataFrame = [name: string]
+
+scala> query2.show()
++---------+                                                                     
+|productName|
++---------+
+|Pencil 3B|
+|Pencil 4B|
+|Pencil 5B|
++---------+
+
+
+
+======================================================================================================================================================================
+PS 81
+
+1)
+
+val hiveTable  = sc.textFile("/user/cloudera/prod.csv")
+
+ 
+case class Product(
+productId : Int,
+productCode : String, 
+name : String,
+quantity : Int,
+price : Float
+)
+
+
+val productsDF = sc.textFile("file:/home/cloudera/Documents/SDPPS/prod.csv").
+map(rec => rec.split(',')).
+map(rec => Product(rec(0).toInt,rec(1),rec(2),rec(3).toInt,rec(4).toFloat)).
+toDF("productId","productCode", "name", "quantity", "price")
+
+productsDF.registerTempTable("products")
+
+val hiveTable = sqlContext.sql("""
+create table problem5.hive_orc(
+productId int,
+productCode string,
+name string,
+qunatity int,
+price float
+)stored as orc
+""")
+
+scala> val hiveTableData = sqlContext.sql("""
+     | insert into table problem5.hive_orc select * from products""")
+hiveTableData: org.apache.spark.sql.DataFrame = []
+
+scala> hiveTable.show()
++------+
+|result|
++------+
++------+
+
+hive> select * from hive_orc;
+OK
+1001	PEN	Pen Red	5000	1.23
+1002	PEN	Pen Blue	8000	1.25
+1003	PEN	Pen Black	2000	1.25
+1004	PEC	Pencil 2B	10000	0.48
+1005	PEC	Pencil 2H	8000	0.49
+1006	PEC	Pencil HB	0	9999.99
+Time taken: 0.432 seconds, Fetched: 6 row(s)
+
+2)
+
+val hive_parquet = sqlContext.sql("""
+create table problem5.hive_parquet(
+productId int,
+productCode string,
+name string,
+qunatity int,
+price float
+)
+stored as parquet
+""")
+
+val hive_parquet_data = sqlContext.sql("""
+insert into table problem5.hive_parquet select * from products""")
+
+hive> show tables;
+OK
+categories_subset
+facebook
+hive_orc
+hive_parquet
+products_hive
+values__tmp__table__1
+values__tmp__table__2
+values__tmp__table__3
+Time taken: 1.424 seconds, Fetched: 8 row(s)
+
+hive> select * from hive_parquet;
+OK
+1001	PEN	Pen Red	5000	1.23
+1002	PEN	Pen Blue	8000	1.25
+1003	PEN	Pen Black	2000	1.25
+1004	PEC	Pencil 2B	10000	0.48
+1005	PEC	Pencil 2H	8000	0.49
+1006	PEC	Pencil HB	0	9999.99
+Time taken: 0.394 seconds, Fetched: 6 row(s)
+
+======================================================================================================================================================================
+
+PS 82:
+
+1)
+
+scala> val prodQuantity = sqlContext.sql("""
+     | select name,quantity
+     | from products
+     | where quantity <= 2000
+     | """)
+prodQuantity: org.apache.spark.sql.DataFrame = [name: string, quantity: int]
+
+scala> prodQuantity.show()
++---------+--------+
+|     name|quantity|
++---------+--------+
+|Pen Black|    2000|
+|Pencil HB|       0|
++---------+--------+
+
+2)
+
+scala> val prodCode = sqlContext.sql("""
+     | select name, price 
+     | from products
+     | where productCode = "PEN"
+     | """)
+prodCode: org.apache.spark.sql.DataFrame = [name: string, price: float]
+
+scala> prodCode.show()
++---------+-----+
+|     name|price|
++---------+-----+
+|  Pen Red| 1.23|
+| Pen Blue| 1.25|
+|Pen Black| 1.25|
++---------+-----+
+
+
+3)
+
+scala> val pencil = sqlContext.sql("""
+     | select * from products
+     | where name LIKE 'Pencil%'
+     | """)
+pencil: org.apache.spark.sql.DataFrame = [productId: int, productCode: string, name: string, quantity: int, price: float]
+
+scala> pencil.show()
++---------+-----------+---------+--------+-------+
+|productId|productCode|     name|quantity|  price|
++---------+-----------+---------+--------+-------+
+|     1004|        PEC|Pencil 2B|   10000|   0.48|
+|     1005|        PEC|Pencil 2H|    8000|   0.49|
+|     1006|        PEC|Pencil HB|       0|9999.99|
++---------+-----------+---------+--------+-------+
+
+
+scala> val pencil = sqlContext.sql("""
+     | select * from products
+     | where name LIKE 'PENCIL%'
+     | """)
+pencil: org.apache.spark.sql.DataFrame = [productId: int, productCode: string, name: string, quantity: int, price: float]
+
+scala> pencil.show()
++---------+-----------+----+--------+-----+
+|productId|productCode|name|quantity|price|
++---------+-----------+----+--------+-----+
++---------+-----------+----+--------+-----+
+
+4)
+
+scala> val regExpInStrings = sqlContext.sql("""
+     | select * from products
+     | where name LIKE 'P__ %'
+     | """)
+regExpInStrings: org.apache.spark.sql.DataFrame = [productId: int, productCode: string, name: string, quantity: int, price: float]
+
+scala> regExpInStrings.show()
++---------+-----------+---------+--------+-----+
+|productId|productCode|     name|quantity|price|
++---------+-----------+---------+--------+-----+
+|     1001|        PEN|  Pen Red|    5000| 1.23|
+|     1002|        PEN| Pen Blue|    8000| 1.25|
+|     1003|        PEN|Pen Black|    2000| 1.25|
++---------+-----------+---------+--------+-----+
+
+======================================================================================================================================================================
+
+PS 83:
+
+1)
+
+scala> val query1 = sqlContext.sql("""
+     | select * from products
+     | where quantity >= 5000 and name LIKE 'Pen%'
+     | """)
+query1: org.apache.spark.sql.DataFrame = [productId: int, productCode: string, name: string, quantity: int, price: float]
+
+scala> query1.show()
++---------+-----------+---------+--------+-----+
+|productId|productCode|     name|quantity|price|
++---------+-----------+---------+--------+-----+
+|     1001|        PEN|  Pen Red|    5000| 1.23|
+|     1002|        PEN| Pen Blue|    8000| 1.25|
+|     1004|        PEC|Pencil 2B|   10000| 0.48|
+|     1005|        PEC|Pencil 2H|    8000| 0.49|
++---------+-----------+---------+--------+-----+
+
+2)
+
+scala> val query2 = sqlContext.sql("""
+     | select * from products
+     | where quantity >= 5000 and price < 1.24 and name LIKE 'Pen%'   (we can use , also. where condition1, condition2 and condition3)
+     | """)
+query2: org.apache.spark.sql.DataFrame = [productId: int, productCode: string, name: string, quantity: int, price: float]
+
+scala> query2.show
++---------+-----------+---------+--------+-----+
+|productId|productCode|     name|quantity|price|
++---------+-----------+---------+--------+-----+
+|     1001|        PEN|  Pen Red|    5000| 1.23|
+|     1004|        PEC|Pencil 2B|   10000| 0.48|
+|     1005|        PEC|Pencil 2H|    8000| 0.49|
++---------+-----------+---------+--------+-----+
+
+
+val query2 = sqlContext.sql("""
+select * from products
+where quantity >= 5000 and price < 1.24 and name LIKE 'Pen%'
+""")
+
+3)
+
+scala> val query3 = sqlContext.sql("""
+     | select * from products
+     | where NOT(quantity >= 5000) AND name NOT LIKE 'Pen %'   where NOT(quantity >= 5000 AND name LIKE 'Pen %' ==> doesn't work correctly. gives wrong output)
+     | """)
+query3: org.apache.spark.sql.DataFrame = [productId: int, productCode: string, name: string, quantity: int, price: float]
+
+scala> query3.show()
++---------+-----------+---------+--------+-------+
+|productId|productCode|     name|quantity|  price|
++---------+-----------+---------+--------+-------+
+|     1006|        PEC|Pencil HB|       0|9999.99|
++---------+-----------+---------+--------+-------+
+
+
+4)
+
+scala> val query4 = sqlContext.sql("""
+     | select * from products
+     | where name = "Pen Red" or name = "Pen Black"
+     | """)
+query4: org.apache.spark.sql.DataFrame = [productId: int, productCode: string, name: string, quantity: int, price: float]
+
+scala> query4.show()
++---------+-----------+---------+--------+-----+
+|productId|productCode|     name|quantity|price|
++---------+-----------+---------+--------+-----+
+|     1001|        PEN|  Pen Red|    5000| 1.23|
+|     1003|        PEN|Pen Black|    2000| 1.25|
++---------+-----------+---------+--------+-----+
+
+
+5)
+
+scala> val query5 = sqlContext.sql("""
+     | select * from products
+     | where price between 1.0 and 2.0 and quantity between 1000 and 2000
+     | """)
+query5: org.apache.spark.sql.DataFrame = [productId: int, productCode: string, name: string, quantity: int, price: float]
+
+scala> query5.show()
++---------+-----------+---------+--------+-----+
+|productId|productCode|     name|quantity|price|
++---------+-----------+---------+--------+-----+
+|     1003|        PEN|Pen Black|    2000| 1.25|
++---------+-----------+---------+--------+-----+
+
+
+======================================================================================================================================================================
+
+PS 84:
+
+1)
+
+scala> val query1 = sqlContext.sql("""
+     | select * from  products
+     | where productCode IS NULL
+     | """)
+query1: org.apache.spark.sql.DataFrame = [productId: int, productCode: string, name: string, quantity: int, price: float]
+
+scala> 
+
+scala> query1.show()
++---------+-----------+----+--------+-----+
+|productId|productCode|name|quantity|price|
++---------+-----------+----+--------+-----+
++---------+-----------+----+--------+-----+
+
+2)
+
+scala> val query1 = sqlContext.sql("""
+     | select * from  products
+     | where name LIKE 'Pen %'
+     | order by price desc
+     | """)
+query1: org.apache.spark.sql.DataFrame = [productId: int, productCode: string, name: string, quantity: int, price: float]
+
+scala> query1.show()
++---------+-----------+---------+--------+-----+
+|productId|productCode|     name|quantity|price|
++---------+-----------+---------+--------+-----+
+|     1003|        PEN|Pen Black|    2000| 1.25|
+|     1002|        PEN| Pen Blue|    8000| 1.25|
+|     1001|        PEN|  Pen Red|    5000| 1.23|
++---------+-----------+---------+--------+-----+
+
+
+3)
+
+
+scala> val query1 = sqlContext.sql("""
+     | select * from  products
+     | where name LIKE 'Pen %'
+     | order by price desc, quantity
+     | """)
+query1: org.apache.spark.sql.DataFrame = [productId: int, productCode: string, name: string, quantity: int, price: float]
+
+scala> query1.show()
++---------+-----------+---------+--------+-----+
+|productId|productCode|     name|quantity|price|
++---------+-----------+---------+--------+-----+
+|     1003|        PEN|Pen Black|    2000| 1.25|
+|     1002|        PEN| Pen Blue|    8000| 1.25|
+|     1001|        PEN|  Pen Red|    5000| 1.23|
++---------+-----------+---------+--------+-----+
+
+4)
+
+scala> val query1 = sqlContext.sql("""
+     | select * from  products
+     | order by price desc limit 2
+     | """)
+query1: org.apache.spark.sql.DataFrame = [productId: int, productCode: string, name: string, quantity: int, price: float]
+
+scala> query1.show()
++---------+-----------+---------+--------+-------+
+|productId|productCode|     name|quantity|  price|
++---------+-----------+---------+--------+-------+
+|     1006|        PEC|Pencil HB|       0|9999.99|
+|     1002|        PEN| Pen Blue|    8000|   1.25|
++---------+-----------+---------+--------+-------+
+
+======================================================================================================================================================================
+
+PS 85:
+
+1)
+
+scala> val query1 = sqlContext.sql("""
+     | select productId as ID, productCode as code, name as Description , price as Unit_Price    (we cannot name a column as Unit Price. space is not allowed)
+     | from products
+     | """)
+query1: org.apache.spark.sql.DataFrame = [ID: int, code: string, Description: string, Unit_Price: float]
+
+scala> query1.show()
++----+----+-----------+----------+
+|  ID|code|Description|Unit_Price|
++----+----+-----------+----------+
+|1001| PEN|    Pen Red|      1.23|
+|1002| PEN|   Pen Blue|      1.25|
+|1003| PEN|  Pen Black|      1.25|
+|1004| PEC|  Pencil 2B|      0.48|
+|1005| PEC|  Pencil 2H|      0.49|
+|1006| PEC|  Pencil HB|   9999.99|
++----+----+-----------+----------+
+
+2)
+
+scala> val query1 = sqlContext.sql("""
+     | select *, concat(productCode, '-', name) as productDescription
+     | from products
+     | """)
+query1: org.apache.spark.sql.DataFrame = [productId: int, productCode: string, name: string, quantity: int, price: float, productDescription: string]
+
+scala> query1.show()
++---------+-----------+---------+--------+-------+------------------+
+|productId|productCode|     name|quantity|  price|productDescription|
++---------+-----------+---------+--------+-------+------------------+
+|     1001|        PEN|  Pen Red|    5000|   1.23|       PEN-Pen Red|
+|     1002|        PEN| Pen Blue|    8000|   1.25|      PEN-Pen Blue|
+|     1003|        PEN|Pen Black|    2000|   1.25|     PEN-Pen Black|
+|     1004|        PEC|Pencil 2B|   10000|   0.48|     PEC-Pencil 2B|
+|     1005|        PEC|Pencil 2H|    8000|   0.49|     PEC-Pencil 2H|
+|     1006|        PEC|Pencil HB|       0|9999.99|     PEC-Pencil HB|
++---------+-----------+---------+--------+-------+------------------+
+
+
+Ex:
+
+scala> val query1 = sqlContext.sql("""
+     | select *, concat(productCode, space(8), name) as productDescription
+     | from products
+     | """)
+query1: org.apache.spark.sql.DataFrame = [productId: int, productCode: string, name: string, quantity: int, price: float, productDescription: string]
+
+scala> query1.show()
++---------+-----------+---------+--------+-------+--------------------+
+|productId|productCode|     name|quantity|  price|  productDescription|
++---------+-----------+---------+--------+-------+--------------------+
+|     1001|        PEN|  Pen Red|    5000|   1.23|  PEN        Pen Red|
+|     1002|        PEN| Pen Blue|    8000|   1.25| PEN        Pen Blue|
+|     1003|        PEN|Pen Black|    2000|   1.25|PEN        Pen Black|
+|     1004|        PEC|Pencil 2B|   10000|   0.48|PEC        Pencil 2B|
+|     1005|        PEC|Pencil 2H|    8000|   0.49|PEC        Pencil 2H|
+|     1006|        PEC|Pencil HB|       0|9999.99|PEC        Pencil HB|
++---------+-----------+---------+--------+-------+--------------------+
+
+3)
+
+
+scala> val price = productsDF.select("price").distinct().show()
++-------+
+|  price|
++-------+
+|   0.48|
+|   1.23|
+|   1.25|
+|   0.49|
+|9999.99|
++-------+
+
+
+scala> val query1 = sqlContext.sql("""
+     | select distinct(price)
+     | from products
+     | """)
+query1: org.apache.spark.sql.DataFrame = [price: float]
+
+scala> query1.show()
++-------+
+|  price|
++-------+
+|   0.48|
+|   1.23|
+|   1.25|
+|   0.49|
+|9999.99|
++-------+
+
+4)
+
+
+val query2 = sqlContext.sql("""
+select name, (select distinct(price) as distPrice from priceDistinct)
+from products
+""")
+
+val query1 = sqlContext.sql("""
+select distinct(price) as distPrice,name
+from products 
+""")
+
+val q1 = productsDF.select(distinct(col("price")),name)
+
+>>> productsRDD = sc.textFile("/user/cloudera/prod.csv")
+
+>>> productsRDD.collect()
+[u'1001,PEN,Pen Red,5000,1.23', u'1002,PEN,Pen Blue,8000,1.25', u'1003,PEN,Pen Black,2000,1.25', u'1004,PEC,Pencil 2B,10000,0.48', u'1005,PEC,Pencil 2H,8000,0.49', u'1006,PEC,Pencil HB,0,9999.99']
+
+>>> productsRDDMap = productsRDD.\
+... map(lambda rec : (rec.split(","))
+... )
+
+>>> productsRDDMap.take(2)
+[[u'1001', u'PEN', u'Pen Red', u'5000', u'1.23'], [u'1002', u'PEN', u'Pen Blue', u'8000', u'1.25']]
+
+
+>>> productsRDDMapPairs = productsRDDMap.\
+... map(lambda rec : (float(rec[4]),rec[2]))
+
+>>> productsRDDMapPairs.first()
+(1.23, u'Pen Red')
+
+>>> productsRDDGrouped = productsRDDMapPairs. \
+... groupByKey()
+
+>>> productsRDDGrouped.collect()
+[(1.25, <pyspark.resultiterable.ResultIterable object at 0xc73090>), (9999.9899999999998, <pyspark.resultiterable.ResultIterable object at 0xc734d0>), (1.23, <pyspark.resultiterable.ResultIterable object at 0xc735d0>), (0.47999999999999998, <pyspark.resultiterable.ResultIterable object at 0xe7bf10>), (0.48999999999999999, <pyspark.resultiterable.ResultIterable object at 0xce8510>)]
+
+
+>>> productsRDDGrouped.mapValues(list).collect()
+[(1.25, [u'Pen Blue', u'Pen Black']), (9999.9899999999998, [u'Pencil HB']), (1.23, [u'Pen Red']), (0.47999999999999998, [u'Pencil 2B']), (0.48999999999999999, [u'Pencil 2H'])]
+
+>>>prodTable = productsRDDGrouped.mapValues(list).toDF()
+DataFrame[_1: double, _2: array<string>]
+
+
+>>> productsRDDGrouped.mapValues(list).toDF().show()
++-------+--------------------+
+|     _1|                  _2|
++-------+--------------------+
+|   1.25|[Pen Blue, Pen Bl...|
+|9999.99|         [Pencil HB]|
+|   1.23|           [Pen Red]|
+|   0.48|         [Pencil 2B]|
+|   0.49|         [Pencil 2H]|
++-------+--------------------+
+
+
+>>> from pyspark.sql.functions import udf, col
+ 
+>>> join_udf = udf(lambda x : ",".join(x))
+ 
+>>> prodTable.show()
++-------+--------------------+
+|     _1|                  _2|
++-------+--------------------+
+|   1.25|[Pen Blue, Pen Bl...|
+|9999.99|         [Pencil HB]|
+|   1.23|           [Pen Red]|
+|   0.48|         [Pencil 2B]|
+|   0.49|         [Pencil 2H]|
++-------+--------------------+
+
+>>> df = prodTable.withColumn("_2", join_udf(col("_2")))
+
+>>> df.show()
++-------+------------------+
+|     _1|                _2|
++-------+------------------+
+|   1.25|Pen Blue,Pen Black|
+|9999.99|         Pencil HB|
+|   1.23|           Pen Red|
+|   0.48|         Pencil 2B|
+|   0.49|         Pencil 2H|
++-------+------------------+
+
+
+To do it in dataframe
+
+>>> from pyspark.sql.functions import concat_ws
+ 
+>>> prodTable.withColumn("_2", concat_ws(",", "_2")).show()
++-------+------------------+
+|     _1|                _2|
++-------+------------------+
+|   1.25|Pen Blue,Pen Black|
+|9999.99|         Pencil HB|
+|   1.23|           Pen Red|
+|   0.48|         Pencil 2B|
+|   0.49|         Pencil 2H|
++-------+------------------+
+
+>>> prodTable.withColumn("_2", concat_ws("|", "_2")).show()
++-------+------------------+
+|     _1|                _2|
++-------+------------------+
+|   1.25|Pen Blue|Pen Black|
+|9999.99|         Pencil HB|
+|   1.23|           Pen Red|
+|   0.48|         Pencil 2B|
+|   0.49|         Pencil 2H|
++-------+------------------+
+
+
+
+6)
+
+scala> val productCount = productsDF.agg(countDistinct(productsDF("productId")))
+productCount: org.apache.spark.sql.DataFrame = [count(productId): bigint]
+
+scala> productCount.show()
++----------------+
+|count(productId)|
++----------------+
+|               6|
++----------------+
+
+(or)
+
+scala> val productCount = sqlContext.sql("""
+     | select count(distinct(productId)) as prodCount
+     | from products
+     | """)
+productCount: org.apache.spark.sql.DataFrame = [prodCount: bigint]
+
+scala> productCount.show()
++---------+
+|prodCount|
++---------+
+|        6|
++---------+
+
+7)
+
+scala> val prouctCount = productsDF.groupBy("productCode").agg(countDistinct("productId").alias("distProd"))
+prouctCount: org.apache.spark.sql.DataFrame = [productCode: string, distProd: bigint]
+
+scala> prouctCount.show()
++-----------+--------+                                                          
+|productCode|distProd|
++-----------+--------+
+|        PEC|       3|
+|        PEN|       3|
++-----------+--------+
+
+
+======================================================================================================================================================================
+
+
+Imp:
+
+Reading and writing Sequence file:
+
+scala> val prods = sc.textFile("file:/home/cloudera/Documents/SDPPS/productQ87")
+prods: org.apache.spark.rdd.RDD[String] = file:/home/cloudera/Documents/SDPPS/productQ87 MapPartitionsRDD[370] at textFile at <console>:31
+
+scala> prods.take(10).foreach(println)
+2001,PEC,Pencil 3B,500,0.52
+2002,PEC,Pencil 4B,200,0.62
+2003,PEC,Pencil 5B,100,0.73
+2004,PEC,Pencil 6B,500,0.47
+
+scala> val prodsMap = prods.map(rec => rec.split(','))
+prodsMap: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[371] at map at <console>:33
+
+scala> val prodsMapped = prodsMap.map(rec => (rec(0),rec(1)))
+prodsMapped: org.apache.spark.rdd.RDD[(String, String)] = MapPartitionsRDD[372] at map at <console>:35
+
+scala> prodsMapped.collect().foreach(println)
+(2001,PEC)
+(2002,PEC)
+(2003,PEC)
+(2004,PEC)
+
+scala> prodsMapped.saveAsSequenceFile("/user/cloudera/SeqFilePob")
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/SeqFilePob
+Found 2 items
+-rw-r--r--   1 cloudera cloudera          0 2018-11-03 12:52 /user/cloudera/SeqFilePob/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        146 2018-11-03 12:52 /user/cloudera/SeqFilePob/part-00000
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/SeqFilePob/part-00000 | more
+SEQorg.apache.hadoop.io.Textorg.apache.hadoop.io.Text
+
+scala> val readingSeqFile = sc.sequenceFile("/user/cloudera/SeqFilePob", classOf[org.apache.hadoop.io.Text],classOf[org.apache.hadoop.io.Text])
+readingSeqFile: org.apache.spark.rdd.RDD[(org.apache.hadoop.io.Text, org.apache.hadoop.io.Text)] = /user/cloudera/SeqFilePob HadoopRDD[375] at sequenceFile at <console>:31
+
+scala> val rdd = readingSeqFile.map(rec => rec.toString)
+rdd: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[376] at map at <console>:33
+
+scala> rdd.collect().foreach(println)
+(2001,PEC)
+(2002,PEC)
+(2003,PEC)
+(2004,PEC)
+
+===================================================================================================================================================================== 
+
+press Insert
+
+1) press Esc
+2) :q! for quitting
+3) :wq for saving and quitting
+
+======================================================================================================================================================================
+
+Example:
+
+Concatenating dayofmonth("DOB") and month("DOB")
+
+scala> val query3 = sqlContext.sql("""
+     | select *,  concat(month(dateOfBirth), '/', dayofmonth(dateOfBirth)) as con_date
+     | from patients
+     | """)
+query3: org.apache.spark.sql.DataFrame = [patientId: int, name: string, dateOfBirth: date, lastVisitDate: date, con_date: string]
+
+scala> query3.show()
++---------+-------+-----------+-------------+--------+
+|patientId|   name|dateOfBirth|lastVisitDate|con_date|
++---------+-------+-----------+-------------+--------+
+|     1001|Ah Tech| 1991-12-31|   2012-01-20|   12/31|
+|     1002|  Kumar| 2011-10-29|   2012-09-20|   10/29|
+|     1003|    Ali| 2011-01-30|   2012-10-21|    1/30|
++---------+-------+-----------+-------------+--------+
+
+
+scala> query3.orderBy(col("con_date").desc)
+res32: org.apache.spark.sql.DataFrame = [patientId: int, name: string, dateOfBirth: date, lastVisitDate: date, con_date: string]
+
+scala> query3.orderBy(col("con_date").desc).show()
++---------+-------+-----------+-------------+--------+
+|patientId|   name|dateOfBirth|lastVisitDate|con_date|
++---------+-------+-----------+-------------+--------+
+|     1001|Ah Tech| 1991-12-31|   2012-01-20|   12/31|
+|     1002|  Kumar| 2011-10-29|   2012-09-20|   10/29|
+|     1003|    Ali| 2011-01-30|   2012-10-21|    1/30|
++---------+-------+-----------+-------------+--------+
+
+
+scala> query3.orderBy(col("con_date")).show()
++---------+-------+-----------+-------------+--------+
+|patientId|   name|dateOfBirth|lastVisitDate|con_date|
++---------+-------+-----------+-------------+--------+
+|     1003|    Ali| 2011-01-30|   2012-10-21|    1/30|
+|     1002|  Kumar| 2011-10-29|   2012-09-20|   10/29|
+|     1001|Ah Tech| 1991-12-31|   2012-01-20|   12/31|
++---------+-------+-----------+-------------+--------+
+
+
+=====
+=====
+
+Converting string to date
+
+scala> val query3 = sqlContext.sql("""
+     | select *, to_date(cast( unix_timestamp(concat(month(dateOfBirth), '/', dayofmonth(dateOfBirth)), 'MM/dd') as TIMESTAMP ) ) as con_date
+     | from patients
+     | """)
+query3: org.apache.spark.sql.DataFrame = [patientId: int, name: string, dateOfBirth: date, lastVisitDate: date, con_date: date]
+
+scala> query3.show()
++---------+-------+-----------+-------------+----------+
+|patientId|   name|dateOfBirth|lastVisitDate|  con_date|
++---------+-------+-----------+-------------+----------+
+|     1001|Ah Tech| 1991-12-31|   2012-01-20|1970-12-31|
+|     1002|  Kumar| 2011-10-29|   2012-09-20|1970-10-29|
+|     1003|    Ali| 2011-01-30|   2012-10-21|1970-01-30|
++---------+-------+-----------+-------------+----------+
+
+
+=====> to_date(cast(unix_timestamp(colName, 'MM/dd/yyyy') as timestamp))  ==> specify whatever the format of colName is
+
+
+This works only for yyyy-MM-dd format but not for others
+
+scala> val dat = sc.parallelize(Seq("2016-12-31")).toDF("st")
+dat: org.apache.spark.sql.DataFrame = [st: string]
+
+scala> dat.show()
++----------+
+|        st|
++----------+
+|2016-12-31|
++----------+
+
+
+scala> val dat1 = dat.withColumn("st1", col("st").cast("date"))
+dat1: org.apache.spark.sql.DataFrame = [st: string, st1: date]
+
+scala> dat1.show()
++----------+----------+
+|        st|       st1|
++----------+----------+
+|2016-12-31|2016-12-31|
++----------+----------+
+
+
+scala> val dat1 = dat.withColumn("st1", col("st").cast("timestamp"))
+dat1: org.apache.spark.sql.DataFrame = [st: string, st1: timestamp]
+
+scala> dat1.show()
++----------+--------------------+
+|        st|                 st1|
++----------+--------------------+
+|2016-12-31|2016-12-31 00:00:...|
++----------+--------------------+
+
+======
+======
+
+scala> sqlContext.sql("""
+     | select from_unixtime(unix_timestamp('08/17/2017', 'MM/dd/yyyy'), 'yyyy:MM:dd')
+     | """)
+res45: org.apache.spark.sql.DataFrame = [_c0: string]
+
+scala> res45.show()
++----------+
+|       _c0|
++----------+
+|2017:08:17|
++----------+
+
+
+scala> sqlContext.sql("""
+     | select to_date(from_unixtime(unix_timestamp('08/17/2017', 'MM/dd/yyyy'), 'yyyy:MM:dd'))
+     | """)
+res47: org.apache.spark.sql.DataFrame = [_c0: date]
+
+scala> res47.show()
++----+
+| _c0|
++----+
+|null|
++----+
+
+
+scala> sqlContext.sql("""
+     | select to_date(cast(from_unixtime(unix_timestamp('08/17/2017', 'MM/dd/yyyy'), 'yyyy:MM:dd') as timestamp))
+     | """)
+res49: org.apache.spark.sql.DataFrame = [_c0: date]
+
+scala> res49.show()
++----+
+| _c0|
++----+
+|null|
++----+
+
+
+scala> sqlContext.sql("""
+     | select to_date(cast(from_unixtime(unix_timestamp('08/17/2017', 'MM/dd/yyyy'), 'yyyy-MM-dd') as timestamp))
+     | """)
+res51: org.apache.spark.sql.DataFrame = [_c0: date]
+
+scala> res51.show()
++----------+
+|       _c0|
++----------+
+|2017-08-17|
++----------+
+
+======================================================================================================================================================================
+
+Partition by
+
+scala> val query1 = sqlContext.sql("""
+     | select *, sum(product_price) over(partition by product_category_id)
+     | from products
+     | """)
+query1: org.apache.spark.sql.DataFrame = [product_id: int, product_category_id: int, product_name: string, product_description: string, product_price: double, product_image: string, _c6: double]
+
+scala> query1.show()
++----------+-------------------+--------------------+-------------------+-------------+--------------------+-----------------+
+|product_id|product_category_id|        product_name|product_description|product_price|       product_image|              _c6|
++----------+-------------------+--------------------+-------------------+-------------+--------------------+-----------------+
+|       669|                 31|Cleveland Golf My...|                   |       179.99|http://images.acm...|7074.809999999997|
+|       670|                 31|Cleveland Golf El...|                   |       209.99|http://images.acm...|7074.809999999997|
+|       671|                 31|Cleveland Golf Co...|                   |       209.99|http://images.acm...|7074.809999999997|
+|       672|                 31|     PING G30 Driver|                   |        349.0|http://images.acm...|7074.809999999997|
+|       673|                 31|PING G30 Fairway ...|                   |        249.0|http://images.acm...|7074.809999999997|
+|       674|                 31|     PING G30 Hybrid|                   |        219.0|http://images.acm...|7074.809999999997|
+|       675|                 31|PING G30 Irons - ...|                   |        799.0|http://images.acm...|7074.809999999997|
+|       676|                 31|PING G30 Irons - ...|                   |        899.0|http://images.acm...|7074.809999999997|
+|       677|                 31|TaylorMade White ...|                   |        99.99|http://images.acm...|7074.809999999997|
+|       678|                 31|TaylorMade White ...|                   |        99.99|http://images.acm...|7074.809999999997|
+|       679|                 31|Tour Edge Exotics...|                   |        99.99|http://images.acm...|7074.809999999997|
+|       680|                 31|Boccieri Golf EL ...|                   |       149.99|http://images.acm...|7074.809999999997|
+|       681|                 31|Boccieri Golf EL ...|                   |       119.99|http://images.acm...|7074.809999999997|
+|       682|                 31|Boccieri Golf EL ...|                   |       149.99|http://images.acm...|7074.809999999997|
+|       683|                 31|Boccieri Golf EL ...|                   |       119.99|http://images.acm...|7074.809999999997|
+|       684|                 31|PING Scottsdale T...|                   |       199.99|http://images.acm...|7074.809999999997|
+|       685|                 31|TaylorMade SLDR I...|                   |       899.99|http://images.acm...|7074.809999999997|
+|       686|                 31|MDGolf Texas Long...|                   |        79.99|http://images.acm...|7074.809999999997|
+|       687|                 31|MDGolf Alabama Cr...|                   |        79.99|http://images.acm...|7074.809999999997|
+|       688|                 31|Tour Edge XCG7 Ir...|                   |       499.99|http://images.acm...|7074.809999999997|
++----------+-------------------+--------------------+-------------------+-------------+--------------------+-----------------+
+only showing top 20 rows
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

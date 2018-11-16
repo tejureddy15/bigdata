@@ -1,0 +1,415 @@
+PS 76:
+
+2)
+
+scala> val ordersDF = sqlContext.read.avro("/user/cloudera/problem1/orders")
+ordersDF: org.apache.spark.sql.DataFrame = [order_id: int, order_date: bigint, order_customer_id: int, order_status: string]
+
+scala> val ordersPerOrderStatus = ordersDF.groupBy(col("order_status")).agg(count("order_id").alias("countPerStatus"))
+ordersPerOrderStatus: org.apache.spark.sql.DataFrame = [order_status: string, countPerStatus: bigint]
+
+scala> ordersPerOrderStatus.show()
++---------------+--------------+                                                
+|   order_status|countPerStatus|
++---------------+--------------+
+|        PENDING|          7610|
+|        ON_HOLD|          3798|
+| PAYMENT_REVIEW|           729|
+|PENDING_PAYMENT|         15030|
+|     PROCESSING|          8275|
+|         CLOSED|          7556|
+|       COMPLETE|         22899|
+|       CANCELED|          1428|
+|SUSPECTED_FRAUD|          1558|
++---------------+--------------+
+
+3)
+
+Do the above question using 
+
+CountByKey)
+groupByKey()
+reduceByKey()
+aggregateByKey()
+combineByKey()
+
+======================================================================================================================================================================
+
+PS 75:
+
+2)
+
+scala> val orderItemsDF = sqlContext.read.avro("/user/cloudera/problem1/order-items")
+orderItemsDF: org.apache.spark.sql.DataFrame = [order_item_id: int, order_item_order_id: int, order_item_product_id: int, order_item_quantity: int, order_item_subtotal: float, order_item_product_price: float]
+
+scala> val totalRevenue = orderItemsDF.agg(round(sum("order_item_subtotal"),2).alias("total_revenue"))
+totalRevenue: org.apache.spark.sql.DataFrame = [total_revenue: double]
+
+scala> totalRevenue.show()
++-------------+
+|total_revenue|
++-------------+
+| 3.43226206E7|
++-------------+
+
+3)
+
+scala> val maxAndMinRevenue = orderItemsDF.agg(min("order_item_subtotal").alias("min_revenue"), max("order_item_subtotal").alias("max_revenue"))
+maxAndMinRevenue: org.apache.spark.sql.DataFrame = [min_revenue: float, max_revenue: float]
+
+scala> maxAndMinRevenue.show()
++-----------+-----------+                                                       
+|min_revenue|max_revenue|
++-----------+-----------+
+|       9.99|    1999.99|
++-----------+-----------+
+
+4)
+
+scala> val avgRevenue = orderItemsDF.agg(round(avg("order_item_subtotal"),2).alias("avg_revenue"))
+avgRevenue: org.apache.spark.sql.DataFrame = [avg_revenue: double]
+
+scala> avgRevenue.show()
++-----------+                                                                   
+|avg_revenue|
++-----------+
+|     199.32|
++-----------+
+
+======================================================================================================================================================================
+
+PS 74:
+
+3)
+
+scala> val totalRevenue = joinedDF.groupBy(to_date(from_unixtime(col("order_date")/1000)).alias("order_date_formatted"),col("order_id")).
+     | agg(round(sum("order_item_subtotal"),2).alias("total_revenue"))
+totalRevenue: org.apache.spark.sql.DataFrame = [order_date_formatted: date, order_id: int, total_revenue: double]
+
+scala> totalRevenue.show()
+[Stage 201:==========================================>              (3 + 1) / 4]18/10/16 05:16:28 WARN memory.TaskMemoryManager: leak 16.3 MB memory from org.apache.spark.unsafe.map.BytesToBytesMap@33539a9c
+18/10/16 05:16:28 ERROR executor.Executor: Managed memory leak detected; size = 17039360 bytes, TID = 1961
++--------------------+--------+-------------+                                   
+|order_date_formatted|order_id|total_revenue|
++--------------------+--------+-------------+
+|          2013-07-27|     366|       509.95|
+|          2013-07-28|     529|       889.92|
+|          2013-07-29|     692|       159.96|
+|          2013-07-31|    1218|       609.94|
+|          2013-08-01|    1381|       649.95|
+|          2013-08-02|    1544|       807.85|
+|          2013-08-05|    2033|      1139.93|
+|          2013-08-06|    2196|       779.97|
+|          2013-08-06|    2396|      1329.92|
+|          2013-08-07|    2559|       329.99|
+|          2013-08-10|    2848|       723.92|
+|          2013-08-12|    3174|       999.93|
+|          2013-08-12|    3374|       899.74|
+|          2013-08-14|    3500|       399.98|
+|          2013-08-15|    3663|       299.95|
+|          2013-08-16|    3826|       979.85|
+|          2013-08-17|    3989|       119.98|
+|          2013-08-22|    4604|        59.99|
+|          2013-08-23|    4767|       199.99|
+|          2013-08-24|    4930|       929.95|
++--------------------+--------+-------------+
+
+4)
+
+scala> val totalOrders = joinedDF.groupBy(to_date(from_unixtime(col("order_date")/1000)).alias("order_date_formatted")).
+     | agg(count("order_id").alias("total_orders")).
+     | orderBy("order_date_formatted")
+totalOrders: org.apache.spark.sql.DataFrame = [order_date_formatted: date, total_orders: bigint]
+
+scala> totalOrders.show()
++--------------------+------------+                                             
+|order_date_formatted|total_orders|
++--------------------+------------+
+|          2013-07-25|         339|
+|          2013-07-26|         694|
+|          2013-07-27|         503|
+|          2013-07-28|         438|
+|          2013-07-29|         666|
+|          2013-07-30|         540|
+|          2013-07-31|         641|
+|          2013-08-01|         636|
+|          2013-08-02|         558|
+|          2013-08-03|         485|
+|          2013-08-04|         452|
+|          2013-08-05|         392|
+|          2013-08-06|         626|
+|          2013-08-07|         532|
+|          2013-08-08|         401|
+|          2013-08-09|         322|
+|          2013-08-10|         639|
+|          2013-08-11|         347|
+|          2013-08-12|         613|
+|          2013-08-13|         204|
++--------------------+------------+
+only showing top 20 rows
+
+
+======================================================================================================================================================================
+
+PS 73:
+
+3))
+
+scala> val employeeData = sqlContext.read.json("/user/cloudera/employee.json")
+employeeData: org.apache.spark.sql.DataFrame = [first_name: string, last_name: string]
+
+scala> employeeData.registerTempTable("employees_data")
+
+4)
+
+scala> val saveEmployeesDataInJsonFormat = sqlContext.sql("""
+     | select * from employees_data
+     | """)
+saveEmployeesDataInJsonFormat: org.apache.spark.sql.DataFrame = [first_name: string, last_name: string]
+
+5)
+
+scala> saveEmployeesDataInJsonFormat.write.json("/user/cloudera/employeein_json.json")
+
+[cloudera@quickstart java_output]$ hadoop fs -ls /user/cloudera/employeein_json.json
+Found 2 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-11 00:11 /user/cloudera/employeein_json.json/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        290 2018-10-11 00:11 /user/cloudera/employeein_json.json/part-r-00000-b2ef5e17-26b7-41ef-bcd3-5819c1a17ee0
+
+[cloudera@quickstart java_output]$ hadoop fs -tail /user/cloudera/employeein_json.json/part-r-00000-b2ef5e17-26b7-41ef-bcd3-5819c1a17ee0
+{"first_name":"Katamreddy","last_name":"Tejaswini"}
+{"first_name":"Chilli","last_name":"Shekhar"}
+{"first_name":"Sudheer","last_name":"Singuluri"}
+{"first_name":"Abhijeet","last_name":"Kaushik"}
+{"first_name":"Srinivas","last_name":"Challa"}
+{"first_name":"Ashok","last_name":"Srinivasan"}
+
+======================================================================================================================================================================
+
+PS 72:
+
+1)
+
+>>> ordersDF = sqlContext.read.json("/user/cloudera/employee.json")
+
+>>> ordersDF.show(5)
++----------+---------+
+|first_name|last_name|
++----------+---------+
+|Katamreddy|Tejaswini|
+|    Chilli|  Shekhar|
+|   Sudheer|Singuluri|
+|  Abhijeet|  Kaushik|
+|  Srinivas|   Challa|
++----------+---------+
+only showing top 5 rows
+
+>>> for i in ordersDF.collect() : print(i)
+... 
+Row(first_name=u'Katamreddy', last_name=u'Tejaswini')
+Row(first_name=u'Chilli', last_name=u'Shekhar')
+Row(first_name=u'Sudheer', last_name=u'Singuluri')
+Row(first_name=u'Abhijeet', last_name=u'Kaushik')
+Row(first_name=u'Srinivas', last_name=u'Challa')
+Row(first_name=u'Ashok', last_name=u'Srinivasan')
+
+>>> for i in ordersDF.show() : print(i)
+... 
++----------+----------+
+|first_name| last_name|
++----------+----------+
+|Katamreddy| Tejaswini|
+|    Chilli|   Shekhar|
+|   Sudheer| Singuluri|
+|  Abhijeet|   Kaushik|
+|  Srinivas|    Challa|
+|     Ashok|Srinivasan|
++----------+----------+
+
+======================================================================================================================================================================
+
+PS 71:
+
+>>> contentFile = sc.textFile("/user/cloudera/content.txt")
+
+>>> contentFile.collect()
+[u'Hello this is HadoopExam.com', u'This is QuickTechie.com', u'Apache Spark Training', u'', u'This is Spark Learning Session', u'', u'Spark is faster than Mapreduce']
+
+>>> contentNOEmptyLines = contentFile. \
+... filter(lambda rec : len(rec) > 0)
+
+>>> contentNOEmptyLines.collect()
+[u'Hello this is HadoopExam.com', u'This is QuickTechie.com', u'Apache Spark Training', u'This is Spark Learning Session', u'Spark is faster than Mapreduce']
+
+
+>>> contentMap = contentNOEmptyLines.map(lambda rec : (rec.split(" ")[0], rec))
+
+>>> contentMap.collect()
+[(u'Hello', u'Hello this is HadoopExam.com'), (u'This', u'This is QuickTechie.com'), (u'Apache', u'Apache Spark Training'), (u'This', u'This is Spark Learning Session'), (u'Spark', u'Spark is faster than Mapreduce')]
+
+>>>contentMap.saveAsSequenceFile("problem86")
+
+[cloudera@quickstart ~]$ hadoop fs -ls problem86
+Found 2 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-25 11:42 problem86/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        284 2018-10-25 11:42 problem86/part-00000
+
+[cloudera@quickstart ~]$ hadoop fs -cat problem86/part-00000
+SEQorg.apache.hadoop.io.Textorg.apache.hadoop.io.Text]g}���
+                                                                ,,����#HelloHello this is HadoopExam.comThisThis is QuickTechie.comApacheApache Spark Training$ThisThis is Spark Learning Session%SparkSpark is faster than Mapreduce[cloudera@quickstart ~]$ 
+>>> contentMap = contentNOEmptyLines.map(lambda rec : (None, rec))
+
+>>> contentMap.collect()
+[(None, u'Hello this is HadoopExam.com'), (None, u'This is QuickTechie.com'), (None, u'Apache Spark Training'), (None, u'This is Spark Learning Session'), (None, u'Spark is faster than Mapreduce')]
+
+>>> contentMap = contentNOEmptyLines.map(lambda rec : (" ", rec))
+
+>>> contentMap.collect()
+[(' ', u'Hello this is HadoopExam.com'), (' ', u'This is QuickTechie.com'), (' ', u'Apache Spark Training'), (' ', u'This is Spark Learning Session'), (' ', u'Spark is faster than Mapreduce')]
+
+>>> contentMap = contentNOEmptyLines.map(lambda rec : ("Null", rec))
+
+>>> contentMap.collect()
+[('Null', u'Hello this is HadoopExam.com'), ('Null', u'This is QuickTechie.com'), ('Null', u'Apache Spark Training'), ('Null', u'This is Spark Learning Session'), ('Null', u'Spark is faster than Mapreduce')]
+
+======================================================================================================================================================================
+
+PS 70:
+
+>>> wordsRDD = sc.textFile("/user/cloudera/content.txt")
+
+>>> wordsRDD.collect()
+[u'Hello this is HadoopExam.com', u'This is QuickTechie.com', u'Apache Spark Training', u'', u'This is Spark Learning Session', u'', u'Spark is faster than Mapreduce']
+
+>>> wordsRDDRemoveEmptyLines = wordsRDD.filter(lambda rec : len(rec) > 0)
+
+>>> wordsRDDRemoveEmptyLines.collect()
+
+[u'Hello this is HadoopExam.com', u'This is QuickTechie.com', u'Apache Spark Training', u'This is Spark Learning Session', u'Spark is faster than Mapreduce']
+
+>>> wordsFlatMap = wordsRDDRemoveEmptyLines.flatMap(lambda rec : rec.split(" "))
+
+>>> wordsFlatMap.collect()
+
+[u'Hello', u'this', u'is', u'HadoopExam.com', u'This', u'is', u'QuickTechie.com', u'Apache', u'Spark', u'Training', u'This', u'is', u'Spark', u'Learning', u'Session', u'Spark', u'is', u'faster', u'than', u'Mapreduce']
+
+>>> wordsMap = wordsFlatMap.map(lambda rec : (rec,1))
+
+>>> wordsMap.collect()
+
+[(u'Hello', 1), (u'this', 1), (u'is', 1), (u'HadoopExam.com', 1), (u'This', 1), (u'is', 1), (u'QuickTechie.com', 1), (u'Apache', 1), (u'Spark', 1), (u'Training', 1), (u'This', 1), (u'is', 1), (u'Spark', 1), (u'Learning', 1), (u'Session', 1), (u'Spark', 1), (u'is', 1), (u'faster', 1), (u'than', 1), (u'Mapreduce', 1)]
+
+>>> for i in wordsMap.collect() : print(i)
+... 
+
+(u'Hello', 1)
+(u'this', 1)
+(u'is', 1)
+(u'HadoopExam.com', 1)
+(u'This', 1)
+(u'is', 1)
+(u'QuickTechie.com', 1)
+(u'Apache', 1)
+(u'Spark', 1)
+(u'Training', 1)
+(u'This', 1)
+(u'is', 1)
+(u'Spark', 1)
+(u'Learning', 1)
+(u'Session', 1)
+(u'Spark', 1)
+(u'is', 1)
+(u'faster', 1)
+(u'than', 1)
+(u'Mapreduce', 1)
+
+>>> wordCount = wordsMap.reduceByKey(lambda x,y : x+y)
+
+>>> wordCount.collect()
+
+[(u'QuickTechie.com', 1), (u'Training', 1), (u'faster', 1), (u'HadoopExam.com', 1), (u'this', 1), (u'is', 4), (u'Mapreduce', 1), (u'Hello', 1), (u'This', 2), (u'Session', 1), (u'Learning', 1), (u'Apache', 1), (u'Spark', 3), (u'than', 1)]
+
+>>> for i in wordCount.collect() : print(i)
+... 
+
+(u'QuickTechie.com', 1)
+(u'Training', 1)
+(u'faster', 1)
+(u'HadoopExam.com', 1)
+(u'this', 1)
+(u'is', 4)
+(u'Mapreduce', 1)
+(u'Hello', 1)
+(u'This', 2)
+(u'Session', 1)
+(u'Learning', 1)
+(u'Apache', 1)
+(u'Spark', 3)
+(u'than', 1)
+
+======================================================================================================================================================================
+
+PS 69:
+
+>>> wordsRDD = sc.textFile("/user/cloudera/content.txt")
+
+>>> wordsRDD.collect()
+[u'Hello this is HadoopExam.com', u'This is QuickTechie.com', u'Apache Spark Training', u'', u'This is Spark Learning Session', u'', u'Spark is faster than Mapreduce']
+
+>>> wordsRDDRemoveEmptyLines = wordsRDD.filter(lambda rec : len(rec) > 0)
+
+>>> wordsRDDRemoveEmptyLines.collect()
+
+[u'Hello this is HadoopExam.com', u'This is QuickTechie.com', u'Apache Spark Training', u'This is Spark Learning Session', u'Spark is faster than Mapreduce']
+
+>>> wordsFlatMap = wordsRDDRemoveEmptyLines.flatMap(lambda rec : rec.split(" "))
+
+>>> wordsFlatMap.collect()
+
+[u'Hello', u'this', u'is', u'HadoopExam.com', u'This', u'is', u'QuickTechie.com', u'Apache', u'Spark', u'Training', u'This', u'is', u'Spark', u'Learning', u'Session', u'Spark', u'is', u'faster', u'than', u'Mapreduce']
+
+>>> wordLength = wordsFlatMap.filter(lambda rec : len(rec) > 2)
+
+>>> wordLength.collect()
+[u'Hello', u'this', u'HadoopExam.com', u'This', u'QuickTechie.com', u'Apache', u'Spark', u'Training', u'This', u'Spark', u'Learning', u'Session', u'Spark', u'faster', u'than', u'Mapreduce']
+
+======================================================================================================================================================================
+
+PS 68:
+
+Question is not clear
+
+======================================================================================================================================================================
+
+PS 67:
+
+lines = sc.parallelize(['Its fun to have fun,','but you have to know how.'])
+
+>>> r1 = lines.map(lambda rec: rec.replace(',','').replace('.','').replace('-','').lower())
+
+>>> for i in r1.collect() : print(i)
+... 
+
+its fun to have fun
+but you have to know how
+
+>>> r1 = lines.map(lambda rec: rec.replace(',','').replace('.','').lower())
+
+>>> for i in r1.collect() : print(i)
+... 
+
+its fun to have fun
+but you have to know how
+
+
+
+
+
+
+
+
+
+
+
+
+

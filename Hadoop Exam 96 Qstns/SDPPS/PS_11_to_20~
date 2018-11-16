@@ -1,0 +1,516 @@
+PS 11:
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table departments \
+--target-dir departments   ==> this will be stored under /user/cloudera/  i.e, /user/cloudera/departments
+
+[cloudera@quickstart ~]$ hadoop fs -ls departments
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-21 22:19 departments/_SUCCESS
+-rw-r--r--   1 cloudera cloudera         21 2018-10-21 22:19 departments/part-m-00000
+-rw-r--r--   1 cloudera cloudera         17 2018-10-21 22:19 departments/part-m-00001
+-rw-r--r--   1 cloudera cloudera         22 2018-10-21 22:19 departments/part-m-00002
+-rw-r--r--   1 cloudera cloudera         33 2018-10-21 22:19 departments/part-m-00003
+
+[cloudera@quickstart ~]$ hadoop fs -cat departments/* | wc -l
+9
+
+[cloudera@quickstart ~]$ hadoop fs -cat departments/*
+2,Fitness
+3,Footwear
+4,Apparel
+5,Golf
+6,Outdoors
+7,Fan Shop
+8,Shopping
+9,MakeUp
+10,Designing
+
+mysql> insert into departments values(11,"Chemistry");
+Query OK, 1 row affected (0.01 sec)
+
+mysql> insert into departments values(12,"Maths");
+Query OK, 1 row affected (0.00 sec)
+
+mysql> insert into departments values(13,"Science");
+Query OK, 1 row affected (0.00 sec)
+
+mysql> insert into departments values(14,"Engineering");
+Query OK, 1 row affected (0.04 sec)
+
+mysql> insert into departments values(15,"Physics");
+Query OK, 1 row affected (0.00 sec)
+
+mysql> select * from departments;
++---------------+-----------------+
+| department_id | department_name |
++---------------+-----------------+
+|             2 | Fitness         |
+|             3 | Footwear        |
+|             4 | Apparel         |
+|             5 | Golf            |
+|             6 | Outdoors        |
+|             7 | Fan Shop        |
+|             8 | Shopping        |
+|             9 | MakeUp          |
+|            10 | Designing       |
++---------------+-----------------+
+9 rows in set (0.01 sec)
+
+mysql> desc departments;
++-----------------+-------------+------+-----+---------+----------------+
+| Field           | Type        | Null | Key | Default | Extra          |
++-----------------+-------------+------+-----+---------+----------------+
+| department_id   | int(11)     | NO   | PRI | NULL    | auto_increment |
+| department_name | varchar(45) | NO   |     | NULL    |                |
++-----------------+-------------+------+-----+---------+----------------+
+2 rows in set (0.00 sec)
+
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table departments \
+--target-dir departments \
+--incremental append \
+--check-column department_id \
+--last-value 10
+
+[cloudera@quickstart ~]$ hadoop fs -cat departments/* | wc -l
+14
+
+[cloudera@quickstart ~]$ hadoop fs -cat departments/*
+2,Fitness
+3,Footwear
+4,Apparel
+5,Golf
+6,Outdoors
+7,Fan Shop
+8,Shopping
+9,MakeUp
+10,Designing
+11,Chemistry
+12,Maths
+13,Science
+14,Engineering
+15,Physics
+
+======================================================================================================================================================================
+
+PS 12:
+
+mysql> create table departments_new(
+    -> department_id int(11),
+    -> department_name varchar(45),
+    -> created_date TIMESTAMP DEFAULT NOW()
+    -> );
+Query OK, 0 rows affected (0.09 sec)
+
+mysql> desc departments_new;
++-----------------+-------------+------+-----+-------------------+-------+
+| Field           | Type        | Null | Key | Default           | Extra |
++-----------------+-------------+------+-----+-------------------+-------+
+| department_id   | int(11)     | YES  |     | NULL              |       |
+| department_name | varchar(45) | YES  |     | NULL              |       |
+| created_date    | timestamp   | NO   |     | CURRENT_TIMESTAMP |       |
++-----------------+-------------+------+-----+-------------------+-------+
+3 rows in set (0.06 sec)
+
+mysql> insert into departments_new(department_id,department_name) select * from departments;
+Query OK, 14 rows affected (0.01 sec)
+Records: 14  Duplicates: 0  Warnings: 0
+
+mysql> select * from departments_new;
++---------------+-----------------+---------------------+
+| department_id | department_name | created_date        |
++---------------+-----------------+---------------------+
+|             2 | Fitness         | 2018-10-21 22:43:45 |
+|             3 | Footwear        | 2018-10-21 22:43:45 |
+|             4 | Apparel         | 2018-10-21 22:43:45 |
+|             5 | Golf            | 2018-10-21 22:43:45 |
+|             6 | Outdoors        | 2018-10-21 22:43:45 |
+|             7 | Fan Shop        | 2018-10-21 22:43:45 |
+|             8 | Shopping        | 2018-10-21 22:43:45 |
+|             9 | MakeUp          | 2018-10-21 22:43:45 |
+|            10 | Designing       | 2018-10-21 22:43:45 |
+|            11 | Chemistry       | 2018-10-21 22:43:45 |
+|            12 | Maths           | 2018-10-21 22:43:45 |
+|            13 | Science         | 2018-10-21 22:43:45 |
+|            14 | Engineering     | 2018-10-21 22:43:45 |
+|            15 | Physics         | 2018-10-21 22:43:45 |
++---------------+-----------------+---------------------+
+14 rows in set (0.00 sec)
+
+sqoop job --create dep_job \
+-- import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table departments_new \
+--target-dir departments_new \
+--split-by department_id \
+--incremental append \
+--check-column department_id \
+--last-value 0
+
+sqoop job --exec dep_job   => executes the sqoop job
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/departments_new
+Found 4 items
+-rw-r--r--   1 cloudera cloudera        126 2018-10-21 23:01 /user/cloudera/departments_new/part-m-00000
+-rw-r--r--   1 cloudera cloudera         99 2018-10-21 23:01 /user/cloudera/departments_new/part-m-00001
+-rw-r--r--   1 cloudera cloudera        101 2018-10-21 23:01 /user/cloudera/departments_new/part-m-00002
+-rw-r--r--   1 cloudera cloudera        134 2018-10-21 23:01 /user/cloudera/departments_new/part-m-00003
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/departments_new/* | wc -l
+14
+
+sqoop job --show dep_job  => shows the sqoop job properties
+
+Job: dep_job
+Tool: import
+Options:
+----------------------------
+verbose = false
+hcatalog.drop.and.create.table = false
+incremental.last.value = 15
+
+sqoop job --delete dep_job  ==> deletes sqoop job
+
+insert into departments_new values(110,"PHE", null);
+
+insert into departments_new values(111,"PHA", null);
+
+insert into departments_new values(112,"PHU", null);
+
+insert into departments_new values(113,"PHY", null);
+
+insert into departments_new values(114,"PHC", null);
+
+sqoop job --exec dep_job -- --last-value 15   => to add or edit any parameter
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/departments_new/* | wc -l
+19
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/departments_new/*
+2,Fitness,2018-10-21 22:43:45.0
+3,Footwear,2018-10-21 22:43:45.0
+4,Apparel,2018-10-21 22:43:45.0
+5,Golf,2018-10-21 22:43:45.0
+6,Outdoors,2018-10-21 22:43:45.0
+7,Fan Shop,2018-10-21 22:43:45.0
+8,Shopping,2018-10-21 22:43:45.0
+9,MakeUp,2018-10-21 22:43:45.0
+10,Designing,2018-10-21 22:43:45.0
+11,Chemistry,2018-10-21 22:43:45.0
+12,Maths,2018-10-21 22:43:45.0
+13,Science,2018-10-21 22:43:45.0
+14,Engineering,2018-10-21 22:43:45.0
+15,Physics,2018-10-21 22:43:45.0
+110,PHE,2018-10-21 23:07:17.0
+111,PHA,2018-10-21 23:07:17.0
+112,PHU,2018-10-21 23:07:17.0
+113,PHY,2018-10-21 23:07:17.0
+114,PHC,2018-10-21 23:07:18.0
+
+======================================================================================================================================================================
+
+PS 13:
+
+mysql> create table departments_export(
+    -> department_id int(11),
+    -> department_name varchar(45),
+    -> created_date TIMESTAMP DEFAULT NOW()
+    -> );
+Query OK, 0 rows affected (0.07 sec)
+
+mysql> desc departments_export;
++-----------------+-------------+------+-----+-------------------+-------+
+| Field           | Type        | Null | Key | Default           | Extra |
++-----------------+-------------+------+-----+-------------------+-------+
+| department_id   | int(11)     | YES  |     | NULL              |       |
+| department_name | varchar(45) | YES  |     | NULL              |       |
+| created_date    | timestamp   | NO   |     | CURRENT_TIMESTAMP |       |
++-----------------+-------------+------+-----+-------------------+-------+
+3 rows in set (0.05 sec)
+
+sqoop export \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table departments_export \
+--export-dir /user/cloudera/departments_new \
+--input-fields-terminated-by ','
+
+**NOTE**
+
+--table departments_export\ throws error.
+This is applicable to all the parameters
+
+
+mysql> select * from departments_export;
++---------------+-----------------+---------------------+
+| department_id | department_name | created_date        |
++---------------+-----------------+---------------------+
+|             9 | MakeUp          | 2018-10-21 22:43:45 |
+|            10 | Designing       | 2018-10-21 22:43:45 |
+|            11 | Chemistry       | 2018-10-21 22:43:45 |
+|            12 | Maths           | 2018-10-21 22:43:45 |
+|            13 | Science         | 2018-10-21 22:43:45 |
+|            14 | Engineering     | 2018-10-21 22:43:45 |
+|            15 | Physics         | 2018-10-21 22:43:45 |
+|             2 | Fitness         | 2018-10-21 22:43:45 |
+|             3 | Footwear        | 2018-10-21 22:43:45 |
+|             4 | Apparel         | 2018-10-21 22:43:45 |
+|             5 | Golf            | 2018-10-21 22:43:45 |
+|             6 | Outdoors        | 2018-10-21 22:43:45 |
+|             7 | Fan Shop        | 2018-10-21 22:43:45 |
+|             8 | Shopping        | 2018-10-21 22:43:45 |
+|           110 | PHE             | 2018-10-21 23:07:17 |
+|           111 | PHA             | 2018-10-21 23:07:17 |
+|           112 | PHU             | 2018-10-21 23:07:17 |
+|           113 | PHY             | 2018-10-21 23:07:17 |
+|           114 | PHC             | 2018-10-21 23:07:18 |
++---------------+-----------------+---------------------+
+19 rows in set (0.01 sec)
+
+======================================================================================================================================================================
+
+PS 14:
+
+sqoop export \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table departments \
+--export-dir /user/cloudera/updated_departments.csv \
+--update-key department_id \
+--input-fields-terminated-by ',' \
+--input-lines-terminated-by '\n'
+
+Failed:
+
+======================================================================================================================================================================
+
+Ps 15:
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table departments \
+--target-dir departments_enclosed \
+--fields-terminated-by - \
+--optionally-enclosed-by '\"' \
+--escaped-by \\ \
+--lines-terminated-by ':'
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/departments_enclosed/*
+2-fitness:3-footwear:4-Apparel:5-Golf:6-Outdoors:7-Fan Shop:8-Shopping:9-MakeUp:10-Designing:11-Chemistry:12-fathematics:13-fcience:14-engineering:15-Physics:5555-Teju:9999-\"Data Science\"
+
+
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table departments \
+--target-dir departments_enclosed1 \
+--fields-terminated-by - \
+--optionally-enclosed-by '\"' \
+--lines-terminated-by ':'
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/departments_enclosed1/*
+2-fitness:3-footwear:4-Apparel:5-Golf:6-Outdoors:7-Fan Shop:8-Shopping:9-MakeUp:10-Designing:11-Chemistry:12-fathematics:13-fcience:14-engineering:15-Physics:5555-Teju:9999-"Data Science"
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table departments \
+--target-dir departments_enclosed3 \
+--fields-terminated-by - \
+--lines-terminated-by ':'
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/departments_enclosed3/*
+2-fitness:3-footwear:4-Apparel:5-Golf:6-Outdoors:7-Fan Shop:8-Shopping:9-MakeUp:10-Designing:11-Chemistry:12-fathematics:13-fcience:14-engineering:15-Physics:5555-Teju:9999-"Data Science"
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table departments \
+--target-dir departments_enclosed4 \
+--fields-terminated-by - \
+--lines-terminated-by ':'
+
+note:
+
+If data contains the delimiter, suppose one column of dataset contains the folowing data
+
+Some string, with a comma.
+Another "string with quotes"
+
+sqoop import --fields-terminated-by , --enclosed-by '\"' --escaped-by \\ ......
+
+res:
+
+"Some string, with a comma.","1","2","3"
+"Another \"string with quotes\"","4","5","6"
+
+sqoop import --fields-terminated-by , --optionally-enclosed-by '\"' --escaped-by \\ ......
+
+res:
+
+"Some string, with a comma.",1,2,3
+"Another \"string with quotes\"",4,5,6
+
+Therefore we need to add --enclosed-by '\"'  ==> \" is used for double quote and \\ is used for escaping character
+
+If data itself contains " (double quote) then it should be escaped (\)
+
+
+======================================================================================================================================================================
+
+PS 16:
+
+hive> create table departments_hive(
+    > department_id int,
+    > department_name string
+    > );
+OK
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table departments \
+--hive-import \
+--hive-table problem5.departments_hive
+
+hive> select * from departments_hive;
+OK
+2	fitness
+3	footwear
+4	Apparel
+5	Golf
+6	Outdoors
+7	Fan Shop
+8	Shopping
+9	MakeUp
+10	Designing
+11	Chemistry
+12	fathematics
+13	fcience
+14	engineering
+15	Physics
+9999	"Data Science"
+Time taken: 1.11 seconds, Fetched: 15 row(s)
+
+Note:
+
+1)
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \   ==> just --hive-import creates table and load data into it. database = default, tableName = table name in Mysql
+--username root \
+--password cloudera \
+--table departments \
+--hive-import
+
+OK
+Time taken: 3.143 seconds
+Loading data to table default.departments
+Table default.departments stats: [numFiles=7, totalSize=238]
+
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \  
+--username root \
+--password cloudera \
+--table departments \
+--hive-import \
+--create-hive-table \      ==> creates hive table in the given database and uses the given name
+--hive-table problem5.dep_hive
+
+OK
+Time taken: 3.628 seconds
+Loading data to table problem5.dep_hive
+Table problem5.dep_hive stats: [numFiles=4, totalSize=178]
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table departments \
+--hive-import \
+--hive-table problem5.deps_hive
+
+OK
+Time taken: 3.61 seconds
+Loading data to table problem5.deps_hive
+Table problem5.deps_hive stats: [numFiles=4, totalSize=178]
+
+Note:
+
+--hive-import   => creates table and populates the table
+--create-hive-table  => creates table but not populate the table
+
+======================================================================================================================================================================
+
+PS 17:
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table products_replica \
+--fields-terminated-by '*' \
+--lines-terminated-by '\n' \
+--null-string ' ' \    
+--null-non-string ' ' \
+--num-mappers 2 \
+--boundary-query "select min(product_id),1111 from products_replica" \
+--target-dir "/user/cloudera/problem5/products-text-with-space1" \
+--as-textfile
+
+This replaces null values with empty string
+
+mysql> select * from products_replica where product_id = 1111;
++------------+---------------------+-----------------------------------------------+---------------------+---------------+------------------------------------------------------------------------------------------------+---------------+-------------------+
+| product_id | product_category_id | product_name                                  | product_description | product_price | product_image                                                                                  | product_grade | product_sentiment |
++------------+---------------------+-----------------------------------------------+---------------------+---------------+------------------------------------------------------------------------------------------------+---------------+-------------------+
+|       1111 |                  50 | Majestic Youth 2014 All-Star Game Mike Trout  |                     |            60 | http://images.acmesports.sports/Majestic+Youth+2014+All-Star+Game+Mike+Trout+%2327+American... |          NULL | NULL              |
++------------+---------------------+-----------------------------------------------+---------------------+---------------+------------------------------------------------------------------------------------------------+---------------+-------------------+
+1 row in set (0.04 sec)
+
+
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/problem5/products-text-with-space1/part-m-00001
+*http://images.acmesports.sports/ASICS+Women%27s+GEL-Nimbus+15+Running+Shoe* * 
+1106*50*Majestic Youth 2014 All-Star Game Andrew McCu**60.0*http://images.acmesports.sports/Majestic+Youth+2014+All-Star+Game+Andrew+McCutchen+%2322...* * 
+1107*50*Majestic Youth 2014 All-Star Game Yadier Moli**60.0*http://images.acmesports.sports/Majestic+Youth+2014+All-Star+Game+Yadier+Molina+%234+National...* * 
+1108*50*Majestic Youth 2014 All-Star Game Troy Tulowi**60.0*http://images.acmesports.sports/Majestic+Youth+2014+All-Star+Game+Troy+Tulowitzki+%232...* * 
+1109*50*Majestic Youth 2014 All-Star Game Yasiel Puig**60.0*http://images.acmesports.sports/Majestic+Youth+2014+All-Star+Game+Yasiel+Puig+%2366+National...* * 
+1110*50*Majestic Youth 2014 All-Star Game Freddie Fre**60.0*http://images.acmesports.sports/Majestic+Youth+2014+All-Star+Game+Freddie+Freeman+%235...* * 
+1111*50*Majestic Youth 2014 All-Star Game Mike Trout **60.0*http://images.acmesports.sports/Majestic+Youth+2014+All-Star+Game+Mike+Trout+%2327+American...* * 
+
+select the whole record and check if last value is replaced or notl
+=====================================================================================================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+

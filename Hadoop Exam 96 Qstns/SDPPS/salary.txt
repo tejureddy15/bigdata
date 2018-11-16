@@ -1,0 +1,5 @@
+Katamreddy,Tejaswini,200000
+Chilli,Shekhar,185000
+Sai,Siva,150000
+Sravya,Sree,125000
+Ganta,Rao,100000

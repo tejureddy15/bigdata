@@ -1,0 +1,1156 @@
+
+PS 1:
+
+connect to mysql and copy categories table to HDFS without specifying any dierctory
+
+connect to mysql and copy categories table to HDFS by specifying dierctory name as categories_target
+
+connect to mysql and copy categories table to HDFS by specifying warehouse dierctory name as categories_warehouse
+
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table categories
+
+res:
+
+18/10/08 23:20:27 INFO mapreduce.ImportJobBase: Retrieved 58 records.
+
+mysql> select count(*) from categories;
++----------+
+| count(*) |
++----------+
+|       58 |
++----------+
+1 row in set (0.03 sec)
+
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera
+Found 13 items
+drwxr-xr-x   - cloudera cloudera          0 2018-09-07 03:30 /user/cloudera/.sparkStaging
+drwxr-xr-x   - cloudera cloudera          0 2018-09-27 23:23 /user/cloudera/_sqoop
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 23:20 /user/cloudera/categories ==> got stored under /user/cloudera
+drwxr-xr-x   - cloudera cloudera          0 2018-09-20 04:41 /user/cloudera/daily_revenue_per_product.daily_revenue
+drwxr-xr-x   - cloudera cloudera          0 2018-09-20 23:46 /user/cloudera/dummy
+drwxr-xr-x   - cloudera cloudera          0 2018-09-21 00:13 /user/cloudera/orders
+drwxr-xr-x   - cloudera cloudera          0 2018-09-26 04:13 /user/cloudera/problem
+drwxr-xr-x   - cloudera cloudera          0 2018-10-04 03:22 /user/cloudera/problem1
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 00:31 /user/cloudera/problem2
+drwxr-xr-x   - cloudera cloudera          0 2018-09-26 05:57 /user/cloudera/problem5
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 04:00 /user/cloudera/retail_stage.db
+drwxrwxrwx   - cloudera cloudera          0 2018-09-09 22:04 /user/cloudera/tables
+drwxr-xr-x   - cloudera cloudera          0 2018-09-26 00:05 /user/cloudera/user
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/categories
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-08 23:20 /user/cloudera/categories/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        271 2018-10-08 23:20 /user/cloudera/categories/part-m-00000
+-rw-r--r--   1 cloudera cloudera        263 2018-10-08 23:20 /user/cloudera/categories/part-m-00001
+-rw-r--r--   1 cloudera cloudera        266 2018-10-08 23:20 /user/cloudera/categories/part-m-00002
+-rw-r--r--   1 cloudera cloudera        229 2018-10-08 23:20 /user/cloudera/categories/part-m-00003
+
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table categories \
+--target-dir categories_target
+
+
+18/10/08 23:31:21 INFO mapreduce.ImportJobBase: Retrieved 58 records.
+
+mysql> select count(*) from categories;
++----------+
+| count(*) |
++----------+
+|       58 |
++----------+
+1 row in set (0.03 sec)
+
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera
+Found 14 items
+drwxr-xr-x   - cloudera cloudera          0 2018-09-07 03:30 /user/cloudera/.sparkStaging
+drwxr-xr-x   - cloudera cloudera          0 2018-09-27 23:23 /user/cloudera/_sqoop
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 23:20 /user/cloudera/categories
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 23:31 /user/cloudera/categories_target ==> got stored under /user/cloudera
+drwxr-xr-x   - cloudera cloudera          0 2018-09-20 04:41 /user/cloudera/daily_revenue_per_product.daily_revenue
+drwxr-xr-x   - cloudera cloudera          0 2018-09-20 23:46 /user/cloudera/dummy
+drwxr-xr-x   - cloudera cloudera          0 2018-09-21 00:13 /user/cloudera/orders
+drwxr-xr-x   - cloudera cloudera          0 2018-09-26 04:13 /user/cloudera/problem
+drwxr-xr-x   - cloudera cloudera          0 2018-10-04 03:22 /user/cloudera/problem1
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 00:31 /user/cloudera/problem2
+drwxr-xr-x   - cloudera cloudera          0 2018-09-26 05:57 /user/cloudera/problem5
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 04:00 /user/cloudera/retail_stage.db
+drwxrwxrwx   - cloudera cloudera          0 2018-09-09 22:04 /user/cloudera/tables
+drwxr-xr-x   - cloudera cloudera          0 2018-09-26 00:05 /user/cloudera/user
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/categories_target
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-08 23:31 /user/cloudera/categories_target/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        271 2018-10-08 23:31 /user/cloudera/categories_target/part-m-00000
+-rw-r--r--   1 cloudera cloudera        263 2018-10-08 23:31 /user/cloudera/categories_target/part-m-00001
+-rw-r--r--   1 cloudera cloudera        266 2018-10-08 23:31 /user/cloudera/categories_target/part-m-00002
+-rw-r--r--   1 cloudera cloudera        229 2018-10-08 23:31 /user/cloudera/categories_target/part-m-00003
+
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \l
+--table categories \
+--warehouse-dir categories_warehouse
+
+18/10/08 23:45:18 INFO mapreduce.ImportJobBase: Retrieved 58 records.
+
+mysql> select count(*) from categories;
++----------+
+| count(*) |
++----------+
+|       58 |
++----------+
+1 row in set (0.03 sec)
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera
+Found 15 items
+drwxr-xr-x   - cloudera cloudera          0 2018-09-07 03:30 /user/cloudera/.sparkStaging
+drwxr-xr-x   - cloudera cloudera          0 2018-09-27 23:23 /user/cloudera/_sqoop
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 23:20 /user/cloudera/categories
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 23:31 /user/cloudera/categories_target
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 23:44 /user/cloudera/categories_warehouse
+drwxr-xr-x   - cloudera cloudera          0 2018-09-20 04:41 /user/cloudera/daily_revenue_per_product.daily_revenue
+drwxr-xr-x   - cloudera cloudera          0 2018-09-20 23:46 /user/cloudera/dummy
+drwxr-xr-x   - cloudera cloudera          0 2018-09-21 00:13 /user/cloudera/orders
+drwxr-xr-x   - cloudera cloudera          0 2018-09-26 04:13 /user/cloudera/problem
+drwxr-xr-x   - cloudera cloudera          0 2018-10-04 03:22 /user/cloudera/problem1
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 00:31 /user/cloudera/problem2
+drwxr-xr-x   - cloudera cloudera          0 2018-09-26 05:57 /user/cloudera/problem5
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 04:00 /user/cloudera/retail_stage.db
+drwxrwxrwx   - cloudera cloudera          0 2018-09-09 22:04 /user/cloudera/tables
+drwxr-xr-x   - cloudera cloudera          0 2018-09-26 00:05 /user/cloudera/user
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/categories_warehouse
+Found 1 items
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 23:45 /user/cloudera/categories_warehouse/categories
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/categories_warehouse/categories
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-08 23:45 /user/cloudera/categories_warehouse/categories/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        271 2018-10-08 23:45 /user/cloudera/categories_warehouse/categories/part-m-00000
+-rw-r--r--   1 cloudera cloudera        263 2018-10-08 23:45 /user/cloudera/categories_warehouse/categories/part-m-00001
+-rw-r--r--   1 cloudera cloudera        266 2018-10-08 23:45 /user/cloudera/categories_warehouse/categories/part-m-00002
+-rw-r--r--   1 cloudera cloudera        229 2018-10-08 23:45 /user/cloudera/categories_warehouse/categories/part-m-00003
+
+======================================================================================================================================================================
+
+PS 2:
+
+What is the command to get all the available commands in HDFS
+
+hadoop fs -help
+
+What is the command to get help on particular hadoop command
+
+hadoop fs -help ls
+
+What is the command to get usage of particular hadoop command
+
+hadoop fs -usage ls
+
+1) Create an empty directory named Employee and create an empty file named quicktechie.txt under Employee
+2) Load both companies Employee data in Employee directory (How to override existing file in HDFS)
+3) Merge both the employees data in single file. This file should have new line character at the end of each file's content.
+4) Upload merged file in HDFS and change the permissions of the merged file so that owner and group can read and write but other users can only read.
+5) Write a command to export the individual file as well as entire directory to Local file system.
+
+quicktechie.txt
+
+1,Alok,Hyderabad
+2,Kris,Hongkong
+3,Jyoti,Mumbai
+4,Atul,Bangalore
+5,Ishan,Gurgaon
+
+hadoopexam.txt
+
+6,JOhn,Newyork
+7,alp2004,California
+8,telime,Mumbai
+9,Gagan21,Pune
+10,Mukesh,Chennai
+
+
+[cloudera@quickstart ~]$ hadoop fs -mkdir /user/cloudera/Employee     => mkdir creates directory
+
+[cloudera@quickstart ~]$ hadoop fs -touchz /user/cloudera/Employee/quicktechie.txt  ==> touchz creates file
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera
+Found 16 items
+drwxr-xr-x   - cloudera cloudera          0 2018-09-07 03:30 /user/cloudera/.sparkStaging
+drwxr-xr-x   - cloudera cloudera          0 2018-10-09 00:30 /user/cloudera/Employee     ==> d in drwxr-xr-x signifies directory
+drwxr-xr-x   - cloudera cloudera          0 2018-09-27 23:23 /user/cloudera/_sqoop
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 23:20 /user/cloudera/categories
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 23:31 /user/cloudera/categories_target
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 23:44 /user/cloudera/categories_warehouse
+drwxr-xr-x   - cloudera cloudera          0 2018-09-20 04:41 /user/cloudera/daily_revenue_per_product.daily_revenue
+drwxr-xr-x   - cloudera cloudera          0 2018-09-20 23:46 /user/cloudera/dummy
+drwxr-xr-x   - cloudera cloudera          0 2018-09-21 00:13 /user/cloudera/orders
+drwxr-xr-x   - cloudera cloudera          0 2018-09-26 04:13 /user/cloudera/problem
+drwxr-xr-x   - cloudera cloudera          0 2018-10-04 03:22 /user/cloudera/problem1
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 00:31 /user/cloudera/problem2
+drwxr-xr-x   - cloudera cloudera          0 2018-09-26 05:57 /user/cloudera/problem5
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 04:00 /user/cloudera/retail_stage.db
+drwxrwxrwx   - cloudera cloudera          0 2018-09-09 22:04 /user/cloudera/tables
+drwxr-xr-x   - cloudera cloudera          0 2018-09-26 00:05 /user/cloudera/user
+
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/Employee
+Found 1 items
+-rwxr-xr-x   - cloudera cloudera          0 2018-10-09 00:30 /user/cloudera/Employee/quicktechie.txt  ==> first - in -rwxr-xr-x signifies file (-rwxrwxrwx : owner,
+                                                                                                                   					     group,
+																			     users)
+
+[cloudera@quickstart ~]$ hadoop fs -put -f /home/cloudera/Documents/HDPCD/quicktechie.txt /user/cloudera/Employee/quicktechie.txt
+
+Note: -put is used to copy local file to HDFS
+      -get is used to copy HDFS file to local file system
+
+      -f is used for overwriting
+
+       Create a file named quicktechie in the directory /home/cloudera/Documents/HDPCD and then hit the above command
+
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/Employee/quicktechie.txt
+1,Alok,Hyderabad
+2,Kris,Hongkong
+3,Jyoti,Mumbai
+4,Atul,Bangalore
+5,Ishan,Gurgaon
+
+[cloudera@quickstart ~]$ hadoop fs -put -f /home/cloudera/Documents/HDPCD/hdpexam.txt /user/cloudera/Employee/hadoopexam.txt
+
+Create hdpexam.txt file under /home/cloudera/Documents/HDPCD and then overwrite hadoopexam.txt with hdpexam.txt
+
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/Employee/hadoopexam.txt
+6,JOhn,Newyork
+7,alp2004,California
+8,telime,Mumbai
+9,Gagan21,Pune
+10,Mukesh,Chennai
+
+[cloudera@quickstart ~]$ hadoop fs -getmerge -nl /user/cloudera/Employee/ /home/cloudera/Documents/HDPCD/merged_file.txt
+
+-getmerge ==> used to merge files
+
+-nl ==> adds new line at the end of each file
+
+/user/cloudera/Employee/ ==> all the files under Employee dir should be merged
+
+/home/cloudera/Documents/HDPCD/merged_file.txt  ==> this should be the local system path but not HDFS path (***IMP***)
+
+[cloudera@quickstart ~]$ hadoop fs -mkdir /user/cloudera/Docs ==> Creating directory Docs in HDFS
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera
+Found 17 items
+drwxr-xr-x   - cloudera cloudera          0 2018-09-07 03:30 /user/cloudera/.sparkStaging
+drwxr-xr-x   - cloudera cloudera          0 2018-10-09 02:37 /user/cloudera/Docs
+drwxr-xr-x   - cloudera cloudera          0 2018-10-09 02:21 /user/cloudera/Employee
+drwxr-xr-x   - cloudera cloudera          0 2018-09-27 23:23 /user/cloudera/_sqoop
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 23:20 /user/cloudera/categories
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 23:31 /user/cloudera/categories_target
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 23:44 /user/cloudera/categories_warehouse
+drwxr-xr-x   - cloudera cloudera          0 2018-09-20 04:41 /user/cloudera/daily_revenue_per_product.daily_revenue
+drwxr-xr-x   - cloudera cloudera          0 2018-09-20 23:46 /user/cloudera/dummy
+drwxr-xr-x   - cloudera cloudera          0 2018-09-21 00:13 /user/cloudera/orders
+drwxr-xr-x   - cloudera cloudera          0 2018-09-26 04:13 /user/cloudera/problem
+drwxr-xr-x   - cloudera cloudera          0 2018-10-04 03:22 /user/cloudera/problem1
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 00:31 /user/cloudera/problem2
+drwxr-xr-x   - cloudera cloudera          0 2018-09-26 05:57 /user/cloudera/problem5
+drwxr-xr-x   - cloudera cloudera          0 2018-10-08 04:00 /user/cloudera/retail_stage.db
+drwxrwxrwx   - cloudera cloudera          0 2018-09-09 22:04 /user/cloudera/tables
+drwxr-xr-x   - cloudera cloudera          0 2018-09-26 00:05 /user/cloudera/user
+
+[cloudera@quickstart ~]$ hadoop fs -put /home/cloudera/Documents/HDPCD/merged_file.txt /user/cloudera/Docs ==> copying file to HDFS from local system
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/Docs/merged_file.txt
+6,JOhn,Newyork
+7,alp2004,California
+8,telime,Mumbai
+9,Gagan21,Pune
+10,Mukesh,Chennai
+
+1,Alok,Hyderabad
+2,Kris,Hongkong
+3,Jyoti,Mumbai
+4,Atul,Bangalore
+5,Ishan,Gurgaon
+
+[cloudera@quickstart ~]$ hadoop fs -chmod 664 /user/cloudera/Docs/merged_file.txt ==> 
+
+[cloudera@quickstart ~]$ hadoop fs -ls  /user/cloudera/Docs
+Found 1 items
+-rw-rw-r--   1 cloudera cloudera        169 2018-10-09 02:45 /user/cloudera/Docs/merged_file.txt
+
+[cloudera@quickstart ~]$ hadoop fs -get /user/cloudera/Employee /home/cloudera  ==> Copy Employee directory to local file system.  (Verified in local file system)
+
+======================================================================================================================================================================
+
+PS 3:
+
+1)
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table categories \
+--target-dir categories_subset_1 \
+--where "category_id = 22"
+
+mysql> select *  from categories where category_id = 22;
++-------------+------------------------+---------------+
+| category_id | category_department_id | category_name |
++-------------+------------------------+---------------+
+|          22 |                      4 | Accessories   |
++-------------+------------------------+---------------+
+1 row in set (0.01 sec)
+
+18/10/09 06:25:04 INFO mapreduce.ImportJobBase: Retrieved 1 records.
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/categories_subset_1
+Found 2 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-09 06:25 /user/cloudera/categories_subset_1/_SUCCESS
+-rw-r--r--   1 cloudera cloudera         17 2018-10-09 06:25 /user/cloudera/categories_subset_1/part-m-00000
+
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/categories_subset_1/part-m-00000
+22,4,Accessories
+
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/categories_subset_1/_SUCCESS
+
+2)
+
+sqoop import \
+--connect  jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table categories \
+--target-dir categories_subset_2 \
+--where "category_id > 22" \
+--boundary-query "select 22,max(category_id) from categories"
+
+18/10/09 06:42:19 INFO mapreduce.ImportJobBase: Retrieved 36 records.
+
+mysql> select count(1)  from categories where category_id > 22;
++----------+
+| count(1) |
++----------+
+|       36 |
++----------+
+1 row in set (0.00 sec)
+
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/categories_subset_2
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-09 06:42 /user/cloudera/categories_subset_2/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        177 2018-10-09 06:42 /user/cloudera/categories_subset_2/part-m-00000
+-rw-r--r--   1 cloudera cloudera        161 2018-10-09 06:42 /user/cloudera/categories_subset_2/part-m-00001
+-rw-r--r--   1 cloudera cloudera        162 2018-10-09 06:42 /user/cloudera/categories_subset_2/part-m-00002
+-rw-r--r--   1 cloudera cloudera        126 2018-10-09 06:42 /user/cloudera/categories_subset_2/part-m-00003
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/categories_subset_2/* |wc -l
+36
+
+3)
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table categories \
+--target-dir categories_subset_3 \
+--where "category_id between 1 and 22" 
+
+Note:
+
+1)select min(primary_key),max(primary_key) from categories; will be  generated internally.
+when we add --where clause it will be attached to the previous query.
+
+2)In this case select min(primary_key),max(primary_key) from categories where "category_id between 1 and 22; will be generated
+
+3)--where clause will be attached to al the generated queries basically.
+
+18/10/09 07:04:12 INFO mapreduce.ImportJobBase: Retrieved 22 records.
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/categories_subset_3/* | wc -l  ==> total no of records in all the files under the specified directory
+22
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/categories_subset_3
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-09 07:04 /user/cloudera/categories_subset_3/_SUCCESS
+-rw-r--r--   1 cloudera cloudera         97 2018-10-09 07:03 /user/cloudera/categories_subset_3/part-m-00000
+-rw-r--r--   1 cloudera cloudera         96 2018-10-09 07:04 /user/cloudera/categories_subset_3/part-m-00001
+-rw-r--r--   1 cloudera cloudera         99 2018-10-09 07:04 /user/cloudera/categories_subset_3/part-m-00002
+-rw-r--r--   1 cloudera cloudera        111 2018-10-09 07:04 /user/cloudera/categories_subset_3/part-m-00003
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/categories_subset_3/* | wc -l    ==> total no of files under the directory
+5
+
+4)
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table categories \
+--fields-terminated-by '|' \
+--target-dir categories_with_diff_delimiter
+
+18/10/09 23:29:41 INFO mapreduce.ImportJobBase: Retrieved 58 records.
+
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/categories_with_diff_delimiter
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-09 23:29 /user/cloudera/categories_with_diff_delimiter/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        271 2018-10-09 23:29 /user/cloudera/categories_with_diff_delimiter/part-m-00000
+-rw-r--r--   1 cloudera cloudera        263 2018-10-09 23:29 /user/cloudera/categories_with_diff_delimiter/part-m-00001
+-rw-r--r--   1 cloudera cloudera        266 2018-10-09 23:29 /user/cloudera/categories_with_diff_delimiter/part-m-00002
+-rw-r--r--   1 cloudera cloudera        229 2018-10-09 23:29 /user/cloudera/categories_with_diff_delimiter/part-m-00003
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/categories_with_diff_delimiter/part-m-00000 | head
+1|2|Football
+2|2|Soccer
+3|2|Baseball & Softball
+4|2|Basketball
+5|2|Lacrosse
+6|2|Tennis & Racquet
+7|2|Hockey
+8|2|More Sports
+9|3|Cardio Equipment
+10|3|Strength Training
+
+5)
+
+sqoop import \
+-connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table categories \
+--fields-terminated-by '|' \
+--target-dir categories_with_2_columns \
+--columns category_id,category_name
+
+mysql> select category_id, category_name from categories limit 10;
++-------------+---------------------+
+| category_id | category_name       |
++-------------+---------------------+
+|           1 | Football            |
+|           2 | Soccer              |
+|           3 | Baseball & Softball |
+|           4 | Basketball          |
+|           5 | Lacrosse            |
+|           6 | Tennis & Racquet    |
+|           7 | Hockey              |
+|           8 | More Sports         |
+|           9 | Cardio Equipment    |
+|          10 | Strength Training   |
++-------------+---------------------+
+10 rows in set (0.01 sec)
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/categories_with_2_columns
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-09 23:36 /user/cloudera/categories_with_2_columns/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        241 2018-10-09 23:36 /user/cloudera/categories_with_2_columns/part-m-00000
+-rw-r--r--   1 cloudera cloudera        235 2018-10-09 23:36 /user/cloudera/categories_with_2_columns/part-m-00001
+-rw-r--r--   1 cloudera cloudera        238 2018-10-09 23:36 /user/cloudera/categories_with_2_columns/part-m-00002
+-rw-r--r--   1 cloudera cloudera        199 2018-10-09 23:36 /user/cloudera/categories_with_2_columns/part-m-00003
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/categories_with_2_columns/part-m-00000 | head
+1|Football
+2|Soccer
+3|Baseball & Softball
+4|Basketball
+5|Lacrosse
+6|Tennis & Racquet
+7|Hockey
+8|More Sports
+9|Cardio Equipment
+10|Strength Training
+
+6)
+
+
+
+alter table categories modify category_departmenr_id int(11);
+insert into categories values(60,NULL,'Testing');
+
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table categories \
+--target-dir categories_subset_null_non_null \
+--fields-terminated-by '|' \
+--null-non-string 'NOT AVAILABLE' \
+--where "category_id between 1 and 61"
+
+[cloudera@quickstart ~]$ hadoop fs -ls categories_subset_null_non_null
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-10 02:00 categories_subset_null_non_null/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        271 2018-10-10 02:00 categories_subset_null_non_null/part-m-00000
+-rw-r--r--   1 cloudera cloudera        285 2018-10-10 02:00 categories_subset_null_non_null/part-m-00001
+-rw-r--r--   1 cloudera cloudera        281 2018-10-10 02:00 categories_subset_null_non_null/part-m-00002
+-rw-r--r--   1 cloudera cloudera        217 2018-10-10 02:00 categories_subset_null_non_null/part-m-00003
+
+[cloudera@quickstart ~]$ hadoop fs -tail categories_subset_null_non_null/part-m-00003
+46|7|Indoor/Outdoor Games
+47|7|Boating
+48|7|Water Sports
+49|8|MLB
+50|8|NFL
+51|8|NHL
+52|8|NBA
+53|8|NCAA
+54|8|MLS
+55|8|International Soccer
+56|8|World Cup Shop
+57|8|MLB Players
+58|8|NFL Players
+60|NOT AVAILABLE|Testing
+
+sqoop import-all-tables \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--warehouse-dir categories_subset_all_tables
+
+[cloudera@quickstart ~]$ hadoop fs -ls categories_subset_all_tables
+Found 6 items
+drwxr-xr-x   - cloudera cloudera          0 2018-10-10 02:11 categories_subset_all_tables/categories
+drwxr-xr-x   - cloudera cloudera          0 2018-10-10 02:13 categories_subset_all_tables/customers
+drwxr-xr-x   - cloudera cloudera          0 2018-10-10 02:14 categories_subset_all_tables/departments
+drwxr-xr-x   - cloudera cloudera          0 2018-10-10 02:16 categories_subset_all_tables/order_items
+drwxr-xr-x   - cloudera cloudera          0 2018-10-10 02:17 categories_subset_all_tables/orders
+drwxr-xr-x   - cloudera cloudera          0 2018-10-10 02:18 categories_subset_all_tables/products
+
+Note: If there is no primary key in any of the tables we need to specify --split-by or -m1
+
+======================================================================================================================================================================
+PS 4
+
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table categories \
+--hive-import \
+--hive-table problem5.categories_subset \
+--where "category_id between 1 and 22"
+
+result in sqoop:
+
+OK
+Time taken: 5.915 seconds
+Loading data to table problem5.categories_subset
+Table problem5.categories_subset stats: [numFiles=4, totalSize=403]
+OK
+Time taken: 5.351 seconds
+
+result in hive:
+OK
+22
+Time taken: 55.751 seconds, Fetched: 1 row(s)
+======================================================================================================================================================================
+
+PS 5
+
+1)
+sqoop list-tables \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera
+
+res:
+
+categories
+customers
+departments
+order_items
+orders
+products
+products_external
+products_replica
+result
+
+2)
+sqoop eval \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--query "show tables"
+
+res:
+
+------------------------
+| Tables_in_retail_db  | 
+------------------------
+| categories           | 
+| customers            | 
+| departments          | 
+| order_items          | 
+| orders               | 
+| products             | 
+| products_external    | 
+| products_replica     | 
+| result               | 
+------------------------
+
+3)
+sqoop import-all-tables \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--as-avrodatafile \
+--warehouse-dir retail_cca174.db
+
+[cloudera@quickstart ~]$ hadoop fs -ls retail_cca174.db
+Found 6 items
+drwxr-xr-x   - cloudera cloudera          0 2018-10-10 02:56 retail_cca174.db/categories
+drwxr-xr-x   - cloudera cloudera          0 2018-10-10 03:01 retail_cca174.db/customers
+drwxr-xr-x   - cloudera cloudera          0 2018-10-10 03:03 retail_cca174.db/departments
+drwxr-xr-x   - cloudera cloudera          0 2018-10-10 03:05 retail_cca174.db/order_items
+drwxr-xr-x   - cloudera cloudera          0 2018-10-10 03:07 retail_cca174.db/orders
+drwxr-xr-x   - cloudera cloudera          0 2018-10-10 03:08 retail_cca174.db/products
+[cloudera@quickstart ~]$ hadoop fs -ls retail_cca174.db/orders
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-10 03:07 retail_cca174.db/orders/_SUCCESS
+-rw-r--r--   1 cloudera cloudera     439146 2018-10-10 03:07 retail_cca174.db/orders/part-m-00000.avro
+-rw-r--r--   1 cloudera cloudera     447726 2018-10-10 03:07 retail_cca174.db/orders/part-m-00001.avro
+-rw-r--r--   1 cloudera cloudera     446959 2018-10-10 03:07 retail_cca174.db/orders/part-m-00002.avro
+-rw-r--r--   1 cloudera cloudera     447606 2018-10-10 03:07 retail_cca174.db/orders/part-m-00003.avro
+
+
+4)
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table departments \
+--as-textfile
+
+res:
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/departments/* | wc -l
+6
+
+mysql> select count(*) from departments;
++----------+
+| count(*) |
++----------+
+|        6 |
++----------+
+1 row in set (0.00 sec)
+
+======================================================================================================================================================================
+
+PS 6:
+
+1)
+
+sqoop import-all-tables \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--hive-import \
+--num-mappers 3 \
+--outdir java_output
+
+
+Note:
+
+RDBMS -> HDFS -> Hive  This is the flow while importing data from RDBMS to Hive. The same will be followed for exporting.
+
+Initially data will be copied to /user/cloudera/ directory and from this directory it will be moved to /user/hive/warehouse
+
+
+Ex:
+
+  a)   RDBMS table 
+
+  b)   /user/cloudera/orders  in HDFS   ==> This directory should not exist prior to running this command
+
+  c)   /user/hive/warehouse/orders in Hive
+
+
+mysql> show tables;
++---------------------+
+| Tables_in_retail_db |
++---------------------+
+| categories          |
+| customers           |
+| departments         |
+| order_items         |
+| orders              |
+| products            |
+| products_external   |
+| products_replica    |
+| result              |
++---------------------+
+9 rows in set (0.08 sec)
+
+
+hive> show tables;
+OK
+categories
+customers
+departments
+order_items
+orders
+products
+Time taken: 0.315 seconds, Fetched: 6 row(s)
+
+only 6 table sgot imported because the other 3 tables doesn't have primary key and we didn't speacify --split-by - nor -m 1
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/hive/warehouse
+Found 11 items
+drwxrwxrwx   - cloudera supergroup          0 2018-10-10 03:42 /user/hive/warehouse/categories
+drwxrwxrwx   - cloudera supergroup          0 2018-10-10 03:43 /user/hive/warehouse/customers
+drwxrwxrwx   - cloudera supergroup          0 2018-09-20 05:54 /user/hive/warehouse/daily_revenue_per_product.db
+drwxrwxrwx   - cloudera supergroup          0 2018-10-10 03:44 /user/hive/warehouse/departments
+drwxrwxrwx   - cloudera supergroup          0 2018-10-10 03:46 /user/hive/warehouse/order_items
+drwxrwxrwx   - cloudera supergroup          0 2018-10-10 03:47 /user/hive/warehouse/orders
+drwxrwxrwx   - cloudera supergroup          0 2018-10-10 02:37 /user/hive/warehouse/problem5.db
+drwxrwxrwx   - cloudera supergroup          0 2018-10-10 03:48 /user/hive/warehouse/products
+drwxrwxrwx   - cloudera supergroup          0 2018-09-17 04:45 /user/hive/warehouse/retail_db.db
+drwxrwxrwx   - cloudera supergroup          0 2018-09-17 00:25 /user/hive/warehouse/retail_db_orc.db
+drwxrwxrwx   - cloudera supergroup          0 2018-09-21 00:10 /user/hive/warehouse/sqoop.db
+[cloudera@quickstart ~]$ hadoop fs -ls /user/hive/warehouse/orders
+^[[AFound 3 items
+-rw-r--r--   1 cloudera cloudera     992505 2018-10-10 03:47 /user/hive/warehouse/orders/part-m-00000
+-rw-r--r--   1 cloudera cloudera    1003786 2018-10-10 03:47 /user/hive/warehouse/orders/part-m-00001
+-rw-r--r--   1 cloudera cloudera    1003653 2018-10-10 03:47 /user/hive/warehouse/orders/part-m-00002
+[cloudera@quickstart ~]$ hadoop fs -ls /user/hive/warehouse/products
+Found 3 items
+-rw-r--r--   1 cloudera cloudera      55462 2018-10-10 03:48 /user/hive/warehouse/products/part-m-00000
+-rw-r--r--   1 cloudera cloudera      57682 2018-10-10 03:48 /user/hive/warehouse/products/part-m-00001
+-rw-r--r--   1 cloudera cloudera      60849 2018-10-10 03:48 /user/hive/warehouse/products/part-m-00002
+[cloudera@quickstart ~]$ hadoop fs -ls /user/hive/warehouse/departments
+Found 3 items
+-rw-r--r--   1 cloudera cloudera         21 2018-10-10 03:44 /user/hive/warehouse/departments/part-m-00000
+-rw-r--r--   1 cloudera cloudera         17 2018-10-10 03:44 /user/hive/warehouse/departments/part-m-00001
+-rw-r--r--   1 cloudera cloudera         22 2018-10-10 03:44 /user/hive/warehouse/departments/part-m-00002
+[cloudera@quickstart ~]$ hadoop fs -ls /user/hive/warehouse/products
+Found 3 items
+-rw-r--r--   1 cloudera cloudera      55462 2018-10-10 03:48 /user/hive/warehouse/products/part-m-00000
+-rw-r--r--   1 cloudera cloudera      57682 2018-10-10 03:48 /user/hive/warehouse/products/part-m-00001
+-rw-r--r--   1 cloudera cloudera      60849 2018-10-10 03:48 /user/hive/warehouse/products/part-m-00002
+[cloudera@quickstart ~]$ hadoop fs -ls /user/hive/warehouse/order_items
+Found 3 items
+-rw-r--r--   1 cloudera cloudera    1751448 2018-10-10 03:46 /user/hive/warehouse/order_items/part-m-00000
+-rw-r--r--   1 cloudera cloudera    1805514 2018-10-10 03:46 /user/hive/warehouse/order_items/part-m-00001
+-rw-r--r--   1 cloudera cloudera    1851918 2018-10-10 03:46 /user/hive/warehouse/order_items/part-m-00002
+[cloudera@quickstart ~]$ hadoop fs -ls /user/hive/warehouse/customers
+Found 3 items
+-rw-r--r--   1 cloudera cloudera     316564 2018-10-10 03:43 /user/hive/warehouse/customers/part-m-00000
+-rw-r--r--   1 cloudera cloudera     317148 2018-10-10 03:43 /user/hive/warehouse/customers/part-m-00001
+-rw-r--r--   1 cloudera cloudera     319813 2018-10-10 03:43 /user/hive/warehouse/customers/part-m-00002
+[cloudera@quickstart ~]$ hadoop fs -ls /user/hive/warehouse/categories
+Found 3 items
+-rw-r--r--   1 cloudera cloudera        366 2018-10-10 03:42 /user/hive/warehouse/categories/part-m-00000
+-rw-r--r--   1 cloudera cloudera        375 2018-10-10 03:42 /user/hive/warehouse/categories/part-m-00001
+-rw-r--r--   1 cloudera cloudera        304 2018-10-10 03:42 /user/hive/warehouse/categories/part-m-00002
+
+[cloudera@quickstart ~]$ pwd  (present working directory)
+/home/cloudera
+
+[cloudera@quickstart ~]$ ls -lrt
+total 748
+drwxrwsr-x 9 cloudera cloudera   4096 Feb 19  2015 eclipse
+drwxrwxr-x 4 cloudera cloudera   4096 Oct 23  2017 workspace
+-rwxrwxr-x 1 cloudera cloudera   4228 Oct 23  2017 parcels
+drwxrwxr-x 2 cloudera cloudera   4096 Oct 23  2017 lib
+-rwxrwxr-x 1 cloudera cloudera   5007 Oct 23  2017 kerberos
+-rw-rw-r-- 1 cloudera cloudera  50515 Oct 23  2017 express-deployment.json
+-rw-rw-r-- 1 cloudera cloudera  53655 Oct 23  2017 enterprise-deployment.json
+drwxrwxr-x 2 cloudera cloudera   4096 Oct 23  2017 Desktop
+-rwxrwxr-x 1 cloudera cloudera   9964 Oct 23  2017 cm_api.py
+-rwxrwxr-x 1 cloudera cloudera   5387 Oct 23  2017 cloudera-manager
+drwxr-xr-x 2 cloudera cloudera   4096 Sep  5 06:10 Videos
+drwxr-xr-x 2 cloudera cloudera   4096 Sep  5 06:10 Templates
+drwxr-xr-x 2 cloudera cloudera   4096 Sep  5 06:10 Public
+drwxr-xr-x 2 cloudera cloudera   4096 Sep  5 06:10 Pictures
+drwxr-xr-x 2 cloudera cloudera   4096 Sep  5 06:10 Music
+drwxr-xr-x 3 cloudera cloudera   4096 Sep  6 05:09 Downloads
+-rw-rw-r-- 1 cloudera cloudera   7568 Sep 14 03:02 script~
+-rw-rw-r-- 1 cloudera cloudera   7583 Sep 19 04:45 script
+-rw-rw-r-- 1 cloudera cloudera  16344 Sep 20 23:15 orders.java
+-rw-rw-r-- 1 cloudera cloudera  25928 Sep 26 05:16 products_replica.java
+-rw-rw-r-- 1 cloudera cloudera  25889 Sep 28 02:02 products_external.java
+drwxrwxr-x 2 cloudera cloudera   4096 Sep 28 03:32 java_files
+drwxrwxr-x 5 cloudera cloudera   4096 Oct  3 02:53 metastore_db
+-rw-rw-r-- 1 cloudera cloudera 155968 Oct  3 02:53 derby.log
+-rw-rw-r-- 1 cloudera cloudera  22555 Oct  4 00:20 order_items.java
+-rw-rw-r-- 1 cloudera cloudera   1099 Oct  4 00:20 order_items.avsc
+-rw-rw-r-- 1 cloudera cloudera  20951 Oct  5 03:09 products.java
+-rw-rw-r-- 1 cloudera cloudera  14124 Oct  8 03:36 categories.java
+-rw-rw-r-- 1 cloudera cloudera    594 Oct  8 03:38 categories.avsc
+-rw-rw-r-- 1 cloudera cloudera  27626 Oct  8 03:47 customers.java
+-rw-rw-r-- 1 cloudera cloudera   1509 Oct  8 03:47 customers.avsc
+-rw-rw-r-- 1 cloudera cloudera  11573 Oct  8 03:54 departments.java
+-rw-rw-r-- 1 cloudera cloudera    440 Oct  8 03:55 departments.avsc
+-rw-rw-r-- 1 cloudera cloudera   1041 Oct  8 04:00 products.avsc
+-rw-r--r-- 1 cloudera cloudera 164090 Oct  8 04:40 part-m-00000.avro
+-rw-rw-r-- 1 cloudera cloudera    708 Oct  8 04:41 orders.avsc
+drwxrwxr-x 7 cloudera cloudera   4096 Oct  9 04:05 Documents
+drwxrwxr-x 2 cloudera cloudera   4096 Oct  9 06:01 daily_revenue_per_product.daily_revenue
+drwxrwxr-x 8 cloudera cloudera   4096 Oct  9 06:01 retail_stage.db
+drwxrwxr-x 2 cloudera cloudera   4096 Oct  9 06:09 Employee
+drwxrwxr-x 2 cloudera cloudera   4096 Oct 10 03:48 java_output
+
+[cloudera@quickstart ~]$ cd java_output
+
+[cloudera@quickstart java_output]$ ls -lrt
+total 148
+-rw-rw-r-- 1 cloudera cloudera 14122 Oct 10 03:22 categories.java
+-rw-rw-r-- 1 cloudera cloudera 27624 Oct 10 03:25 customers.java
+-rw-rw-r-- 1 cloudera cloudera 11571 Oct 10 03:30 departments.java
+-rw-rw-r-- 1 cloudera cloudera 22553 Oct 10 03:44 order_items.java
+-rw-rw-r-- 1 cloudera cloudera 16342 Oct 10 03:46 orders.java
+-rw-rw-r-- 1 cloudera cloudera 20947 Oct 10 03:47 products.java
+-rw-rw-r-- 1 cloudera cloudera 25888 Oct 10 03:48 products_external.jav
+
+
+======================================================================================================================================================================
+
+PS 7:
+
+1)
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table departments \
+--boundary-query "select min(department_id),max(department_id) from departments where department_id between 1 and 25" \
+--num-mappers 2 \
+--columns "department_id,department_name"
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/departments/* | wc -l
+6
+
+[cloudera@quickstart ~]$ hadoop fs -ls /user/cloudera/departments
+Found 3 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-10 04:09 /user/cloudera/departments/_SUCCESS
+-rw-r--r--   1 cloudera cloudera         31 2018-10-10 04:08 /user/cloudera/departments/part-m-00000
+-rw-r--r--   1 cloudera cloudera         29 2018-10-10 04:08 /user/cloudera/departments/part-m-00001
+
+[cloudera@quickstart ~]$ hadoop fs -tail /user/cloudera/departments/part-m-00000
+2,Fitness
+3,Footwear
+4,Apparel
+
+======================================================================================================================================================================
+PS 8
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--target-dir /user/cloudera/orderAndOrderItemsJoined \
+--split-by order_id \
+--query 'select * from orders o join order_items oi on o.order_id = oi.order_item_order_id WHERE $CONDITIONS' \
+--boundary-query "select min(order_id),max(order_id) from orders o join order_items oi on o.order_id = oi.order_item_order_id " \
+--num-mappers 2
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/orderAndOrderItemsJoined/* | wc -l
+172198
+
+
+If you write --query 'select * from orders o join order_items oi on o.order_id = oi.order_item_order_id WHERE $CONDITIONS' ==> fine
+
+But if you write --query "select * from orders o join order_items oi on o.order_id = oi.order_item_order_id WHERE \$CONDITIONS"  ==> adding \ before $ is mandatory
+
+======================================================================================================================================================================
+
+[cloudera@quickstart ~]$ pwd
+/home/cloudera
+
+[cloudera@quickstart ~]$ ls -lrt
+total 644
+drwxrwsr-x 9 cloudera cloudera   4096 Feb 19  2015 eclipse
+drwxrwxr-x 4 cloudera cloudera   4096 Oct 23  2017 workspace
+-rwxrwxr-x 1 cloudera cloudera   4228 Oct 23  2017 parcels
+drwxrwxr-x 2 cloudera cloudera   4096 Oct 23  2017 lib
+-rwxrwxr-x 1 cloudera cloudera   5007 Oct 23  2017 kerberos
+-rw-rw-r-- 1 cloudera cloudera  50515 Oct 23  2017 express-deployment.json
+-rw-rw-r-- 1 cloudera cloudera  53655 Oct 23  2017 enterprise-deployment.json
+drwxrwxr-x 2 cloudera cloudera   4096 Oct 23  2017 Desktop
+-rwxrwxr-x 1 cloudera cloudera   9964 Oct 23  2017 cm_api.py
+-rwxrwxr-x 1 cloudera cloudera   5387 Oct 23  2017 cloudera-manager
+drwxr-xr-x 2 cloudera cloudera   4096 Sep  5 06:10 Videos
+drwxr-xr-x 2 cloudera cloudera   4096 Sep  5 06:10 Templates
+drwxr-xr-x 2 cloudera cloudera   4096 Sep  5 06:10 Public
+drwxr-xr-x 2 cloudera cloudera   4096 Sep  5 06:10 Pictures
+drwxr-xr-x 2 cloudera cloudera   4096 Sep  5 06:10 Music
+drwxr-xr-x 3 cloudera cloudera   4096 Sep  6 05:09 Downloads
+-rw-rw-r-- 1 cloudera cloudera   7568 Sep 14 03:02 script~
+-rw-rw-r-- 1 cloudera cloudera   7583 Sep 19 04:45 script
+-rw-rw-r-- 1 cloudera cloudera  16344 Sep 20 23:15 orders.java
+-rw-rw-r-- 1 cloudera cloudera  25928 Sep 26 05:16 products_replica.java
+-rw-rw-r-- 1 cloudera cloudera  25889 Sep 28 02:02 products_external.java
+drwxrwxr-x 2 cloudera cloudera   4096 Sep 28 03:32 java_files
+-rw-rw-r-- 1 cloudera cloudera  22555 Oct  4 00:20 order_items.java
+-rw-rw-r-- 1 cloudera cloudera   1099 Oct  4 00:20 order_items.avsc
+-rw-rw-r-- 1 cloudera cloudera  20951 Oct  5 03:09 products.java
+-rw-rw-r-- 1 cloudera cloudera  14124 Oct  8 03:36 categories.java
+-rw-rw-r-- 1 cloudera cloudera    594 Oct  8 03:38 categories.avsc
+-rw-rw-r-- 1 cloudera cloudera  27626 Oct  8 03:47 customers.java
+-rw-rw-r-- 1 cloudera cloudera   1509 Oct  8 03:47 customers.avsc
+-rw-rw-r-- 1 cloudera cloudera  11573 Oct  8 03:54 departments.java
+-rw-rw-r-- 1 cloudera cloudera    440 Oct  8 03:55 departments.avsc
+-rw-rw-r-- 1 cloudera cloudera   1041 Oct  8 04:00 products.avsc
+-rw-r--r-- 1 cloudera cloudera 164090 Oct  8 04:40 part-m-00000.avro
+-rw-rw-r-- 1 cloudera cloudera    708 Oct  8 04:41 orders.avsc
+drwxrwxr-x 7 cloudera cloudera   4096 Oct  9 04:05 Documents
+drwxrwxr-x 2 cloudera cloudera   4096 Oct  9 06:01 daily_revenue_per_product.daily_revenue
+drwxrwxr-x 8 cloudera cloudera   4096 Oct  9 06:01 retail_stage.db
+drwxrwxr-x 2 cloudera cloudera   4096 Oct  9 06:09 Employee
+drwxrwxr-x 2 cloudera cloudera   4096 Oct 10 03:48 java_output
+-rw-rw-r-- 1 cloudera cloudera  32085 Oct 10 04:31 QueryResult.java
+drwxrwxr-x 5 cloudera cloudera   4096 Oct 10 06:24 metastore_db
+-rw-rw-r-- 1 cloudera cloudera  20387 Oct 10 06:24 derby.log
+
+
+[cloudera@quickstart ~]$ pwd
+/home/cloudera
+
+[cloudera@quickstart ~]$ cd ../  ==> to go one step backward i.e, to home
+
+[cloudera@quickstart home]$ ls -rt
+cloudera
+
+[cloudera@quickstart home]$ cd ../
+
+[cloudera@quickstart /]$ ls -lrt
+total 102
+drwxr-xr-x.   2 root root  4096 Sep 23  2011 srv
+drwxr-xr-x.   2 root root  4096 Sep 23  2011 mnt
+drwx------.   2 root root 16384 Oct 23  2017 lost+found
+drwxr-xr-x.   2 root root  4096 Oct 23  2017 selinux
+dr-xr-xr-x.   5 root root  1024 Oct 23  2017 boot
+dr-xr-xr-x.  11 root root  4096 Oct 23  2017 lib
+drwxr-xr-x.  22 root root  4096 Oct 23  2017 var
+drwxrwxr-x.  14 root root  4096 Oct 23  2017 usr
+drwxrwxr-x.   3 root root  4096 Oct 23  2017 home
+drwxr-xr-x.   7 root root  4096 Oct 23  2017 opt
+dr-xr-x---.   4 root root  4096 Oct 23  2017 root
+dr-xr-xr-x  181 root root     0 Sep  5 06:07 proc
+drwxr-xr-x   13 root root     0 Sep  5 06:07 sys
+drwxr-xr-x   17 root root  3580 Sep  5 06:10 dev
+dr-xr-xr-x.   9 root root 12288 Sep  5 07:38 lib64
+dr-xr-xr-x.   2 root root  4096 Sep  5 07:38 bin
+dr-xr-xr-x.   2 root root 12288 Sep  5 07:38 sbin
+drwxr-xr-x.   4 root root  4096 Sep 25 04:15 media
+drwxr-xr-x. 120 root root 12288 Oct  8 06:32 etc
+drwxrwxrwt.  30 root root  4096 Oct 10 06:39 tmp
+
+[cloudera@quickstart /]$ cd etc/hive/conf
+
+[cloudera@quickstart conf]$ ls -lrt
+total 24
+-rw-r--r-- 1 root root 2060 Oct  4  2017 ivysettings.xml
+-rw-r--r-- 1 root root 3505 Oct  4  2017 hive-log4j.properties
+-rw-r--r-- 1 root root 2662 Oct  4  2017 hive-exec-log4j.properties
+-rw-r--r-- 1 root root 2378 Oct  4  2017 hive-env.sh.template
+-rw-r--r-- 1 root root 1196 Oct  4  2017 beeline-log4j.properties.template
+-rw-rw-r-- 1 root root 1937 Oct 23  2017 hive-site.xml
+
+[cloudera@quickstart conf]$ pwd
+/etc/hive/conf
+
+[cloudera@quickstart conf]$ cd ../../../
+
+[cloudera@quickstart /]$ pwd
+/
+[cloudera@quickstart /]$ cd usr/lib/spark/conf
+
+[cloudera@quickstart conf]$ ls -lrt
+total 52
+-rwxr-xr-x 1 root root 4209 Oct  4  2017 spark-env.sh.template
+-rw-r--r-- 1 root root 1292 Oct  4  2017 spark-defaults.conf.template
+-rw-r--r-- 1 root root  865 Oct  4  2017 slaves.template
+-rw-r--r-- 1 root root 6671 Oct  4  2017 metrics.properties.template
+-rw-r--r-- 1 root root 2025 Oct  4  2017 log4j.properties.template
+-rw-r--r-- 1 root root 1105 Oct  4  2017 fairscheduler.xml.template
+-rw-r--r-- 1 root root  987 Oct  4  2017 docker.properties.template
+-rwxr-xr-x 1 root root 6026 Oct  4  2017 spark-env.sh
+-rw-r--r-- 1 root root 1292 Oct  4  2017 spark-defaults.conf
+-rw-rw-r-- 1 root root   92 Oct 23  2017 slaves
+
+[cloudera@quickstart conf]$ cp /etc/hive/conf/hive-site.xml
+cp: missing destination file operand after `/etc/hive/conf/hive-site.xml'
+Try `cp --help' for more information.
+
+[cloudera@quickstart conf]$ cp /etc/hive/conf/hive-site.xml .  ==> . represents the present working directory. i.e, it copies hive-site.xml to pwd
+cp: cannot create regular file `./hive-site.xml': Permission denied
+
+[cloudera@quickstart conf]$ sudo cp /etc/hive/conf/hive-site.xml .
+
+[cloudera@quickstart conf]$ ls -lrt
+total 56
+-rwxr-xr-x 1 root root 4209 Oct  4  2017 spark-env.sh.template
+-rw-r--r-- 1 root root 1292 Oct  4  2017 spark-defaults.conf.template
+-rw-r--r-- 1 root root  865 Oct  4  2017 slaves.template
+-rw-r--r-- 1 root root 6671 Oct  4  2017 metrics.properties.template
+-rw-r--r-- 1 root root 2025 Oct  4  2017 log4j.properties.template
+-rw-r--r-- 1 root root 1105 Oct  4  2017 fairscheduler.xml.template
+-rw-r--r-- 1 root root  987 Oct  4  2017 docker.properties.template
+-rwxr-xr-x 1 root root 6026 Oct  4  2017 spark-env.sh
+-rw-r--r-- 1 root root 1292 Oct  4  2017 spark-defaults.conf
+-rw-rw-r-- 1 root root   92 Oct 23  2017 slaves
+-rw-r--r-- 1 root root 1937 Oct 10 06:43 hive-site.xml
+======================================================================================================================================================================
+
+PS 9:
+
+mysql> select * from departments;
++---------------+-----------------+
+| department_id | department_name |
++---------------+-----------------+
+|             2 | Fitness         |
+|             3 | Footwear        |
+|             4 | Apparel         |
+|             5 | Golf            |
+|             6 | Outdoors        |
+|             7 | Fan Shop        |
++---------------+-----------------+
+6 rows in set (0.14 sec)
+
+
+mysql> insert into departments values(8,'Shopping');
+Query OK, 1 row affected (0.05 sec)
+
+mysql> insert into departments values(9,'MakeUp');
+Query OK, 1 row affected (0.00 sec)
+
+mysql> insert into departments values(10,'Designing');
+Query OK, 1 row affected (0.02 sec)
+
+
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table departments \
+--fields-terminated-by '|' \
+--lines-terminated-by '\n' \
+--incremental append \
+--check-column department_id \
+--last-value 7
+
+[cloudera@quickstart java_output]$ hadoop fs -ls /user/cloudera/departments
+Found 6 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-10 04:09 /user/cloudera/departments/_SUCCESS
+-rw-r--r--   1 cloudera cloudera         31 2018-10-10 04:08 /user/cloudera/departments/part-m-00000
+-rw-r--r--   1 cloudera cloudera         29 2018-10-10 04:08 /user/cloudera/departments/part-m-00001
+-rw-r--r--   1 cloudera cloudera         11 2018-10-10 07:44 /user/cloudera/departments/part-m-00002
+-rw-r--r--   1 cloudera cloudera          9 2018-10-10 07:44 /user/cloudera/departments/part-m-00003
+-rw-r--r--   1 cloudera cloudera         13 2018-10-10 07:44 /user/cloudera/departments/part-m-00004
+
+[cloudera@quickstart java_output]$ hadoop fs -cat /user/cloudera/departments/* | wc -l
+9
+
+======================================================================================================================================================================
+
+
+PS 10:
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table departments \
+--hive-import \
+--hive-table hadoopexam.departments 
+
+Error:
+
+18/10/10 07:52:19 ERROR tool.ImportTool: Import failed: org.apache.hadoop.mapred.FileAlreadyExistsException: Output directory hdfs://quickstart.cloudera:8020/user/cloudera/departments already exists
+
+
+[cloudera@quickstart java_output]$ hadoop fs -rm -r /user/cloudera/departments
+Deleted /user/cloudera/departments
+
+hive> select * from departments;
+OK
+2	Fitness
+3	Footwear
+4	Apparel
+5	Golf
+6	Outdoors
+7	Fan Shop
+8	Shopping
+9	MakeUp
+10	Designing
+
+[cloudera@quickstart java_output]$ hadoop fs -cat /user/hive/warehouse/hadoopexam.db/departments/*
+2Fitness
+3Footwear
+4Apparel
+5Golf
+6Outdoors
+7Fan Shop
+8Shopping
+9MakeUp
+10Designing
+
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table departments \
+--hive-import \
+--create-hive-table \
+--hive-database hadoopexam \
+--hive-table departments_new 
+
+OK
+Time taken: 4.5 seconds
+Loading data to table hadoopexam.departments_new
+Table hadoopexam.departments_new stats: [numFiles=4, totalSize=93]
+
+[cloudera@quickstart java_output]$ hadoop fs -cat /user/hive/warehouse/hadoopexam.db/departments/*
+2Fitness
+3Footwear
+4Apparel
+5Golf
+6Outdoors
+7Fan Shop
+8Shopping
+9MakeUp
+10Designing
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

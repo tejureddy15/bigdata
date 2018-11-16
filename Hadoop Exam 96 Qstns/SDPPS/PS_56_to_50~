@@ -1,0 +1,195 @@
+
+PS 56:
+
+scala> val a  = sc.parallelize(1 to 100, 3)
+a: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[1168] at parallelize at <console>:33
+
+scala> a.glom.collect
+res205: Array[Array[Int]] = Array(
+Array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33), 
+Array(34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66), 
+Array(67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100))
+
+scala> val a  = sc.parallelize(1 to 100, 2)
+a: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[1170] at parallelize at <console>:33
+
+scala> a.glom.collect
+res206: Array[Array[Int]] = Array(
+Array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50), 
+Array(51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100))
+
+Note:
+
+Clubs all the elements of a partition in an Array
+
+therefore 3 arrays in the first case, since no of partitions are 3 (,3)
+
+2 ararys in the second case, since no of partitions are 2 (,2)
+
+======================================================================================================================================================================
+
+PS 55:
+
+scala> val rdd1 = sc.parallelize(List( ("cat",2), ("cat",5), ("book",4), ("cat",12) ))
+rdd1: org.apache.spark.rdd.RDD[(String, Int)] = ParallelCollectionRDD[1172] at parallelize at <console>:33
+
+scala> val rdd2 = sc.parallelize(List( ("cat",2), ("cup",5), ("mouse",4), ("cat",12) ))
+rdd2: org.apache.spark.rdd.RDD[(String, Int)] = ParallelCollectionRDD[1173] at parallelize at <console>:33
+
+scala> rdd1.fullOuterJoin(rdd2)
+res207: org.apache.spark.rdd.RDD[(String, (Option[Int], Option[Int]))] = MapPartitionsRDD[1176] at fullOuterJoin at <console>:38
+
+scala> rdd1.fullOuterJoin(rdd2).collect
+res208: Array[(String, (Option[Int], Option[Int]))] = Array((book,(Some(4),None)), (mouse,(None,Some(4))), (cup,(None,Some(5))), (cat,(Some(2),Some(2))), (cat,(Some(2),Some(12))), (cat,(Some(5),Some(2))), (cat,(Some(5),Some(12))), (cat,(Some(12),Some(2))), (cat,(Some(12),Some(12))))
+
+======================================================================================================================================================================
+
+PS 54:
+
+scala> val a = sc.parallelize(List("dog", "tiger", "lion", "cat", "panther", "eagle"),2)
+a: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[1180] at parallelize at <console>:33
+
+scala> val b = a.map(x => (x.length, x))
+b: org.apache.spark.rdd.RDD[(Int, String)] = MapPartitionsRDD[1181] at map at <console>:37
+
+scala> b.collect()
+res209: Array[(Int, String)] = Array((3,dog), (5,tiger), (4,lion), (3,cat), (7,panther), (5,eagle))
+
+scala> b.foldByKey("")(_+_).collect
+res212: Array[(Int, String)] = Array((4,lion), (3,dogcat), (7,panther), (5,tigereagle))
+
+======================================================================================================================================================================
+
+PS 53:
+
+scala> val a = sc.parallelize(1 to 10)
+a: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[1183] at parallelize at <console>:33
+
+scala> val b = a.filter(x => x%2 == 0)
+b: org.apache.spark.rdd.RDD[Int] = MapPartitionsRDD[1184] at filter at <console>:37
+
+scala> b.collect
+res213: Array[Int] = Array(2, 4, 6, 8, 10)
+
+scala> val b = a.filter(x => x<3)
+b: org.apache.spark.rdd.RDD[Int] = MapPartitionsRDD[1185] at filter at <console>:37
+
+scala> b.collect
+res214: Array[Int] = Array(1, 2)
+
+======================================================================================================================================================================
+
+PS 52:
+
+scala> val a = sc.parallelize(List(1,2,3,4,5,6,7,8,2,4,2,1,1,1,1,1))
+a: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[1186] at parallelize at <console>:33
+
+scala> a.countByValue
+res218: scala.collection.Map[Int,Long] = Map(5 -> 1, 1 -> 6, 6 -> 1, 2 -> 3, 7 -> 1, 3 -> 1, 8 -> 1, 4 -> 2)
+
+======================================================================================================================================================================
+
+PS 51:
+
+scala> val a = sc.parallelize(List(1,2,1,3))
+a: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[1190] at parallelize at <console>:33
+
+scala> val b = a.map((_,"b"))
+b: org.apache.spark.rdd.RDD[(Int, String)] = MapPartitionsRDD[1191] at map at <console>:35
+
+scala> b.collect
+res219: Array[(Int, String)] = Array((1,b), (2,b), (1,b), (3,b))
+
+scala> val c = a.map((_,"c"))
+c: org.apache.spark.rdd.RDD[(Int, String)] = MapPartitionsRDD[1192] at map at <console>:35
+
+scala> c.collect
+res220: Array[(Int, String)] = Array((1,c), (2,c), (1,c), (3,c))
+
+scala> b.cogroup(c).collect
+res221: Array[(Int, (Iterable[String], Iterable[String]))] = Array((1,(CompactBuffer(b, b),CompactBuffer(c, c))), (3,(CompactBuffer(b),CompactBuffer(c))), (2,(CompactBuffer(b),CompactBuffer(c))))
+
+======================================================================================================================================================================
+
+PS 50:
+
+
+scala> val scores = sc.parallelize(List(("Fred", 88.0), ("Fred", 95.0), ("Fred", 91.0), ("Wilma", 93.0), ("Wilma", 95.0), ("Wilma", 98.0) ))
+scores: org.apache.spark.rdd.RDD[(String, Double)] = ParallelCollectionRDD[1199] at parallelize at <console>:33
+
+scala> val scoresReduced = scores.reduceByKey(_+_)
+scoresReduced: org.apache.spark.rdd.RDD[(String, Double)] = ShuffledRDD[1200] at reduceByKey at <console>:35
+
+scala> scoresReduced.collect
+res228: Array[(String, Double)] = Array((Wilma,286.0), (Fred,274.0))
+
+scala> val count = scoresReduced.count
+count: Long = 2
+
+scala> val map = scoresReduced.map(x => (x._1, x._2/count))
+map: org.apache.spark.rdd.RDD[(String, Double)] = MapPartitionsRDD[1202] at map at <console>:41
+
+scala> map.collect
+res227: Array[(String, Double)] = Array((Wilma,143.0), (Fred,137.0))
+
+----------------------------------------------------------------------------------------------------------------------
+>>>scores = sc.parallelize([("Fred", 88.0), ("Fred", 95.0), ("Fred", 91.0), ("Wilma", 93.0), ("Wilma", 95.0), ("Wilma", 98.0)], 2)
+
+To find just the counter
+
+>>> agg = scores.aggregateByKey \
+... (0, lambda a,i : a + 1, lambda x,y : (x + y))
+ 
+>>> agg.collect()
+[('Wilma', 3), ('Fred', 3)]
+
+To find just the revenue
+
+>>> agg = scores.aggregateByKey \
+... (0, lambda a,i : a + i, lambda x,y : (x + y))
+ 
+>>> agg.collect()
+[('Wilma', 286.0), ('Fred', 274.0)]
+ 
+To find both revenue and count and also average of scores
+
+>>> agg = scores.aggregateByKey \
+... ((0.0, 0), lambda x,y : (x[0]+ y, x[1] + 1), lambda x, y : (x[0] + y[0], x[1] + y[1]))
+ 
+>>> agg.collect()
+[('Wilma', (286.0, 3)), ('Fred', (274.0, 3))]
+ 
+>>> map = agg.map \
+... (lambda rec : (rec[0], rec[1][0]/rec[1][1]))
+ 
+>>> map.collect()
+[('Wilma', 95.333333333333329), ('Fred', 91.333333333333329)]
+
+
+In Scala:
+
+Both average scores
+
+scala> val scoresRDD = sc.parallelize(List(("Fred",88.0),("Fred",95.0),("Fred",91.0),("Wilma",93.0),("Wilma",95.0),("Wilma",98.0)))
+scoresRDD: org.apache.spark.rdd.RDD[(String, Double)] = ParallelCollectionRDD[78] at parallelize at <console>:31
+
+scala> scoresRDD.collect()
+res44: Array[(String, Double)] = Array((Fred,88.0), (Fred,95.0), (Fred,91.0), (Wilma,93.0), (Wilma,95.0), (Wilma,98.0))
+
+cala> val scoresRDDMap = scoresRDD.aggregateByKey((0.0,0))((x,y) => (x._1 + y, x._2 + 1), (x,y) => (x._1 + y._1, x._2 + y._2))
+scoresRDDMap: org.apache.spark.rdd.RDD[(String, (Double, Int))] = ShuffledRDD[79] at aggregateByKey at <console>:37
+
+scala> scoresRDDMap.collect()
+res45: Array[(String, (Double, Int))] = Array((Wilma,(286.0,3)), (Fred,(274.0,3)))
+
+Only no of keys present in List
+
+scala> val scores = scoresRDD.aggregateByKey(0)((x,y) => (x + 1), (x,y) => (x + y))
+scores: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[83] at aggregateByKey at <console>:37
+
+scala> scores.collect()
+res49: Array[(String, Int)] = Array((Wilma,3), (Fred,3))
+
+======================================================================================================================================================================
+
+

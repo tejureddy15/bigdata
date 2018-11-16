@@ -1,0 +1,1215 @@
+PS 81:
+
+case class Products(
+productId : Int,
+productCode : String,
+name : String,
+quantity : Int,
+price : Float
+)
+
+val productsDF = sc.textFile("/user/cloudera/prod.csv").
+map(rec => rec.split(',')).
+map(rec => Products(rec(0).toInt,rec(1),rec(2),rec(3).toInt,rec(4).toFloat)).
+toDF()
+
+productsDF.registerTempTable("products")
+
+val hiveTable = sqlContext.sql("""
+create table problem5.hive_orc_again(
+productId int,
+productCode string,
+name string,
+quantity int,
+price float
+) stored as orc
+""")
+
+val hiveTableData = sqlContext.sql("""
+insert into table problem5.hive_orc_again select * from products
+""")
+
+same for parquet just replace with orc with parquet
+
+======================================================================================================================================================================
+PS 80:
+
+scala> val query1 = sqlContext.sql("""
+     | select product_id,product_category_id,product_price,
+     | row_number() over(partition by product_category_id order by product_price)
+     | from prod
+     | """)
+query1: org.apache.spark.sql.DataFrame = [product_id: int, product_category_id: int, product_price: float, _c3: int]
+
+scala> query1.show()
++----------+-------------------+-------------+---+                              
+|product_id|product_category_id|product_price|_c3|
++----------+-------------------+-------------+---+
+|       686|                 31|        79.99|  1|
+|       687|                 31|        79.99|  2|
+|       691|                 31|        79.99|  3|
+|       692|                 31|        79.99|  4|
+|       677|                 31|        99.99|  5|
+|       678|                 31|        99.99|  6|
+|       679|                 31|        99.99|  7|
+|       681|                 31|       119.99|  8|
+|       683|                 31|       119.99|  9|
+|       680|                 31|       149.99| 10|
+|       682|                 31|       149.99| 11|
+|       669|                 31|       179.99| 12|
+|       684|                 31|       199.99| 13|
+|       670|                 31|       209.99| 14|
+|       671|                 31|       209.99| 15|
+|       674|                 31|        219.0| 16|
+|       673|                 31|        249.0| 17|
+|       672|                 31|        349.0| 18|
+|       688|                 31|       499.99| 19|
+|       689|                 31|       599.99| 20|
++----------+-------------------+-------------+---+
+only showing top 20 rows
+
+
+scala> val query1 = sqlContext.sql("""
+     | select product_id,product_category_id,product_price,
+     | row_number() over(partition by product_category_id order by product_price desc)
+     | from prod
+     | """)
+query1: org.apache.spark.sql.DataFrame = [product_id: int, product_category_id: int, product_price: float, _c3: int]
+
+scala> query1.show()
++----------+-------------------+-------------+---+
+|product_id|product_category_id|product_price|_c3|
++----------+-------------------+-------------+---+
+|       685|                 31|       899.99|  1|
+|       676|                 31|        899.0|  2|
+|       675|                 31|        799.0|  3|
+|       689|                 31|       599.99|  4|
+|       690|                 31|       599.99|  5|
+|       688|                 31|       499.99|  6|
+|       672|                 31|        349.0|  7|
+|       673|                 31|        249.0|  8|
+|       674|                 31|        219.0|  9|
+|       670|                 31|       209.99| 10|
+|       671|                 31|       209.99| 11|
+|       684|                 31|       199.99| 12|
+|       669|                 31|       179.99| 13|
+|       680|                 31|       149.99| 14|
+|       682|                 31|       149.99| 15|
+|       681|                 31|       119.99| 16|
+|       683|                 31|       119.99| 17|
+|       677|                 31|        99.99| 18|
+|       678|                 31|        99.99| 19|
+|       679|                 31|        99.99| 20|
++----------+-------------------+-------------+---+
+only showing top 20 rows
+
+
+scala> val query2 = query1.drop("_c3")
+query2: org.apache.spark.sql.DataFrame = [product_id: int, product_category_id: int, product_price: float]
+
+scala> query2.show()
++----------+-------------------+-------------+                                  
+|product_id|product_category_id|product_price|
++----------+-------------------+-------------+
+|       685|                 31|       899.99|
+|       676|                 31|        899.0|
+|       675|                 31|        799.0|
+|       689|                 31|       599.99|
+|       690|                 31|       599.99|
+|       688|                 31|       499.99|
+|       672|                 31|        349.0|
+|       673|                 31|        249.0|
+|       674|                 31|        219.0|
+|       670|                 31|       209.99|
+|       671|                 31|       209.99|
+|       684|                 31|       199.99|
+|       669|                 31|       179.99|
+|       680|                 31|       149.99|
+|       682|                 31|       149.99|
+|       681|                 31|       119.99|
+|       683|                 31|       119.99|
+|       677|                 31|        99.99|
+|       678|                 31|        99.99|
+|       679|                 31|        99.99|
++----------+-------------------+-------------+
+only showing top 20 rows
+
+======================================================================================================================================================================
+
+PS 83:
+
+1)
+
+scala> val query1 = sqlContext.sql("""
+     | select * from prods
+     | where quantity >= 5000 and name LIKE "Pen %"
+     | """)
+query1: org.apache.spark.sql.DataFrame = [productid: int, productcode: string, name: string, quantity: int, price: float]
+
+scala> query1.show()
++---------+-----------+--------+--------+-----+
+|productid|productcode|    name|quantity|price|
++---------+-----------+--------+--------+-----+
+|     1001|        PEN| Pen Red|    5000| 1.23|
+|     1002|        PEN|Pen Blue|    8000| 1.25|
++---------+-----------+--------+--------+-----+
+
+2)
+
+scala> val query2 = sqlContext.sql("""
+     | select * from prods
+     | where quantity >= 5000 and price < 1.24 and name LIKE "Pen %"
+     | """)
+query2: org.apache.spark.sql.DataFrame = [productid: int, productcode: string, name: string, quantity: int, price: float]
+
+scala> query2.show()
++---------+-----------+-------+--------+-----+
+|productid|productcode|   name|quantity|price|
++---------+-----------+-------+--------+-----+
+|     1001|        PEN|Pen Red|    5000| 1.23|
++---------+-----------+-------+--------+-----+
+
+
+3)
+
+scala> val query3 = sqlContext.sql("""
+     | select * from prods
+     | where not(quantity >= 5000) and not(name LIKE "Pen %")
+     | """)
+query3: org.apache.spark.sql.DataFrame = [productid: int, productcode: string, name: string, quantity: int, price: float]
+
+scala> query3.show()
++---------+-----------+---------+--------+-------+
+|productid|productcode|     name|quantity|  price|
++---------+-----------+---------+--------+-------+
+|     1006|        PEC|Pencil HB|       0|9999.99|
++---------+-----------+---------+--------+-------+
+
+4)
+
+scala> val query4 = sqlContext.sql("""
+     | select * from prods
+     | where name = "Pen Red" or name = "Pen Black"
+     | """)
+query4: org.apache.spark.sql.DataFrame = [productid: int, productcode: string, name: string, quantity: int, price: float]
+
+scala> query4.show()
++---------+-----------+---------+--------+-----+
+|productid|productcode|     name|quantity|price|
++---------+-----------+---------+--------+-----+
+|     1001|        PEN|  Pen Red|    5000| 1.23|
+|     1003|        PEN|Pen Black|    2000| 1.25|
++---------+-----------+---------+--------+-----+
+
+5)
+
+scala> val query5 = sqlContext.sql("""
+     | select * from prods
+     | where price between 1.0 and 2.0 and quantity between 1000 and 2000
+     | """)
+query5: org.apache.spark.sql.DataFrame = [productid: int, productcode: string, name: string, quantity: int, price: float]
+
+scala> query5.show()
++---------+-----------+---------+--------+-----+
+|productid|productcode|     name|quantity|price|
++---------+-----------+---------+--------+-----+
+|     1003|        PEN|Pen Black|    2000| 1.25|
++---------+-----------+---------+--------+-----+
+
+
+scala> hiveTable.show()
++---------+-----------+---------+--------+-------+
+|productid|productcode|     name|quantity|  price|
++---------+-----------+---------+--------+-------+
+|     1001|        PEN|  Pen Red|    5000|   1.23|
+|     1002|        PEN| Pen Blue|    8000|   1.25|
+|     1003|        PEN|Pen Black|    2000|   1.25|
+|     1004|        PEC|Pencil 2B|   10000|   0.48|
+|     1005|        PEC|Pencil 2H|    8000|   0.49|
+|     1006|        PEC|Pencil HB|       0|9999.99|
++---------+-----------+---------+--------+-------+
+
+
+======================================================================================================================================================================
+PS 82:
+
+1)
+
+scala> val hiveTable = sqlContext.table("problem5.hive_orc_again")
+hiveTable: org.apache.spark.sql.DataFrame = [productid: int, productcode: string, name: string, quantity: int, price: float]
+
+scala> hiveTable.show()
++---------+-----------+---------+--------+-------+
+|productid|productcode|     name|quantity|  price|
++---------+-----------+---------+--------+-------+
+|     1001|        PEN|  Pen Red|    5000|   1.23|
+|     1002|        PEN| Pen Blue|    8000|   1.25|
+|     1003|        PEN|Pen Black|    2000|   1.25|
+|     1004|        PEC|Pencil 2B|   10000|   0.48|
+|     1005|        PEC|Pencil 2H|    8000|   0.49|
+|     1006|        PEC|Pencil HB|       0|9999.99|
++---------+-----------+---------+--------+-------+
+
+
+scala> val query1 = hiveTable.select("name","quantity").where(col("quantity") <= 2000)
+query1: org.apache.spark.sql.DataFrame = [name: string, quantity: int]
+
+scala> query1.show()
++---------+--------+
+|     name|quantity|
++---------+--------+
+|Pen Black|    2000|
+|Pencil HB|       0|
++---------+--------+
+
+2)
+
+scala> hiveTable.registerTempTable("prods")
+
+scala> val query2 = sqlContext.sql("""
+     | select name,price
+     | from prods
+     | where productCode = "PEN"
+     | """)
+query2: org.apache.spark.sql.DataFrame = [name: string, price: float]
+
+scala> query2.show()
++---------+-----+
+|     name|price|
++---------+-----+
+|  Pen Red| 1.23|
+| Pen Blue| 1.25|
+|Pen Black| 1.25|
++---------+-----+
+
+3)
+
+scala> val query3 = sqlContext.sql("""
+     | select name from prods
+     | where name LIKE "Pencil%"
+     | """)
+query3: org.apache.spark.sql.DataFrame = [name: string]
+
+scala> query3.show()
++---------+
+|     name|
++---------+
+|Pencil 2B|
+|Pencil 2H|
+|Pencil HB|
++---------+
+
+4)
+
+scala> val query4 = sqlContext.sql("""
+     | select name from prods
+     | where name LIKE "P__ %"   ==> just give space for white space 
+     | """)
+query4: org.apache.spark.sql.DataFrame = [name: string]
+
+scala> query4.show()
++---------+
+|     name|
++---------+
+|  Pen Red|
+| Pen Blue|
+|Pen Black|
++---------+
+
+% --> any number of characters
+_ --> for on echaracter
+
+give space for whitespace
+
+^ --> for the beginning of the line
+$ --> for the end of the line
+
+======================================================================================================================================================================
+PS 84:
+
+1)
+scala> val query1 = hiveTable.alias("ht").select("ht.*").filter("productCode is null")
+query1: org.apache.spark.sql.DataFrame = [productid: int, productcode: string, name: string, quantity: int, price: float]
+
+scala> query1.show()
++---------+-----------+----+--------+-----+
+|productid|productcode|name|quantity|price|
++---------+-----------+----+--------+-----+
++---------+-----------+----+--------+-----+
+
+
+scala> hiveTable.show()
++---------+-----------+---------+--------+-------+
+|productid|productcode|     name|quantity|  price|
++---------+-----------+---------+--------+-------+
+|     1001|        PEN|  Pen Red|    5000|   1.23|
+|     1002|        PEN| Pen Blue|    8000|   1.25|
+|     1003|        PEN|Pen Black|    2000|   1.25|
+|     1004|        PEC|Pencil 2B|   10000|   0.48|
+|     1005|        PEC|Pencil 2H|    8000|   0.49|
+|     1006|        PEC|Pencil HB|       0|9999.99|
++---------+-----------+---------+--------+-------+
+
+using Spark SQL
+
+scala> val query1 = sqlContext.sql("""
+     | select * from prods
+     | where productCode is null
+     | """)
+query1: org.apache.spark.sql.DataFrame = [productid: int, productcode: string, name: string, quantity: int, price: float]
+
+scala> query1.show()
++---------+-----------+----+--------+-----+
+|productid|productcode|name|quantity|price|
++---------+-----------+----+--------+-----+
++---------+-----------+----+--------+-----+
+
+
+2)
+
+scala> val query2 = sqlContext.sql("""
+     | select name,price from prods
+     | where name LIKE "Pen %"
+     | order by price desc
+     | """)
+query2: org.apache.spark.sql.DataFrame = [name: string, price: float]
+
+scala> query2.show()
++---------+-----+
+|     name|price|
++---------+-----+
+|Pen Black| 1.25|
+| Pen Blue| 1.25|
+|  Pen Red| 1.23|
++---------+-----+
+
+3)
+
+scala> val query4 = sqlContext.sql("""
+     | select * from prods
+     | where name LIKE "Pen %"
+     | order by price desc, quantity
+     | """)
+query4: org.apache.spark.sql.DataFrame = [productid: int, productcode: string, name: string, quantity: int, price: float]
+
+scala> query4.show()
++---------+-----------+---------+--------+-----+
+|productid|productcode|     name|quantity|price|
++---------+-----------+---------+--------+-----+
+|     1003|        PEN|Pen Black|    2000| 1.25|
+|     1002|        PEN| Pen Blue|    8000| 1.25|
+|     1001|        PEN|  Pen Red|    5000| 1.23|
++---------+-----------+---------+--------+-----+
+
+
+4)
+
+scala> val query3 = hiveTable.alias("ht").select("ht.*").orderBy(col("price").desc).show(2)
++---------+-----------+---------+--------+-------+
+|productid|productcode|     name|quantity|  price|
++---------+-----------+---------+--------+-------+
+|     1006|        PEC|Pencil HB|       0|9999.99|
+|     1002|        PEN| Pen Blue|    8000|   1.25|
++---------+-----------+---------+--------+-------+
+only showing top 2 rows
+
+query3: Unit = ()
+
+using SparkSQL
+
+scala> val query3 = sqlContext.sql("""
+     | select * from prods
+     | order by price desc limit 2
+     | """)
+query3: org.apache.spark.sql.DataFrame = [productid: int, productcode: string, name: string, quantity: int, price: float]
+
+scala> query3.show()
++---------+-----------+---------+--------+-------+
+|productid|productcode|     name|quantity|  price|
++---------+-----------+---------+--------+-------+
+|     1006|        PEC|Pencil HB|       0|9999.99|
+|     1002|        PEN| Pen Blue|    8000|   1.25|
++---------+-----------+---------+--------+-------+
+
+======================================================================================================================================================================
+
+PS 85:
+
+1)
+
+scala> val query1 = sqlContext.sql("""
+     | select productId as ID, productCode as Code, name as Description, price as `Unit Price`
+     | from prods
+     | """)
+query1: org.apache.spark.sql.DataFrame = [ID: int, Code: string, Description: string, Unit Price: float]
+
+scala> query1.show()
++----+----+-----------+----------+
+|  ID|Code|Description|Unit Price|
++----+----+-----------+----------+
+|1001| PEN|    Pen Red|      1.23|
+|1002| PEN|   Pen Blue|      1.25|
+|1003| PEN|  Pen Black|      1.25|
+|1004| PEC|  Pencil 2B|      0.48|
+|1005| PEC|  Pencil 2H|      0.49|
+|1006| PEC|  Pencil HB|   9999.99|
++----+----+-----------+----------+
+
+2)
+scala> val query2 = sqlContext.sql("""
+     | select concat(name, '-', productCode) as `Product Description`
+     | from prods
+     | """)
+query2: org.apache.spark.sql.DataFrame = [Product Description: string]
+
+scala> query2.show()
++-------------------+
+|Product Description|
++-------------------+
+|        Pen Red-PEN|
+|       Pen Blue-PEN|
+|      Pen Black-PEN|
+|      Pencil 2B-PEC|
+|      Pencil 2H-PEC|
+|      Pencil HB-PEC|
++-------------------+
+
+3)
+scala> val query2 = sqlContext.sql("""
+     | select concat(substr(name,1,3), '-', productCode) as `Product Description`
+     | from prods
+     | """)
+query2: org.apache.spark.sql.DataFrame = [Product Description: string]
+
+scala> query2.show()
++-------------------+
+|Product Description|
++-------------------+
+|            Pen-PEN|
+|            Pen-PEN|
+|            Pen-PEN|
+|            Pen-PEC|
+|            Pen-PEC|
+|            Pen-PEC|
++-------------------+
+
+
+scala> val query2 = sqlContext.sql("""
+     | select concat(substr(name,1,1),productCode) as `Product Description`
+     | from prods
+     | """)
+query2: org.apache.spark.sql.DataFrame = [Product Description: string]
+
+scala> query2.show()
++-------------------+
+|Product Description|
++-------------------+
+|               PPEN|
+|               PPEN|
+|               PPEN|
+|               PPEC|
+|               PPEC|
+|               PPEC|
++-------------------+
+
+4)
+scala> val query4 = sqlContext.sql("""
+     | select distinct(price) from prods """)
+query4: org.apache.spark.sql.DataFrame = [price: float]
+
+scala> query4.show()
++-------+                                                                       
+|  price|
++-------+
+|   0.49|
+|9999.99|
+|   0.48|
+|   1.25|
+|   1.23|
++-------+
+
+
+scala> hiveTable.show()
++---------+-----------+---------+--------+-------+
+|productid|productcode|     name|quantity|  price|
++---------+-----------+---------+--------+-------+
+|     1001|        PEN|  Pen Red|    5000|   1.23|
+|     1002|        PEN| Pen Blue|    8000|   1.25|
+|     1003|        PEN|Pen Black|    2000|   1.25|
+|     1004|        PEC|Pencil 2B|   10000|   0.48|
+|     1005|        PEC|Pencil 2H|    8000|   0.49|
+|     1006|        PEC|Pencil HB|       0|9999.99|
++---------+-----------+---------+--------+-------+
+
+5)
+
+scala> val hiveTableRDD = hiveTable.rdd
+hiveTableRDD: org.apache.spark.rdd.RDD[org.apache.spark.sql.Row] = MapPartitionsRDD[911] at rdd at <console>:36
+
+scala> hiveTableRDD.collect().foreach(println)
+[1001,PEN,Pen Red,5000,1.23]
+[1002,PEN,Pen Blue,8000,1.25]
+[1003,PEN,Pen Black,2000,1.25]
+[1004,PEC,Pencil 2B,10000,0.48]
+[1005,PEC,Pencil 2H,8000,0.49]
+[1006,PEC,Pencil HB,0,9999.99]
+
+scala> hiveTableRDD.collect()
+res124: Array[org.apache.spark.sql.Row] = Array([1001,PEN,Pen Red,5000,1.23], [1002,PEN,Pen Blue,8000,1.25], [1003,PEN,Pen Black,2000,1.25], [1004,PEC,Pencil 2B,10000,0.48], [1005,PEC,Pencil 2H,8000,0.49], [1006,PEC,Pencil HB,0,9999.99])
+
+scala> val hiveTableMap = hiveTableRDD.map(rec => (rec(4).toString,rec(2).toString))
+hiveTableMap: org.apache.spark.rdd.RDD[(String, String)] = MapPartitionsRDD[912] at map at <console>:38
+
+scala> val hiveTableMappes = hiveTableMap.map(rec => (rec._1.toFloat,rec._2))
+hiveTableMappes: org.apache.spark.rdd.RDD[(Float, String)] = MapPartitionsRDD[913] at map at <console>:40
+
+scala> hiveTableMappes.collect()
+res126: Array[(Float, String)] = Array((1.23,Pen Red), (1.25,Pen Blue), (1.25,Pen Black), (0.48,Pencil 2B), (0.49,Pencil 2H), (9999.99,Pencil HB))
+
+scala> val grouped = hiveTableMappes.groupByKey()
+grouped: org.apache.spark.rdd.RDD[(Float, Iterable[String])] = ShuffledRDD[914] at groupByKey at <console>:42
+
+scala> grouped.collect()
+res127: Array[(Float, Iterable[String])] = Array((0.48,CompactBuffer(Pencil 2B)), (9999.99,CompactBuffer(Pencil HB)), (1.25,CompactBuffer(Pen Blue, Pen Black)), (0.49,CompactBuffer(Pencil 2H)), (1.23,CompactBuffer(Pen Red)))
+
+scala> val groupedMap = grouped.map(rec => (rec._1,rec._2.toList))
+groupedMap: org.apache.spark.rdd.RDD[(Float, List[String])] = MapPartitionsRDD[915] at map at <console>:44
+
+scala> groupedMap.collect()
+res128: Array[(Float, List[String])] = Array((0.48,List(Pencil 2B)), (9999.99,List(Pencil HB)), (1.25,List(Pen Blue, Pen Black)), (0.49,List(Pencil 2H)), (1.23,List(Pen Red)))
+
+scala> val df = groupedMap.toDF("price", "names")
+df: org.apache.spark.sql.DataFrame = [price: float, names: array<string>]
+
+scala> df.show()
++-------+--------------------+
+|  price|               names|
++-------+--------------------+
+|   0.48|         [Pencil 2B]|
+|9999.99|         [Pencil HB]|
+|   1.25|[Pen Blue, Pen Bl...|
+|   0.49|         [Pencil 2H]|
+|   1.23|           [Pen Red]|
++-------+--------------------+
+
+
+scala> val df1 = df.withColumn("names",concat_ws(",", col("names")))
+df1: org.apache.spark.sql.DataFrame = [price: float, names: string]
+
+scala> df1.show()
++-------+------------------+
+|  price|             names|
++-------+------------------+
+|   0.48|         Pencil 2B|
+|9999.99|         Pencil HB|
+|   1.25|Pen Blue,Pen Black|
+|   0.49|         Pencil 2H|
+|   1.23|           Pen Red|
++-------+------------------+
+
+5)
+
+scala> hiveTable.show()
++---------+-----------+---------+--------+-------+
+|productid|productcode|     name|quantity|  price|
++---------+-----------+---------+--------+-------+
+|     1001|        PEN|  Pen Red|    5000|   1.23|
+|     1002|        PEN| Pen Blue|    8000|   1.25|
+|     1003|        PEN|Pen Black|    2000|   1.25|
+|     1004|        PEC|Pencil 2B|   10000|   0.48|
+|     1005|        PEC|Pencil 2H|    8000|   0.49|
+|     1006|        PEC|Pencil HB|       0|9999.99|
++---------+-----------+---------+--------+-------+
+
+
+scala> val query5 = sqlContext.sql("""
+     | select price from prods
+     | order by productCode,productId
+     | """)
+query5: org.apache.spark.sql.DataFrame = [price: float]
+
+scala> query5.show()
++-------+
+|  price|
++-------+
+|   0.48|
+|   0.49|
+|9999.99|
+|   1.23|
+|   1.25|
+|   1.25|
++-------+
+
+
+scala> val query5 = sqlContext.sql("""
+     | select price from prods
+     | order by productCode,productId desc
+     | """)
+query5: org.apache.spark.sql.DataFrame = [price: float]
+
+scala> query5.show()
++-------+
+|  price|
++-------+
+|9999.99|
+|   0.49|
+|   0.48|
+|   1.25|
+|   1.25|
+|   1.23|
++-------+
+
+6)
+
+scala> val query6 = sqlContext.sql("""
+     | select count(productId) as `product Count`
+     | from prods
+     | """)
+query6: org.apache.spark.sql.DataFrame = [product Count: bigint]
+
+scala> query6.show()
++-------------+
+|product Count|
++-------------+
+|            6|
++-------------+
+
+7)
+
+scala> val query7 = sqlContext.sql("""
+     | select productCode,count(productId) as `product Count`
+     | from prods
+     | group by productCode
+     | """)
+query7: org.apache.spark.sql.DataFrame = [productCode: string, product Count: bigint]
+
+scala> query7.show()
++-----------+-------------+                                                     
+|productCode|product Count|
++-----------+-------------+
+|        PEC|            3|
+|        PEN|            3|
++-----------+-------------+
+
+
+======================================================================================================================================================================
+PS 86:
+
+1)
+
+scala> val query1 = sqlContext.sql("""
+     | select min(price) as min_price,max(price) as max_price,avg(price) as avg_price,STD(price) as std_price,sum(quantity) as total_quantity
+     | from prods
+     | """)
+query1: org.apache.spark.sql.DataFrame = [min_price: float, max_price: float, avg_price: double, std_price: double, total_quantity: bigint]
+
+scala> query1.show()
++---------+---------+------------------+-----------------+--------------+
+|min_price|max_price|         avg_price|        std_price|total_quantity|
++---------+---------+------------------+-----------------+--------------+
+|     0.48|  9999.99|1667.4483723988135|3726.426021187565|         33000|
++---------+---------+------------------+-----------------+--------------+
+
+
+2)
+
+scala> val query1 = productsDF.groupBy("productCode").agg(min("price"),max("price"))
+query1: org.apache.spark.sql.DataFrame = [productCode: string, min(price): float, max(price): float]
+
+scala> query1.show()
++-----------+----------+----------+
+|productCode|min(price)|max(price)|
++-----------+----------+----------+
+|        PEC|      0.48|   9999.99|
+|        PEN|      1.23|      1.25|
++-----------+----------+----------+
+
+
+3)
+
+scala> val query1 = productsDF.groupBy("productCode").agg(min("price").alias("min_price"), max("price").alias("max_price"), round(avg("price"),2).alias("avg_price"),round(stddev("price"),2).alias("std_price"), sum("quantity").alias("total_quantity"))
+query1: org.apache.spark.sql.DataFrame = [productCode: string, min_price: float, max_price: float, avg_price: double, std_price: double, total_quantity: bigint]
+
+scala> query1.show()
++-----------+---------+---------+---------+---------+--------------+
+|productCode|min_price|max_price|avg_price|std_price|total_quantity|
++-----------+---------+---------+---------+---------+--------------+
+|        PEC|     0.48|  9999.99|  3333.65|  5773.22|         18000|
+|        PEN|     1.23|     1.25|     1.24|     0.01|         15000|
++-----------+---------+---------+---------+---------+--------------+
+
+4)
+
+scala> val query1 = productsDF.groupBy("productCode").agg(round(avg("price"),2).alias("avg_price"), countDistinct("productId").alias("prodCount"))
+query1: org.apache.spark.sql.DataFrame = [productCode: string, avg_price: double, prodCount: bigint]
+
+scala> val query2 = query1.select("productCode", "avg_price", "prodCount").where(col("prodCount") >=3)
+query2: org.apache.spark.sql.DataFrame = [productCode: string, avg_price: double, prodCount: bigint]
+
+scala> query2.show()
++-----------+---------+---------+
+|productCode|avg_price|prodCount|
++-----------+---------+---------+
+|        PEC|  3333.65|        3|
+|        PEN|     1.24|        3|
++-----------+---------+---------+
+
+
+(or)
+
+cala> query1.registerTempTable("query1")
+
+scala> val query2 = sqlContext.sql("""
+select productCode, avg_price
+from query1
+where prodCount >= 3
+""")
+query2: org.apache.spark.sql.DataFrame = [productCode: string, avg_price: double]
+
+
+scala> query2.show()
++-----------+---------+
+|productCode|avg_price|
++-----------+---------+
+|        PEC|  3333.65|
+|        PEN|     1.24|
++-----------+---------+
+
+
+5)
+
+
+scala> val query1 = productsDF.groupBy("productCode").agg(min("price").alias("min_price"), max("price").alias("max_price"), round(avg("price"),2).alias("avg_price"),round(stddev("price"),2).alias("std_price"), sum("quantity").alias("total_quantity"), countDistinct("productId").alias("prodCount"))
+query1: org.apache.spark.sql.DataFrame = [productCode: string, min_price: float, max_price: float, avg_price: double, std_price: double, total_quantity: bigint, prodCount: bigint]
+
+scala> 
+
+scala> query1.show()
++-----------+---------+---------+---------+---------+--------------+---------+  
+|productCode|min_price|max_price|avg_price|std_price|total_quantity|prodCount|
++-----------+---------+---------+---------+---------+--------------+---------+
+|        PEC|     0.48|  9999.99|  3333.65|  5773.22|         18000|        3|
+|        PEN|     1.23|     1.25|     1.24|     0.01|         15000|        3|
++-----------+---------+---------+---------+---------+--------------+---------+
+
+
+scala> val query1 = productsDF.agg(min("price").alias("min_price"), max("price").alias("max_price"), round(avg("price"),2).alias("avg_price"),round(stddev("price"),2).alias("std_price"), sum("quantity").alias("total_quantity"), countDistinct("productId").alias("prodCount"))
+query1: org.apache.spark.sql.DataFrame = [min_price: float, max_price: float, avg_price: double, std_price: double, total_quantity: bigint, prodCount: bigint]
+
+scala> query1.show()
++---------+---------+---------+---------+--------------+---------+              
+|min_price|max_price|avg_price|std_price|total_quantity|prodCount|
++---------+---------+---------+---------+--------------+---------+
+|     0.48|  9999.99|  1667.45|   4082.1|         33000|        6|
++---------+---------+---------+---------+--------------+---------+
+
+
+======================================================================================================================================================================
+Ex:
+
+scala> val query1 = sqlContext.sql("""
+     | select *,concat(substr(product_name,1,1), '-', product_category_id) as prodConcat
+     | from products
+     | """)
+query1: org.apache.spark.sql.DataFrame = [product_id: int, product_category_id: int, product_name: string, product_description: string, product_price: double, product_image: string, prodConcat: string]
+     
+scala> query1.show(5)
++----------+-------------------+--------------------+-------------------+-------------+--------------------+----------+
+|product_id|product_category_id|        product_name|product_description|product_price|       product_image|prodConcat|
++----------+-------------------+--------------------+-------------------+-------------+--------------------+----------+
+|         1|                  2|Quest Q64 10 FT. ...|                   |        59.98|http://images.acm...|       Q-2|
+|         2|                  2|Under Armour Men'...|                   |       129.99|http://images.acm...|       U-2|
+|         3|                  2|Under Armour Men'...|                   |        89.99|http://images.acm...|       U-2|
+|         4|                  2|Under Armour Men'...|                   |        89.99|http://images.acm...|       U-2|
+|         5|                  2|Riddell Youth Rev...|                   |       199.99|http://images.acm...|       R-2|
++----------+-------------------+--------------------+-------------------+-------------+--------------------+----------+
+only showing top 5 rows
+
+
+==>
+
+scala> val query1 = sqlContext.sql("""
+     | select *,concat(substr(product_name,1,3), '-', product_category_id) as prodConcat
+     | from products
+     | """)
+query1: org.apache.spark.sql.DataFrame = [product_id: int, product_category_id: int, product_name: string, product_description: string, product_price: double, product_image: string, prodConcat: string]
+
+scala> query1.show()
++----------+-------------------+--------------------+-------------------+-------------+--------------------+----------+
+|product_id|product_category_id|        product_name|product_description|product_price|       product_image|prodConcat|
++----------+-------------------+--------------------+-------------------+-------------+--------------------+----------+
+|         1|                  2|Quest Q64 10 FT. ...|                   |        59.98|http://images.acm...|     Que-2|
+|         2|                  2|Under Armour Men'...|                   |       129.99|http://images.acm...|     Und-2|
+|         3|                  2|Under Armour Men'...|                   |        89.99|http://images.acm...|     Und-2|
+|         4|                  2|Under Armour Men'...|                   |        89.99|http://images.acm...|     Und-2|
+|         5|                  2|Riddell Youth Rev...|                   |       199.99|http://images.acm...|     Rid-2|
+
+======================================================================================================================================================================
+
+PS 79:
+
+1)
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table products \
+--target-dir p93_products \
+--columns "product_id, product_category_id,product_price" 
+
+Note:
+
+(java_output the intermediate java files generated during sqoop import or export will be created in local file system /home/cloudera)  
+
+                                                                                                                                                        
+[cloudera@quickstart /]$ hadoop fs -ls /user/cloudera/p93_products
+Found 5 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-15 23:20 /user/cloudera/p93_products/_SUCCESS
+-rw-r--r--   1 cloudera cloudera      41419 2018-10-15 23:20 /user/cloudera/p93_products/part-m-00000
+-rw-r--r--   1 cloudera cloudera      43660 2018-10-15 23:20 /user/cloudera/p93_products/part-m-00001
+-rw-r--r--   1 cloudera cloudera      42195 2018-10-15 23:20 /user/cloudera/p93_products/part-m-00002
+-rw-r--r--   1 cloudera cloudera      46719 2018-10-15 23:20 /user/cloudera/p93_products/part-m-00003
+
+[cloudera@quickstart /]$ hadoop fs -tail /user/cloudera/p93_products/part-m-00001
+/Merrell+Men%27s+Moab+Rover+Mid+Waterproof+Hiking+Boot
+666,30,Merrell Men's All Out Flash Trail Running Sho,,109.99,http://images.acmesports.sports/Merrell+Men%27s+All+Out+Flash+Trail+Running+Shoe
+667,30,Merrell Women's All Out Flash Trail Running S,,109.99,http://images.acmesports.sports/Merrell+Women%27s+All+Out+Flash+Trail+Running+Shoe
+668,30,Merrell Women's All Out Flash Trail Running S,,109.99,http://images.acmesports.sports/Merrell+Women%27s+All+Out+Flash+Trail+Running+Shoe
+669,31,Cleveland Golf My Custom Wedge 588 Forged RTX,,179.99,http://images.acmesports.sports/Cleveland+Golf+My+Custom+Wedge+588+Forged+RTX+Black+Pearl...
+670,31,Cleveland Golf Elite My Custom Wedge 588 Forg,,209.99,http://images.acmesports.sports/Cleveland+Golf+Elite+My+Custom+Wedge+588+Forged+RTX+Black...
+671,31,Cleveland Golf Collegiate My Custom Wedge 588,,209.99,http://images.acmesports.sports/Cleveland+Golf+Collegiate+My+Custom+Wedge+588+RTX+Forged...
+672,31,PING G30 Driver,,349.0,http://images.acmesports.sports/PING+G30+Driver
+
+2)
+
+case class Product1(
+product_id : Int,
+product_category_id : Int,
+product_name: String,
+product_description : String,
+product_price : Float,
+product_image : String
+)
+
+scala> val productsDF = sc.textFile("/user/cloudera/p93_products").
+     | map(rec => rec.split(',')).
+     | map(prod => Products(prod(0).trim.toInt,prod(1).trim.toInt,prod(2).toString,prod(3).toString,prod(4).trim.toFloat,prod(5).toString)).
+     | toDF()
+productsDF: org.apache.spark.sql.DataFrame = [product_id: int, product_category_id: int, product_name: string, product_description: string, product_price: float, product_image: string]
+
+scala> productsDF.show(5)
++----------+-------------------+--------------------+-------------------+-------------+--------------------+
+|product_id|product_category_id|        product_name|product_description|product_price|       product_image|
++----------+-------------------+--------------------+-------------------+-------------+--------------------+
+|         1|                  2|Quest Q64 10 FT. ...|                   |        59.98|http://images.acm...|
+|         2|                  2|Under Armour Men'...|                   |       129.99|http://images.acm...|
+|         3|                  2|Under Armour Men'...|                   |        89.99|http://images.acm...|
+|         4|                  2|Under Armour Men'...|                   |        89.99|http://images.acm...|
+|         5|                  2|Riddell Youth Rev...|                   |       199.99|http://images.acm...|
++----------+-------------------+--------------------+-------------------+-------------+--------------------+
+only showing top 5 rows
+
+scala> val prodFiltered = productsDF.filter(productsDF("product_price") === " " || productsDF("product_price") === "NULL")
+prodFiltered: org.apache.spark.sql.DataFrame = [product_id: int, product_category_id: int, product_name: string, product_description: string, product_price: float, product_image: string]
+
+scala> prodFiltered.show()
++----------+-------------------+------------+-------------------+-------------+-------------+
+|product_id|product_category_id|product_name|product_description|product_price|product_image|
++----------+-------------------+------------+-------------------+-------------+-------------+
++----------+-------------------+------------+-------------------+-------------+-------------+
+
+mysql> select * from products where product_price IS NULL;
+Empty set (0.00 sec)
+
+mysql> select * from products where product_price = " ";
++------------+---------------------+-----------------------------------------------+---------------------+---------------+-----------------------------------------------------------------------------------------+
+| product_id | product_category_id | product_name                                  | product_description | product_price | product_image                                                                           |
++------------+---------------------+-----------------------------------------------+---------------------+---------------+-----------------------------------------------------------------------------------------+
+|         38 |                   3 | Nike Men's Hypervenom Phantom Premium FG Socc |                     |             0 | http://images.acmesports.sports/Nike+Men%27s+Hypervenom+Phantom+Premium+FG+Soccer+Cleat |
+|        388 |                  18 | Nike Men's Hypervenom Phantom Premium FG Socc |                     |             0 | http://images.acmesports.sports/Nike+Men%27s+Hypervenom+Phantom+Premium+FG+Soccer+Cleat |
+|        414 |                  19 | Nike Men's Hypervenom Phantom Premium FG Socc |                     |             0 | http://images.acmesports.sports/Nike+Men%27s+Hypervenom+Phantom+Premium+FG+Soccer+Cleat |
+|        517 |                  24 | Nike Men's Hypervenom Phantom Premium FG Socc |                     |             0 | http://images.acmesports.sports/Nike+Men%27s+Hypervenom+Phantom+Premium+FG+Soccer+Cleat |
+|        547 |                  25 | Nike Men's Hypervenom Phantom Premium FG Socc |                     |             0 | http://images.acmesports.sports/Nike+Men%27s+Hypervenom+Phantom+Premium+FG+Soccer+Cleat |
+|        934 |                  42 | Callaway X Hot Driver                         |                     |             0 | http://images.acmesports.sports/Callaway+X+Hot+Driver                                   |
+|       1284 |                  57 | Nike Men's Hypervenom Phantom Premium FG Socc |                     |             0 | http://images.acmesports.sports/Nike+Men%27s+Hypervenom+Phantom+Premium+FG+Soccer+Cleat |
++------------+---------------------+-----------------------------------------------+---------------------+---------------+-----------------------------------------------------------------------------------------+
+7 rows in set (0.01 sec)
+
+3)
+
+productsDF.select(when(col("product_price") === "", "a").otherwise(col("product_id").alias("product_id")) )
+
+case class Product1(
+product_id : Int,
+product_category_id : Int,
+product_price : Float
+)
+
+val productsDF = sc.textFile("/user/cloudera/p93_products").
+map(rec => rec.split(',')).
+map(prod => Product1(prod(0).trim.toInt,prod(1).trim.toInt,prod(2).toFloat)).
+toDF()
+
+scala> productsDF.sort("product_price").show()
++----------+-------------------+-------------+
+|product_id|product_category_id|product_price|
++----------+-------------------+-------------+
+|      1284|                 57|          0.0|
+|       934|                 42|          0.0|
+|        38|                  3|          0.0|
+|       388|                 18|          0.0|
+|       547|                 25|          0.0|
+|       517|                 24|          0.0|
+|       414|                 19|          0.0|
+|       815|                 37|         4.99|
+|       624|                 29|         4.99|
+|       336|                 15|          5.0|
+|       476|                 21|          8.0|
+|       915|                 41|         9.59|
+|       913|                 41|         9.59|
+|       914|                 41|         9.59|
+|      1262|                 56|         9.99|
+|      1296|                 57|         9.99|
+|       775|                 35|         9.99|
+|      1249|                 55|         9.99|
+|       772|                 35|         9.99|
+|      1248|                 55|         9.99|
++----------+-------------------+-------------+
+only showing top 20 rows
+
+
+scala> productsDF.sort(col("product_price").desc).show()
++----------+-------------------+-------------+
+|product_id|product_category_id|product_price|
++----------+-------------------+-------------+
+|       208|                 10|      1999.99|
+|       199|                 10|      1799.99|
+|       496|                 22|      1799.99|
+|        66|                  4|      1799.99|
+|      1048|                 47|      1099.99|
+|       695|                 32|       999.99|
+|       694|                 32|       999.99|
+|        60|                  4|       999.99|
+|       197|                 10|       999.99|
+|       488|                 22|       999.99|
+|       685|                 31|       899.99|
+|       676|                 31|        899.0|
+|       229|                 11|       799.99|
+|      1069|                 48|       799.99|
+|       675|                 31|        799.0|
+|       698|                 32|       699.99|
+|      1054|                 47|       699.99|
+|       689|                 31|       599.99|
+|       697|                 32|       599.99|
+|       860|                 38|       599.99|
++----------+-------------------+-------------+
+only showing top 20 rows
+
+
+
+517,24,Nike Men's Hypervenom Phantom Premium FG Socc,,0.0,http://images.acmesports.sports/Nike+Men%27s+Hypervenom+Phantom+Premium+FG+Soccer+Cleat
+
+547,25,Nike Men's Hypervenom Phantom Premium FG Socc,,0.0,http://images.acmesports.sports/Nike+Men%27s+Hypervenom+Phantom+Premium+FG+Soccer+Cleat
+
+1284,57,Nike Men's Hypervenom Phantom Premium FG Socc,,0.0,http://images.acmesports.sports/Nike+Men%27s+Hypervenom+Phantom+Premium+FG+Soccer+Cleat
+
+934,42,Callaway X Hot Driver,,0.0,http://images.acmesports.sports/Callaway+X+Hot+Driver
+
+447,20,Nike Women's Free TR Connect 2 Training Shoe,,109.99,http://images.acmesports.sports/Nike+Women%27s+Free+TR+Connect+2+Training+Shoe  ==> error in this record
+
+
+447,20,Nike Women's Free TR Connect 2 Training Shoe,109.99
+
+4)
+
+scala> productsDF.orderBy(col("product_price").desc,col("product_id").desc).show()
++----------+-------------------+-------------+
+|product_id|product_category_id|product_price|
++----------+-------------------+-------------+
+|       208|                 10|      1999.99|
+|       496|                 22|      1799.99|
+|       199|                 10|      1799.99|
+|        66|                  4|      1799.99|
+|      1048|                 47|      1099.99|
+|       695|                 32|       999.99|
+|       694|                 32|       999.99|
+|       488|                 22|       999.99|
+|       197|                 10|       999.99|
+|        60|                  4|       999.99|
+|       685|                 31|       899.99|
+|       676|                 31|        899.0|
+|      1069|                 48|       799.99|
+|       229|                 11|       799.99|
+|       675|                 31|        799.0|
+|      1054|                 47|       699.99|
+|       698|                 32|       699.99|
+|      1009|                 45|       599.99|
+|       860|                 38|       599.99|
+|       699|                 32|       599.99|
++----------+-------------------+-------------+
+only showing top 20 rows
+
+5)
+
+a)
+
+scala> val rdd1 = sc.parallelize(List(1,3,56,90,78,23,45,22))
+rdd1: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[279] at parallelize at <console>:27
+
+scala> rdd1.top(3)
+res139: Array[Int] = Array(90, 78, 56)   (gives the largest elements in rdd)
+
+scala> rdd1.takeOrdered(3)
+res140: Array[Int] = Array(1, 3, 22)     (gives the smallest elements in rdd. this is applicaple only on rdd)
+
+======================================================================================================================================================================
+
+PS 78:
+
+1)
+
+scala> import com.databricks.spark.avro._
+import com.databricks.spark.avro._
+
+scala> val ordersDF = sqlContext.read.avro("/user/cloudera/problem1/orders")
+ordersDF: org.apache.spark.sql.DataFrame = [order_id: int, order_date: bigint, order_customer_id: int, order_status: string]
+
+scala> ordersDF.count()
+res141: Long = 68883                                                            
+
+scala> val orderItemsDF = sqlContext.read.avro("/user/cloudera/problem1/order-items")
+orderItemsDF: org.apache.spark.sql.DataFrame = [order_item_id: int, order_item_order_id: int, order_item_product_id: int, order_item_quantity: int, order_item_subtotal: float, order_item_product_price: float]
+
+scala> orderItemsDF.count()
+res142: Long = 172198
+
+[cloudera@quickstart /]$ hadoop fs -cat /user/cloudera/problem1/orders/* | wc -l  ==> gives wroung output since it is in avro format
+1375
+
+[cloudera@quickstart /]$ hadoop fs -cat /user/cloudera/problem1/order-items/* | wc -l   => gives wroung output since it is in avro format
+8890
+
+scala> val joinedDF = ordersDF.join(orderItemsDF, ordersDF("order_id") === orderItemsDF("order_item_order_id"))
+joinedDF: org.apache.spark.sql.DataFrame = [order_id: int, order_date: bigint, order_customer_id: int, order_status: string, order_item_id: int, order_item_order_id: int, order_item_product_id: int, order_item_quantity: int, order_item_subtotal: float, order_item_product_price: float]
+
+scala> joinedDF.show(5)
++--------+-------------+-----------------+---------------+-------------+-------------------+---------------------+-------------------+-------------------+------------------------+
+|order_id|   order_date|order_customer_id|   order_status|order_item_id|order_item_order_id|order_item_product_id|order_item_quantity|order_item_subtotal|order_item_product_price|
++--------+-------------+-----------------+---------------+-------------+-------------------+---------------------+-------------------+-------------------+------------------------+
+|       1|1374735600000|            11599|         CLOSED|            1|                  1|                  957|                  1|             299.98|                  299.98|
+|       2|1374735600000|              256|PENDING_PAYMENT|            2|                  2|                 1073|                  1|             199.99|                  199.99|
+|       2|1374735600000|              256|PENDING_PAYMENT|            3|                  2|                  502|                  5|              250.0|                    50.0|
+|       2|1374735600000|              256|PENDING_PAYMENT|            4|                  2|                  403|                  1|             129.99|                  129.99|
+|       4|1374735600000|             8827|         CLOSED|            5|                  4|                  897|                  2|              49.98|                   24.99|
++--------+-------------+-----------------+---------------+-------------+-------------------+---------------------+-------------------+-------------------+------------------------+
+only showing top 5 rows
+
+2)
+
+scala> val totalRevenue = joinedDF.groupBy(to_date(from_unixtime(col("order_date")/1000)).alias("order_date_formatted"),col("order_customer_id")).
+     | agg(round(sum("order_item_subtotal"),2).alias("total_revenue"))
+totalRevenue: org.apache.spark.sql.DataFrame = [order_date_formatted: date, order_customer_id: int, total_revenue: double]
+
+scala> totalRevenue.show(5)
+[Stage 167:==========================================>              (3 + 1) / 4]18/10/16 04:43:29 WARN memory.TaskMemoryManager: leak 16.3 MB memory from org.apache.spark.unsafe.map.BytesToBytesMap@41fcfc31
+18/10/16 04:43:29 ERROR executor.Executor: Managed memory leak detected; size = 17039360 bytes, TID = 874
++--------------------+-----------------+-------------+                          
+|order_date_formatted|order_customer_id|total_revenue|
++--------------------+-----------------+-------------+
+|          2013-07-25|             4840|       129.99|
+|          2013-07-28|              529|       199.99|
+|          2013-07-29|            11292|       119.97|
+|          2013-07-29|             1492|       669.93|
+|          2013-07-30|            10255|       599.97|
++--------------------+-----------------+-------------+
+only showing top 5 rows
+
+
+3)
+
+scala> val maxRevenue = totalRevenue.orderBy(col("total_revenue").desc)
+maxRevenue: org.apache.spark.sql.DataFrame = [order_date_formatted: date, order_customer_id: int, total_revenue: double]
+
+scala> maxRevenue.show(5)
++--------------------+-----------------+-------------+                          
+|order_date_formatted|order_customer_id|total_revenue|
++--------------------+-----------------+-------------+
+|          2014-03-02|            10351|      3579.85|
+|          2013-08-16|             9515|      3449.91|
+|          2014-03-15|             5927|      2919.66|
+|          2013-09-26|             1148|      2859.89|
+|          2014-06-06|            10744|      2839.91|
++--------------------+-----------------+-------------+
+only showing top 5 rows
+
+4)
+
+scala> val customer = joinedDF.groupBy(col("order_customer_id")).agg(sum("order_item_subtotal").alias("summ"))
+customer: org.apache.spark.sql.DataFrame = [order_customer_id: int, summ: double]
+
+scala> customer.orderBy(col("summ").desc).show(5)
++-----------------+------------------+                                          
+|order_customer_id|              summ|
++-----------------+------------------+
+|              791|10524.170177459717|
+|             9371| 9299.030206680298|
+|             8766| 9296.140186309814|
+|             1657| 9223.710151672363|
+|             2641| 9130.920223236084|
++-----------------+------------------+
+only showing top 5 rows
+
+
+======================================================================================================================================================================
+
+PS 77:
+
+3)
+
+scala> val totalRevenue = joinedDF.groupBy(to_date(from_unixtime(col("order_date")/1000)).alias("order_date_formatted"),col("order_id")).
+     | agg(round(sum("order_item_subtotal"),2).alias("total_revenue"))
+
+totalRevenue: org.apache.spark.sql.DataFrame = [order_date_formatted: date, order_id: int, total_revenue: double]
+
+scala> totalRevenue.show(5)
+[Stage 182:==========================================>              (3 + 1) / 4]18/10/16 04:50:10 WARN memory.TaskMemoryManager: leak 16.3 MB memory from org.apache.spark.unsafe.map.BytesToBytesMap@40d7ed89
+18/10/16 04:50:10 ERROR executor.Executor: Managed memory leak detected; size = 17039360 bytes, TID = 1715
++--------------------+--------+-------------+                                   
+|order_date_formatted|order_id|total_revenue|
++--------------------+--------+-------------+
+|          2013-07-27|     366|       509.95|
+|          2013-07-28|     529|       889.92|
+|          2013-07-29|     692|       159.96|
+|          2013-07-31|    1218|       609.94|
+|          2013-08-01|    1381|       649.95|
++--------------------+--------+-------------+
+only showing top 5 rows
+
+
+4)
+
+scala> val totalAndAvgRevenue = joinedDF.groupBy(to_date(from_unixtime(col("order_date")/1000)).alias("order_date_formatted"),col("order_id")).
+     | agg(round(sum("order_item_subtotal"),2).alias("total_revenue"), round(avg(col("order_item_subtotal")),2).alias("avg_revenue"))
+totalAndAvgRevenue: org.apache.spark.sql.DataFrame = [order_date_formatted: date, order_id: int, total_revenue: double, avg_revenue: double]
+
+scala> totalAndAvgRevenue.show(5)
+[Stage 188:==========================================>              (3 + 1) / 4]18/10/16 04:52:03 WARN memory.TaskMemoryManager: leak 16.3 MB memory from org.apache.spark.unsafe.map.BytesToBytesMap@572ffd09
+18/10/16 04:52:03 ERROR executor.Executor: Managed memory leak detected; size = 17039360 bytes, TID = 1733
++--------------------+--------+-------------+-----------+                       
+|order_date_formatted|order_id|total_revenue|avg_revenue|
++--------------------+--------+-------------+-----------+
+|          2013-07-27|     366|       509.95|     169.98|
+|          2013-07-28|     529|       889.92|     177.98|
+|          2013-07-29|     692|       159.96|     159.96|
+|          2013-07-31|    1218|       609.94|     203.31|
+|          2013-08-01|    1381|       649.95|     324.98|
++--------------------+--------+-------------+-----------+
+only showing top 5 rows
+
+======================================================================================================================================================================
+
+
+
+
+

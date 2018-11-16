@@ -1,0 +1,432 @@
+PS 41:
+
+scala> val a = sc.parallelize(List( ("a", Array(1,2)), ("b", Array(1,2))  ))
+a: org.apache.spark.rdd.RDD[(String, Array[Int])] = ParallelCollectionRDD[1249] at parallelize at <console>:33
+
+scala> a.collect()
+res271: Array[(String, Array[Int])] = Array((a,Array(1, 2)), (b,Array(1, 2)))
+
+scala> val b = sc.parallelize(List( ("a", Array(3)), ("b", Array(2))  ))
+b: org.apache.spark.rdd.RDD[(String, Array[Int])] = ParallelCollectionRDD[1250] at parallelize at <console>:33
+
+scala> b.collect()
+res273: Array[(String, Array[Int])] = Array((a,Array(3)), (b,Array(2)))
+
+scala> a.union(b)
+res274: org.apache.spark.rdd.RDD[(String, Array[Int])] = UnionRDD[1251] at union at <console>:38
+
+scala> a.union(b).collect()
+res275: Array[(String, Array[Int])] = Array((a,Array(1, 2)), (b,Array(1, 2)), (a,Array(3)), (b,Array(2)))
+
+======================================================================================================================================================================
+
+PS 42:
+
+scala> case class Employees(
+     | Department : String,
+     | Designation : String,
+     | costToCompany : Int,
+     | State : String
+     | )
+defined class Employees
+
+scala> val employeesDF = sc.textFile("file:/home/cloudera/Documents/SDPPS/sparkSales.txt")
+employeesDF: org.apache.spark.rdd.RDD[String] = file:/home/cloudera/Documents/SDPPS/sparkSales.txt MapPartitionsRDD[1254] at textFile at <console>:33
+
+scala> val employeesDF = sc.textFile("file:/home/cloudera/Documents/SDPPS/sparkSales.txt").
+     | map(rec => rec.split(',')).
+     | map(rec => Employees(rec(0), rec(1), rec(2).toInt, rec(3))).
+     | toDF()
+employeesDF: org.apache.spark.sql.DataFrame = [Department: string, Designation: string, costToCompany: int, State: string]
+
+scala> employeesDF.show()
++----------+-----------+-------------+-----+
+|Department|Designation|costToCompany|State|
++----------+-----------+-------------+-----+
+|     Sales|    Trainee|        12000|   UP|
+|     Sales|       Lead|        32000|   AP|
+|     Sales|       Lead|        32000|   LA|
+|     Sales|       Lead|        32000|   TN|
+|     Sales|       Lead|        32000|   AP|
+|     Sales|       Lead|        32000|   TN|
+|     Sales|       Lead|        32000|   LA|
+|     Sales|       Lead|        32000|   LA|
+| Marketing|  Associate|        18000|   TN|
+| Marketing|  Associate|        18000|   TN|
+|        HR|    Manager|        58000|   TN|
++----------+-----------+-------------+-----+
+
+scala> val empGroup = employeesDF.groupBy(col("Designation"), col("Department"), col("State")).
+agg(sum(col("costToCompany")).alias("total_sum"), count("costToCompany").alias("emp_count"))
+
+empGroup: org.apache.spark.sql.DataFrame = [Designation: string, Department: string, State: string, total_sum: bigint, emp_count: bigint]
+
+scala> empGroup.show()
++-----------+----------+-----+---------+---------+                              
+|Designation|Department|State|total_sum|emp_count|
++-----------+----------+-----+---------+---------+
+|       Lead|     Sales|   AP|    64000|        2|
+|  Associate| Marketing|   TN|    36000|        2|
+|    Trainee|     Sales|   UP|    12000|        1|
+|       Lead|     Sales|   LA|    96000|        3|
+|       Lead|     Sales|   TN|    64000|        2|
+|    Manager|        HR|   TN|    58000|        1|
++-----------+----------+-----+---------+---------+
+
+======================================================================================================================================================================
+
+PS 43:
+
+scala> val grouped = sc.parallelize(Seq(( (1,"two"), List( (3,4), (5,6)) ) ) )
+grouped: org.apache.spark.rdd.RDD[((Int, String), List[(Int, Int)])] = ParallelCollectionRDD[18] at parallelize at <console>:27
+
+scala> grouped.collect()
+res3: Array[((Int, String), List[(Int, Int)])] = Array(((1,two),List((3,4), (5,6))))
+
+scala> val flattened = grouped.flatMap { case (key, groupValues) =>
+     | groupValues.map { value => (key._1, key._2, value._1, value._2)  }
+     | }
+flattened: org.apache.spark.rdd.RDD[(Int, String, Int, Int)] = MapPartitionsRDD[19] at flatMap at <console>:29
+
+scala> flattened.collect()
+res4: Array[(Int, String, Int, Int)] = Array((1,two,3,4), (1,two,5,6))
+
+
+Ex:
+
+scala> val list = sc.parallelize( List( (("a1","b1"),"c1"), (("a2","b2"),"c2")   )
+     | )
+list: org.apache.spark.rdd.RDD[((String, String), String)] = ParallelCollectionRDD[20] at parallelize at <console>:27
+
+scala> list.collect().foreach(println)
+((a1,b1),c1)
+((a2,b2),c2)
+
+scala> val res = list.map { case ((a,b), c)  => (a,(b, c))}
+res: org.apache.spark.rdd.RDD[(String, (String, String))] = MapPartitionsRDD[21] at map at <console>:29
+
+scala> res.collect().foreach(println)
+(a1,(b1,c1))
+(a2,(b2,c2))
+
+======================================================================================================================================================================
+
+PS 44:
+
+scala> val trouble = sc.textFile("file:/home/cloudera/Documents/SDPPS/trouble.txt")
+trouble: org.apache.spark.rdd.RDD[String] = file:/home/cloudera/Documents/SDPPS/trouble.txt MapPartitionsRDD[30] at textFile at <console>:27
+
+scala> trouble.collect()
+res14: Array[String] = Array(If you trouble the trouble the trouble will trouble you I am not the trouble I am the truth)
+
+scala> val troubleFlatMap = trouble.flatMap(rec => rec.split(' '))
+troubleFlatMap: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[31] at flatMap at <console>:29
+
+scala> troubleFlatMap.collect()
+res15: Array[String] = Array(If, you, trouble, the, trouble, the, trouble, will, trouble, you, I, am, not, the, trouble, I, am, the, truth)
+
+scala> val troubleMap = troubleFlatMap.map(rec => (rec,1))
+troubleMap: org.apache.spark.rdd.RDD[(String, Int)] = MapPartitionsRDD[32] at map at <console>:31
+
+scala> troubleMap.collect()
+res16: Array[(String, Int)] = Array((If,1), (you,1), (trouble,1), (the,1), (trouble,1), (the,1), (trouble,1), (will,1), (trouble,1), (you,1), (I,1), (am,1), (not,1), (the,1), (trouble,1), (I,1), (am,1), (the,1), (truth,1))
+
+scala> val troubleReduce = troubleMap.reduceByKey(_+_)
+troubleReduce: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[33] at reduceByKey at <console>:33
+
+scala> troubleReduce.collect()
+res17: Array[(String, Int)] = Array((not,1), (you,2), (trouble,5), (am,2), (truth,1), (will,1), (I,2), (If,1), (the,4))
+
+(
+scala> val swap = troubleReduce.map(rec => (rec._2,rec._1))
+swap: org.apache.spark.rdd.RDD[(Int, String)] = MapPartitionsRDD[34] at map at <console>:35
+
+scala> swap.collect()
+res19: Array[(Int, String)] = Array((1,not), (2,you), (5,trouble), (2,am), (1,truth), (1,will), (2,I), (1,If), (4,the))
+
+)
+
+
+scala> val swap = troubleReduce.map(rec => rec.swap)
+swap: org.apache.spark.rdd.RDD[(Int, String)] = MapPartitionsRDD[35] at map at <console>:35
+
+scala> swap.collect()
+res20: Array[(Int, String)] = Array((1,not), (2,you), (5,trouble), (2,am), (1,truth), (1,will), (2,I), (1,If), (4,the))
+
+scala> val sort = swap.sortByKey(false)
+sort: org.apache.spark.rdd.RDD[(Int, String)] = ShuffledRDD[36] at sortByKey at <console>:37
+
+scala> sort.collect()
+res21: Array[(Int, String)] = Array((5,trouble), (4,the), (2,you), (2,am), (2,I), (1,not), (1,truth), (1,will), (1,If))
+
+scala> val sortAgain = sort.map(rec => rec.swap)
+sortAgain: org.apache.spark.rdd.RDD[(String, Int)] = MapPartitionsRDD[37] at map at <console>:39
+
+scala> sortAgain.collect()
+res23: Array[(String, Int)] = Array((trouble,5), (the,4), (you,2), (am,2), (I,2), (not,1), (truth,1), (will,1), (If,1))
+
+======================================================================================================================================================================
+
+PS 45:
+
+scala> val technology  = sc.textFile("file:/home/cloudera/Documents/SDPPS/technology.txt")
+technology: org.apache.spark.rdd.RDD[String] = file:/home/cloudera/Documents/SDPPS/technology.txt MapPartitionsRDD[44] at textFile at <console>:27
+
+scala> technology.collect()
+res31: Array[String] = Array(Katamreddy,Tejaswini,Spark, Chilli,Shekhar,Hadoop, Sai,Siva,Scala, Sravya,Sree,Hive, Ganta,Rao,Sqoop)
+
+scala> techMap.collect()
+
+scala> val techMap = technology.map(rec => rec.split(',')).map(rec => ((rec(0),rec(1)),rec(2)))
+techMap: org.apache.spark.rdd.RDD[((String, String), String)] = MapPartitionsRDD[46] at map at <console>:29
+
+res32: Array[((String, String), String)] = Array(((Katamreddy,Tejaswini),Spark), ((Chilli,Shekhar),Hadoop), ((Sai,Siva),Scala), ((Sravya,Sree),Hive), ((Ganta,Rao),Sqoop))
+
+scala> val salary = sc.textFile("file:/home/cloudera/Documents/SDPPS/salary.txt")
+salary: org.apache.spark.rdd.RDD[String] = file:/home/cloudera/Documents/SDPPS/salary.txt MapPartitionsRDD[48] at textFile at <console>:27
+
+scala> salary.collect()
+res33: Array[String] = Array(Katamreddy,Tejaswini,200000, Chilli,Shekhar,185000, Sai,Siva,150000, Sravya,Sree,125000, Ganta,Rao,100000)
+
+scala> val salaryMap = salary.map(rec => rec.split(',')).map(rec => ((rec(0),rec(1)),rec(2)))
+salaryMap: org.apache.spark.rdd.RDD[((String, String), String)] = MapPartitionsRDD[50] at map at <console>:29
+
+scala> salaryMap.collect()
+res34: Array[((String, String), String)] = Array(((Katamreddy,Tejaswini),200000), ((Chilli,Shekhar),185000), ((Sai,Siva),150000), ((Sravya,Sree),125000), ((Ganta,Rao),100000))
+
+scala> val joinedRDD = techMap.join(salaryMap)
+joinedRDD: org.apache.spark.rdd.RDD[((String, String), (String, String))] = MapPartitionsRDD[53] at join at <console>:35
+
+scala> joinedRDD.collect().foreach(println)
+((Katamreddy,Tejaswini),(Spark,200000))
+((Chilli,Shekhar),(Hadoop,185000))
+((Sravya,Sree),(Hive,125000))
+((Sai,Siva),(Scala,150000))
+((Ganta,Rao),(Sqoop,100000))
+
+scala> joinedRDD.saveAsTextFile("/user/cloudera/PS45Data")
+
+[cloudera@quickstart /]$ hadoop fs -ls  /user/cloudera/PS45Data
+Found 2 items
+-rw-r--r--   1 cloudera cloudera          0 2018-10-18 23:01 /user/cloudera/PS45Data/_SUCCESS
+-rw-r--r--   1 cloudera cloudera        162 2018-10-18 23:01 /user/cloudera/PS45Data/part-00000
+[cloudera@quickstart /]$ hadoop fs -cat  /user/cloudera/PS45Data/*
+((Katamreddy,Tejaswini),(Spark,200000))
+((Chilli,Shekhar),(Hadoop,185000))
+((Sravya,Sree),(Hive,125000))
+((Sai,Siva),(Scala,150000))
+((Ganta,Rao),(Sqoop,10000
+
+
+EXPL:
+
+When to use r._1 and r(0)?
+
+scala> val r = (1,2)   (r is a tuple)
+r: (Int, Int) = (1,2)
+
+scala> r._1
+res27: Int = 1
+
+scala> r._2
+res28: Int = 2
+
+scala> val r = "1,2"  (r is a string)
+r: String = 1,2
+
+scala> r._1
+<console>:28: error: value _1 is not a member of String
+              r._1
+
+Note:
+
+1) r is a string therefore you can access using ._ ex: rec._  
+2) You need to split by , and then it gets converted to array
+3) Array elements can be accessed using r(0), r(1) but not r._1, r._2
+
+Repartition ==> we can increase or decrease the number of prtitions
+
+Coalesce  ==> we can only decrease the no of partition sbut not increase.
+
+======================================================================================================================================================================
+
+PS 46:
+
+scala> val rdd1 = sc.parallelize(List( ("Deepak", "male", 4000), ("Deepak", "male", 2000), ("Deepak", "female", 2000), ("Deepak", "female", 2000), ("Deepak", "male", 1000), ("Neeta", "female", 2000)     ))
+rdd1: org.apache.spark.rdd.RDD[(String, String, Int)] = ParallelCollectionRDD[55] at parallelize at <console>:27
+
+scala> rdd1.collect().foreach(println)
+(Deepak,male,4000)
+(Deepak,male,2000)
+(Deepak,female,2000)
+(Deepak,female,2000)
+(Deepak,male,1000)
+(Neeta,female,2000)
+
+scala> val rdd1Map = rdd1.map{case (a,b,c) => ((a,b),c)}
+rdd1Map: org.apache.spark.rdd.RDD[((String, String), Int)] = MapPartitionsRDD[56] at map at <console>:29
+
+scala> rdd1Map.collect().foreach(println)
+((Deepak,male),4000)
+((Deepak,male),2000)
+((Deepak,female),2000)
+((Deepak,female),2000)
+((Deepak,male),1000)
+((Neeta,female),2000)
+
+scala> val reduced = rdd1Map.reduceByKey(_+_)
+reduced: org.apache.spark.rdd.RDD[((String, String), Int)] = ShuffledRDD[57] at reduceByKey at <console>:31
+
+scala> reduced.collect().foreach(println)
+((Deepak,female),4000)
+((Deepak,male),7000)
+((Neeta,female),2000)
+
+Using groupByKey :
+
+scala> val grouped = rdd1Map.groupByKey()
+grouped: org.apache.spark.rdd.RDD[((String, String), Iterable[Int])] = ShuffledRDD[58] at groupByKey at <console>:31
+
+scala> grouped.collect
+res40: Array[((String, String), Iterable[Int])] = Array(((Deepak,female),CompactBuffer(2000, 2000)), ((Deepak,male),CompactBuffer(4000, 2000, 1000)), ((Neeta,female),CompactBuffer(2000)))
+
+
+scala> val finalRDD = grouped.map{case ((a,b),c) => (a,b,c.sum)}
+finalRDD: org.apache.spark.rdd.RDD[(String, String, Int)] = MapPartitionsRDD[59] at map at <console>:33
+
+scala> finalRDD.collect()
+res41: Array[(String, String, Int)] = Array((Deepak,female,4000), (Deepak,male,7000), (Neeta,female,2000))
+
+======================================================================================================================================================================
+
+PS 47:
+
+scala> val z = sc.parallelize(1 to 6, 2)
+z: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[60] at parallelize at <console>:27
+
+scala> z.collect()
+res42: Array[Int] = Array(1, 2, 3, 4, 5, 6)
+
+scala> z.aggregate(5)(math.max(_,_), _+_)
+res47: Int = 16
+
+
+scala> z.glom.collect()
+res49: Array[Array[Int]] = Array(Array(1, 2, 3), Array(4, 5, 6))
+
+
+Expl:
+
+first fun has to find the max value in each partition.
+second function has to sum up the max values and initilalize with value 5
+
+so in first fun:
+
+max(5,1,2,3)  => 5  => In Partition1
+
+max(5,4,5,6)  => 6  => In Partition2
+
+second fun:
+
+5 + 5 + 6 = 16
+
+======================================================================================================================================================================
+
+PS 48:
+
+>>>people = []
+>>>people.append({ 'name' : 'Teju', 'age' : '45', 'gender': 'F' })
+>>>people.append({ 'name' : 'Teju', 'age' : '43', 'gender': 'F' })
+>>>people.append({ 'name' : 'Teju', 'age' : '28', 'gender': 'F' })
+>>>people.append({ 'name' : 'Teju', 'age' : '33', 'gender': 'F' })
+>>>people.append({ 'name' : 'Teju', 'age' : '18', 'gender': 'F' })
+
+>>> aggregate = peopleRDD.aggregate((0,0), lambda initial,next : (initial[0] + int(next["age"]), initial[1] + 1), lambda x,y : (x[0] + y[0], x[1] + y[1]))
+
+>>> aggregate
+(167, 5)
+
+======================================================================================================================================================================
+
+PS 49:
+
+scala> val list = Array("foo=A", "foo=A", "foo=A", "foo=A", "foo=B", "bar=C", "bar=D", "bar=D")
+list: Array[String] = Array(foo=A, foo=A, foo=A, foo=A, foo=B, bar=C, bar=D, bar=D)
+
+scala> val data = sc.parallelize(list)
+data: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[64] at parallelize at <console>:29
+
+scala> data.collect()
+res50: Array[String] = Array(foo=A, foo=A, foo=A, foo=A, foo=B, bar=C, bar=D, bar=D)
+
+scala> val map  = data.map(rec => rec.split("="))
+map: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[65] at map at <console>:31
+
+scala> map.collect()
+res51: Array[Array[String]] = Array(Array(foo, A), Array(foo, A), Array(foo, A), Array(foo, A), Array(foo, B), Array(bar, C), Array(bar, D), Array(bar, D))
+
+scala> val mapper = map.map(rec => (rec(0),1))
+mapper: org.apache.spark.rdd.RDD[(String, Int)] = MapPartitionsRDD[66] at map at <console>:33
+
+scala> mapper.collect()
+res52: Array[(String, Int)] = Array((foo,1), (foo,1), (foo,1), (foo,1), (foo,1), (bar,1), (bar,1), (bar,1))
+
+scala> val finalRDD = mapper.reduceByKey(_+_)
+finalRDD: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[67] at reduceByKey at <console>:35
+
+scala> finalRDD.collect()
+res53: Array[(String, Int)] = Array((bar,3), (foo,5))
+
+
+Using aggregateByKey:
+
+scala> val mapper = map.map(rec => (rec(0),rec(1)))
+mapper: org.apache.spark.rdd.RDD[(String, String)] = MapPartitionsRDD[73] at map at <console>:33
+
+scala> mapper.collect()
+res59: Array[(String, String)] = Array((foo,A), (foo,A), (foo,A), (foo,A), (foo,B), (bar,C), (bar,D), (bar,D))
+
+
+scala> val mapperRDD = mapper.aggregateByKey(0)((x,y) => x+1, (x,y) => x+y)
+mapperRDD: org.apache.spark.rdd.RDD[(String, Int)] = ShuffledRDD[72] at aggregateByKey at <console>:39
+
+scala> mapperRDD.collect()
+res58: Array[(String, Int)] = Array((bar,3), (foo,5))
+
+b)
+
+scala> import scala.collection._
+import scala.collection._
+
+scala> val initialSet = mutable.HashSet.empty[String]
+initialSet: scala.collection.mutable.HashSet[String] = Set()
+
+scala> val addToSet = (s: mutable.HashSet[String],v: String) => s+=v
+addToSet: (scala.collection.mutable.HashSet[String], String) => scala.collection.mutable.HashSet[String] = <function2>
+
+scala> val mergePartitionsSet = (p1 : mutable.HashSet[String], p2 : mutable.HashSet[String]) => p1 ++= p2
+mergePartitionsSet: (scala.collection.mutable.HashSet[String], scala.collection.mutable.HashSet[String]) => scala.collection.mutable.HashSet[String] = <function2>
+
+scala> val finale = mapper.aggregateByKey(initialSet)(addToSet,mergePartitionsSet)
+finale: org.apache.spark.rdd.RDD[(String, scala.collection.mutable.HashSet[String])] = ShuffledRDD[81] at aggregateByKey at <console>:44
+
+scala> finale.collect()
+res65: Array[(String, scala.collection.mutable.HashSet[String])] = Array((foo,Set(B, A)), (bar,Set(C, D)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

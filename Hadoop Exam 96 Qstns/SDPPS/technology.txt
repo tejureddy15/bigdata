@@ -1,0 +1,5 @@
+Katamreddy,Tejaswini,Spark
+Chilli,Shekhar,Hadoop
+Sai,Siva,Scala
+Sravya,Sree,Hive
+Ganta,Rao,Sqoop
