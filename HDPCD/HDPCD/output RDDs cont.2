@@ -1,0 +1,154 @@
+>>> for i in ordersMap.take(10) : print(i)
+... 
+(1, (u'2013-07-25 00:00:00.0', 11599))             (order_id, (date, customer_id))                                         
+(2, (u'2013-07-25 00:00:00.0', 256))
+(3, (u'2013-07-25 00:00:00.0', 12111))
+(4, (u'2013-07-25 00:00:00.0', 8827))
+(5, (u'2013-07-25 00:00:00.0', 11318))
+(6, (u'2013-07-25 00:00:00.0', 7130))
+(7, (u'2013-07-25 00:00:00.0', 4530))
+(8, (u'2013-07-25 00:00:00.0', 2911))
+(9, (u'2013-07-25 00:00:00.0', 5657))
+(10, (u'2013-07-25 00:00:00.0', 5648))
+
+>>> for i in orderItemsMap.take(10) : print(i)
+... 
+(1, (957, 299.98000000000002))                       (order_id, (product_id, revenue))
+(2, (1073, 199.99000000000001))
+(2, (502, 250.0))
+(2, (403, 129.99000000000001))
+(4, (897, 49.979999999999997))
+(4, (365, 299.94999999999999))
+(4, (502, 150.0))
+(4, (1014, 199.91999999999999))
+(5, (957, 299.98000000000002))
+(5, (365, 299.94999999999999))
+
+>>> for i in ordersAndOrderItemsJoin.take(10) : print(i)
+... 
+(2, ((u'2013-07-25 00:00:00.0', 256), (1073, 199.99000000000001)))              (order_id, (date, customer_id), (product_id, revenue))
+(2, ((u'2013-07-25 00:00:00.0', 256), (502, 250.0)))
+(2, ((u'2013-07-25 00:00:00.0', 256), (403, 129.99000000000001)))
+(4, ((u'2013-07-25 00:00:00.0', 8827), (897, 49.979999999999997)))
+(4, ((u'2013-07-25 00:00:00.0', 8827), (365, 299.94999999999999)))
+(4, ((u'2013-07-25 00:00:00.0', 8827), (502, 150.0)))
+(4, ((u'2013-07-25 00:00:00.0', 8827), (1014, 199.91999999999999)))
+(8, ((u'2013-07-25 00:00:00.0', 2911), (365, 179.97)))
+(8, ((u'2013-07-25 00:00:00.0', 2911), (365, 299.94999999999999)))
+(8, ((u'2013-07-25 00:00:00.0', 2911), (1014, 199.91999999999999)))
+
+
+>>> for i in ordersAndOrderItemsJoinMap.take(10) : print(i)
+... 
+((u'2013-07-25 00:00:00.0', 1073), 199.99000000000001)                            ((date, product_id), revenue)
+((u'2013-07-25 00:00:00.0', 502), 250.0)
+((u'2013-07-25 00:00:00.0', 403), 129.99000000000001)
+((u'2013-07-25 00:00:00.0', 897), 49.979999999999997)
+((u'2013-07-25 00:00:00.0', 365), 299.94999999999999)
+((u'2013-07-25 00:00:00.0', 502), 150.0)
+((u'2013-07-25 00:00:00.0', 1014), 199.91999999999999)
+((u'2013-07-25 00:00:00.0', 365), 179.97)
+((u'2013-07-25 00:00:00.0', 365), 299.94999999999999)
+((u'2013-07-25 00:00:00.0', 1014), 199.91999999999999)
+
+
+
+>>> for i in ordersRevenue.take(10) : print(i)
+... 
+((u'2013-11-18 00:00:00.0', 818), 239.94999999999999)                           
+((u'2014-06-21 00:00:00.0', 1073), 4399.7799999999997)
+((u'2014-02-27 00:00:00.0', 273), 111.95999999999999)
+((u'2014-02-08 00:00:00.0', 78), 499.94999999999999)
+((u'2014-03-03 00:00:00.0', 828), 159.94999999999999)
+((u'2014-05-12 00:00:00.0', 926), 31.98)
+((u'2013-08-19 00:00:00.0', 305), 199.0)
+((u'2014-03-26 00:00:00.0', 1073), 7799.6099999999969)
+((u'2013-12-18 00:00:00.0', 797), 17.989999999999998)
+((u'2013-10-01 00:00:00.0', 235), 139.96000000000001)
+
+>>> for i in ordersJoin.take(10) : print(i)
+... 
+((u'2013-07-25 00:00:00.0', 'Pelican Sunstream 100 Kayak'), 199.99000000000001)
+((u'2013-07-25 00:00:00.0', "Nike Men's Dri-FIT Victory Golf Polo"), 250.0)
+((u'2013-07-25 00:00:00.0', "Nike Men's CJ Elite 2 TD Football Cleat"), 129.99000000000001)
+((u'2013-07-25 00:00:00.0', 'Team Golf New England Patriots Putter Grip'), 49.979999999999997)
+((u'2013-07-25 00:00:00.0', 'Perfect Fitness Perfect Rip Deck'), 299.94999999999999)
+((u'2013-07-25 00:00:00.0', "Nike Men's Dri-FIT Victory Golf Polo"), 150.0)
+((u'2013-07-25 00:00:00.0', "O'Brien Men's Neoprene Life Vest"), 199.91999999999999)
+((u'2013-07-25 00:00:00.0', 'Perfect Fitness Perfect Rip Deck'), 179.97)
+((u'2013-07-25 00:00:00.0', 'Perfect Fitness Perfect Rip Deck'), 299.94999999999999)
+((u'2013-07-25 00:00:00.0', "O'Brien Men's Neoprene Life Vest"), 199.91999999999999)
+
+
+>>> for i in ordersRevenuePerProductName.sortByKey().take(10) : print(i)
+... 
+((u'2013-07-25 00:00:00.0', 'Bag Boy Beverage Holder'), 99.959999999999994)     
+((u'2013-07-25 00:00:00.0', 'Bowflex SelectTech 1090 Dumbbells'), 599.99000000000001)
+((u'2013-07-25 00:00:00.0', 'Bridgestone e6 Straight Distance NFL Carolina'), 63.979999999999997)
+((u'2013-07-25 00:00:00.0', 'Bridgestone e6 Straight Distance NFL San Dieg'), 95.969999999999999)
+((u'2013-07-25 00:00:00.0', 'Bridgestone e6 Straight Distance NFL Tennesse'), 127.95999999999999)
+((u'2013-07-25 00:00:00.0', "Cleveland Golf Women's 588 RTX CB Satin Chrom"), 119.98999999999999)
+((u'2013-07-25 00:00:00.0', "Cleveland Golf Women's 588 RTX CB Satin Chrom"), 119.98999999999999)
+((u'2013-07-25 00:00:00.0', 'Clicgear 8.0 Shoe Brush'), 19.98)
+((u'2013-07-25 00:00:00.0', "Diamondback Women's Serene Classic Comfort Bi"), 299.98000000000002)
+((u'2013-07-25 00:00:00.0', "Diamondback Women's Serene Classic Comfort Bi"), 299.98000000000002)
+
+
+>>> for i in ordersRevenuePerProductName.sortByKey(False).take(10) : print(i)                 ((date,productName), revenue)
+... 
+((u'2014-07-24 00:00:00.0', "adidas Men's F10 Messi TRX FG Soccer Cleat"), 179.97)
+((u'2014-07-24 00:00:00.0', "adidas Kids' F5 Messi FG Soccer Cleat"), 34.990000000000002)
+((u'2014-07-24 00:00:00.0', "adidas Kids' F5 Messi FG Soccer Cleat"), 174.94999999999999)
+((u'2014-07-24 00:00:00.0', 'adidas Brazuca 2014 Official Match Ball'), 159.99000000000001)
+((u'2014-07-24 00:00:00.0', "Under Armour Women's Micro G Skulpt Running S"), 164.91)
+((u'2014-07-24 00:00:00.0', "Under Armour Women's Micro G Skulpt Running S"), 274.85000000000002)
+((u'2014-07-24 00:00:00.0', "Under Armour Women's Ignite PIP VI Slide"), 127.95999999999999)
+((u'2014-07-24 00:00:00.0', "Under Armour Women's Ignite PIP VI Slide"), 63.979999999999997)
+((u'2014-07-24 00:00:00.0', "Under Armour Women's Ignite PIP VI Slide"), 31.989999999999998)
+((u'2014-07-24 00:00:00.0', "Under Armour Men's Compression EV SL Slide"), 134.97)
+
+
+
+>>> for i in ordersRevenueReArrangingColumnsSorted.take(100) : print(i)
+... 
+((u'2013-07-25 00:00:00.0', -599.99000000000001), 'Bowflex SelectTech 1090 Dumbbells')
+((u'2013-07-25 00:00:00.0', -499.94999999999999), "Nike Men's Free 5.0+ Running Shoe")
+((u'2013-07-25 00:00:00.0', -499.94999999999999), "Nike Men's Free 5.0+ Running Shoe")
+((u'2013-07-25 00:00:00.0', -499.94999999999999), "Nike Men's Free 5.0+ Running Shoe")
+((u'2013-07-25 00:00:00.0', -499.94999999999999), "Nike Men's Free 5.0+ Running Shoe")
+((u'2013-07-25 00:00:00.0', -499.94999999999999), "Nike Men's Free 5.0+ Running Shoe")
+((u'2013-07-25 00:00:00.0', -499.94999999999999), "Nike Men's Free 5.0+ Running Shoe")
+((u'2013-07-25 00:00:00.0', -499.94999999999999), "Nike Men's Free 5.0+ Running Shoe")
+((u'2013-07-25 00:00:00.0', -499.94999999999999), "Nike Men's Free 5.0+ Running Shoe")
+((u'2013-07-25 00:00:00.0', -499.94999999999999), "Nike Men's Free 5.0+ Running Shoe")
+((u'2013-07-25 00:00:00.0', -499.94999999999999), "Nike Men's Free 5.0+ Running Shoe")
+((u'2013-07-25 00:00:00.0', -399.98000000000002), 'Field & Stream Sportsman 16 Gun Fire Safe')
+((u'2013-07-25 00:00:00.0', -399.98000000000002), 'Field & Stream Sportsman 16 Gun Fire Safe')
+((u'2013-07-25 00:00:00.0', -399.98000000000002), 'Field & Stream Sportsman 16 Gun Fire Safe')
+
+
+>>> for i in ordersRevenueReArrangingColumnsSortedResults.take(100) : print(i)
+... 
+2013-07-25 00:00:00.0,599.99,Bowflex SelectTech 1090 Dumbbells
+2013-07-25 00:00:00.0,499.95,Nike Men's Free 5.0+ Running Shoe
+2013-07-25 00:00:00.0,499.95,Nike Men's Free 5.0+ Running Shoe
+2013-07-25 00:00:00.0,499.95,Nike Men's Free 5.0+ Running Shoe
+2013-07-25 00:00:00.0,499.95,Nike Men's Free 5.0+ Running Shoe
+2013-07-25 00:00:00.0,499.95,Nike Men's Free 5.0+ Running Shoe
+2013-07-25 00:00:00.0,499.95,Nike Men's Free 5.0+ Running Shoe
+2013-07-25 00:00:00.0,499.95,Nike Men's Free 5.0+ Running Shoe
+2013-07-25 00:00:00.0,499.95,Nike Men's Free 5.0+ Running Shoe
+2013-07-25 00:00:00.0,499.95,Nike Men's Free 5.0+ Running Shoe
+2013-07-25 00:00:00.0,499.95,Nike Men's Free 5.0+ Running Shoe
+2013-07-25 00:00:00.0,399.98,Field & Stream Sportsman 16 Gun Fire Safe
+2013-07-25 00:00:00.0,399.98,Field & Stream Sportsman 16 Gun Fire Safe
+2013-07-25 00:00:00.0,399.98,Field & Stream Sportsman 16 Gun Fire Safe
+2013-07-25 00:00:00.0,399.98,Field & Stream Sportsman 16 Gun Fire Safe
+2013-07-25 00:00:00.0,399.98,Field & Stream Sportsman 16 Gun Fire Safe
+
+
+
+
+
+
+

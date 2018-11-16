@@ -1,0 +1,390 @@
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table orders \
+--target-dir /user/cloudera/problem1/orders \
+--as-avrodatafile \
+--compress \
+--compression-codec org.apache.hadoop.io.compress.SnappyCodec
+
+=====================================================================
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table order_items \
+--target-dir /user/cloudera/problem1/order-items \
+--as-avrodatafile \
+--compress \
+--compression-codec org.apache.hadoop.io.compress.SnappyCodec
+
+======================================================================
+
+val ordersDF = sqlContext.read.avro("/user/cloudera/problem1/orders")
+
+val orderItemsDF = sqlContext.read.avro("/user/cloudera/problem1/order-items")
+
+=============================================================================
+
+val ordersAndOrderItemsJoinedDF = ordersDF.join(orderItemsDF, ordersDF("order_id") === orderItemsDF("order_item_order_id")).drop("order_item_order_id")
+
+val ordersAndOrderItemsGrouped = ordersAndOrderItemsJoinedDF.
+groupBy(to_date(from_unixtime(col("order_date")/1000)).alias("order_date_formatted"),col("order_status"))
+
+val ordersAndOrderItemsAggregated = ordersAndOrderItemsGrouped.
+agg(round(sum("order_item_subtotal"),2).alias("total_amount"), countDistinct("order_id").alias("total_orders"))
+
+val ordersAndOrderItemsOrdered = ordersAndOrderItemsAggregated.
+orderBy(col("order_date_formatted").desc,col("order_status"),col("total_amount").desc,col("total_orders"))
+
+sqlContext.setConf("org.apache.parquet.compression.codec", "gzip")
+
+ordersAndOrderItemsOrdered.write.parquet("/user/cloudera/problem1/result4a-gzip")
+
+sqlContext.setConf("org.apache.parquet.compression.codec", "snappy")
+
+ordersAndOrderItemsOrdered.write.parquet("/user/cloudera/problem1/result4a-snappy")
+
+val ordersAndOrderItemsOrderedMapped = ordersAndOrderItemsOrdered.map(rec => rec(0) + "," + rec(1) + "," + rec(2) + "," + rec(3))
+
+ordersAndOrderItemsOrderedMapped.saveAsTextFile("/user/cloudera/problem1/result4c-csv")
+
+==============================================================================================================
+
+ordersAndOrderItemsJoinedDF.registerTempTable("orders_order_items_joined")
+
+val sqlResult = sqlContext.sql("""
+select to_date(from_unixtime(order_date/1000)) as order_date_formatted, order_status, round(sum(order_item_subtotal),2) as total_amount, count(distinct(order_id)) as total_orders
+from orders_order_items_joined
+group by to_date(from_unixtime(order_date/1000)), order_status
+order by order_date_formatted desc, order_status, total_amount desc, total_orders""")
+
+sqlContext.setConf("org.apache.parquet.compression.codec", "gzip")
+
+sqlResult.write.parquet("/user/cloudera/problem1/result4b-gzip")
+
+sqlContext.setConf("org.apache.parquet.compression.codec", "snappy")
+
+sqlResult.write.parquet("/user/cloudera/problem1/result4b-snappy")
+
+val sqlResultMapped = sqlResult.map(rec => rec(0) + "," + rec(1) + "," + rec(2) + "," + rec(3))
+
+sqlResultMapped.saveAsTextFile("/user/cloudera/problem1/result4b-csv")
+
+=============================================================================================================
+
+
+scala> ordersDF
+res73: org.apache.spark.sql.DataFrame = [order_id: int, order_date: bigint, order_customer_id: int, order_status: string]
+
+ordersDF.rdd.saveAsTextFile("/user/cloudera/problem1/ordersTextFile")
+
+orderItemsDF.rdd.saveAsTextFile("/user/cloudera/problem1/orderItemsTextFile")
+
+ordersAndOrderItemsOrdered.rdd.saveAsTextFile("/user/cloudera/problem1/tryingWithoutMapping")  (by default , is the delimiter)
+
+res:
+
+[2013-08-11,CANCELED,784.91,1]
+[2013-08-11,CLOSED,9852.81,17]
+[2013-08-11,COMPLETE,21302.69,41]
+[2013-08-11,ON_HOLD,3393.63,4]
+
+===================================================================================================================================
+
+
+>>> ordersRDD = sc.textFile("file:/home/cloudera/Downloads/data-master/retail_db/orders")
+
+>>> orderItemsRDD = sc.textFile("file:/home/cloudera/Downloads/data-master/retail_db/order_items")
+
+>>> ordersRDDMapped = ordersRDD.map \
+... (lambda rec : (int(rec.split(",")[0]), (rec.split(",")[1], rec.split(",")[3])))
+
+>>> ordersRDDMapped.first()
+
+(1, (u'2013-07-25 00:00:00.0', u'CLOSED'))
+
+>>> orderItemsRDDMapped = orderItemsRDD.map \
+... (lambda rec : (int(rec.split(",")[1]), float(rec.split(",")[4])))
+ 
+>>> orderItemsRDDMapped.first()
+(1, 299.98000000000002)
+
+
+>>>>>> ordersAndOrderItemsJoined = ordersRDDMapped.join(orderItemsRDDMapped)
+
+>>> ordersAndOrderItemsJoined.top(5)
+[(68883, ((u'2014-07-23 00:00:00.0', u'COMPLETE'), 1999.99)),      (order_id, (order_date,order_status), subtotal)
+ (68883, ((u'2014-07-23 00:00:00.0', u'COMPLETE'), 150.0)),
+ (68882, ((u'2014-07-22 00:00:00.0', u'ON_HOLD'), 59.990000000000002)),
+ (68882, ((u'2014-07-22 00:00:00.0', u'ON_HOLD'), 50.0)),
+ (68881, ((u'2014-07-19 00:00:00.0', u'PENDING_PAYMENT'), 129.99000000000001))]
+
+>>> orderAndOrderItemsRevenue = ordersAndOrderItemsJoined.map\
+... (lambda rec : ((rec[1][0][0], rec[1][0][1]), rec[1][1]))
+
+>>> orderAndOrderItemsRevenue.first()
+((u'2013-07-25 00:00:00.0', u'PENDING_PAYMENT'), 199.99000000000001)
+
+
+>>>orderAndOrderItemsRevenueUsingReduceByKey = orderAndOrderItemsRevenue.reduceByKey\
+(lambda x,y : x+y)
+
+>>> orderAndOrderItemsRevenueUsingReduceByKey.top(5)
+[((u'2014-07-24 00:00:00.0', u'SUSPECTED_FRAUD'), 2351.6100000000001),
+ ((u'2014-07-24 00:00:00.0', u'PROCESSING'), 9964.739999999998),
+ ((u'2014-07-24 00:00:00.0', u'PENDING_PAYMENT'), 17680.69999999999),
+ ((u'2014-07-24 00:00:00.0', u'PENDING'), 12729.489999999996),
+ ((u'2014-07-24 00:00:00.0', u'PAYMENT_REVIEW'), 499.94999999999999)]
+
+
+>>>orderAndOrderItemsTotalOrders = ordersAndOrderItemsJoined.map\
+(lambda rec : ((rec[1][0][0], rec[1][0][1]), rec[0]))
+
+>>> orderAndOrderItemsTotalOrders.first()
+((u'2013-07-25 00:00:00.0', u'PENDING_PAYMENT'), 2)
+
+orderAndOrderItemsTotalOrdersUsingCountByKey = orderAndOrderItemsTotalOrders.distinct().countByKey()
+
+>>> orderAndOrderItemsTotalOrdersUsingCountByKey.take(5)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AttributeError: 'collections.defaultdict' object has no attribute 'take'
+>>> orderAndOrderItemsTotalOrdersUsingCountByKey.first()
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AttributeError: 'collections.defaultdict' object has no attribute 'first'
+
+>>>orderAndOrderItemsTotalOrdersUsingCountByKey
+
+
+({(u'2013-10-31 00:00:00.0', u'PROCESSING'): 19, (u'2014-02-19 00:00:00.0', u'COMPLETE'): 79, (u'2014-01-17 00:00:00.0', u'PENDING_PAYMENT'): 16, (u'2014-07-12 00:00:00.0', u'COMPLETE'): 54, (u'2014-01-18 00:00:00.0', u'PENDING'): 11, (u'2014-02-09 00:00:00.0', u'CLOSED'): 23, (u'2013-11-08 00:00:00.0', u'SUSPECTED_FRAUD'): 3, (u'2013-12-19 00:00:00.0', u'SUSPECTED_FRAUD'): 3, (u'2014-05-30 00:00:00.0', u'ON_HOLD'): 8, (u'2013-08-24 00:00:00.0', u'PROCESSING'): 27, (u'2014-02-21 00:00:00.0', u'COMPLETE'): 49, (u'2014-04-29 00:00:00.0', u'PAYMENT_REVIEW'): 1, (u'2013-12-22 00:00:00.0', u'PAYMENT_REVIEW'): 2, (u'2013-10-06 00:00:00.0', u'ON_HOLD'): 9, (u'2013-09-05 00:00:00.0', u'PENDING'): 24, (u'2014-05-27 00:00:00.0', u'PAYMENT_REVIEW'): 2, (u'2014-07-03 00:00:00.0', u'PENDING'): 15, (u'2013-11-10 00:00:00.0', u'PENDING'): 25, (u'2014-04-16 00:00:00.0', u'PAYMENT_REVIEW'): 1, (u'2014-01-01 00:00:00.0', u'PENDING_PAYMENT'): 30, (u'2014-07-15 00:00:00.0', u'PROCESSING'): 36})
+
+>>>orderAndOrderItemsFinal = orderAndOrderItemsRevenueUsingReduceByKey.join(orderAndOrderItemsTotalOrdersUsingCountByKey)
+
+>>> ordersCountRDD = sc.parallelize([orderAndOrderItemsTotalOrdersUsingCountByKey])
+
+>>> type(ordersCountRDD)
+<class 'pyspark.rdd.RDD'>
+
+>>>ordersCountRDD
+
+[({(u'2014-07-12 00:00:00.0', u'COMPLETE'): 54, (u'2014-01-18 00:00:00.0', u'PENDING'): 11, (u'2013-08-26 00:00:00.0', u'PENDING_PAYMENT'): 36, (u'2014-02-09 00:00:00.0', u'CLOSED'): 23, (u'2013-11-08 00:00:00.0', u'SUSPECTED_FRAUD'): 3, (u'2013-12-19 00:00:00.0', u'SUSPECTED_FRAUD'): 3, (u'2014-05-30 00:00:00.0', u'ON_HOLD'): 8, (u'2013-08-24 00:00:00.0', u'PROCESSING'): 27, (u'2014-02-21 00:00:00.0', u'COMPLETE'): 49, (u'2014-04-29 00:00:00.0', u'PAYMENT_REVIEW'): 1, (u'2013-12-22 00:00:00.0', u'PAYMENT_REVIEW'): 2, (u'2013-10-06 00:00:00.0', u'ON_HOLD'): 9, (u'2013-09-05 00:00:00.0', u'PENDING'): 24, (u'2014-05-27 00:00:00.0', u'PAYMENT_REVIEW'): 2, (u'2014-07-03 00:00:00.0', u'PENDING'): 15, (u'2013-11-10 00:00:00.0', u'PENDING'): 25, (u'2014-04-16 00:00:00.0', u'PAYMENT_REVIEW'): 1, (u'2014-01-01 00:00:00.0', u'PENDING_PAYMENT'): 30, (u'2014-07-15 00:00:00.0', u'PROCESSING'): 36})]
+
+>>> xDict = orderAndOrderItemsRevenueUsingReduceByKey.collectAsMap()
+
+>>> yDict = orderAndOrderItemsTotalOrdersUsingCountByKey.collectAsMap()
+
+====
+
+orderAndOrderItemsTotalOrders.distinct().mapValues(lambda x: 1).reduceByKey(lambda x,y: x+y).collect()
+
+OCESSING'), 33), ((u'2013-10-07 00:00:00.0', u'ON_HOLD'), 5), ((u'2014-07-04 00:00:00.0', u'PENDING'), 17), ((u'2013-11-09 00:00:00.0', u'PENDING_PAYMENT'), 47), ((u'2013-09-28 00:00:00.0', u'PAYMENT_REVIEW'), 2), ((u'2014-06-30 00:00:00.0', u'CLOSED'), 10), ((u'2014-04-27 00:00:00.0', u'CLOSED'), 27), ((u'2013-10-31 00:00:00.0', u'PROCESSING'), 19), ((u'2014-02-19 00:00:00.0', u'COMPLETE'), 79), ((u'2014-02-09 00:00:00.0', u'CLOSED'), 23), ((u'2013-11-08 00:00:00.0', u'SUSPECTED_FRAUD'), 3), ((u'2013-10-14 00:00:00.0', u'PENDING'), 12), ((u'2013-12-22 00:00:00.0', u'PAYMENT_REVIEW'), 2), ((u'2013-09-05 00:00:00.0', u'PENDING'), 24), ((u'2014-05-27 00:00:00.0', u'PAYMENT_REVIEW'), 2), ((u'2014-01-01 00:00:00.0', u'PENDING_PAYMENT'), 30)]
+
+
+
+
+
+======================================================================================================================================================================
+
+PROBLEMSCENARIO 2
+
+
+sqoop import \
+--connect jdbc:mysql://localhost/retail_db \
+--username root \
+--password cloudera \
+--table products \
+--target-dir /user/cloudera/products \
+--as-textfile \
+-fields-terminated-by '|'
+
+hadoop fs -mkdir /user/cloudera/problem2
+
+hadoop fs -mv /user/cloudera/products /user/cloudera/problem2
+
+
+
+product_id
+product_category_id
+product_name
+product_description
+product_price
+product_image
+
+case class Products(
+product_id : Int,
+product_category_id : Int,
+product_name : String,
+product_description : String,
+product_price : Float,
+product_image : String
+)
+
+
+
+scala> case class Products(
+     | product_id : Int,
+     | product_category_id : Int,
+     | product_name : String,
+     | product_description : String,
+     | product_price : Float,
+     | product_image : String
+     | )
+defined class Products
+
+scala> val productsRDD = sc.textFile("/user/cloudera/problem2/products")
+productsRDD: org.apache.spark.rdd.RDD[String] = /user/cloudera/problem2/products MapPartitionsRDD[1139] at textFile at <console>:34
+
+scala> val productsDF = productsRDD.
+     | map(rec => rec.split('|')).
+     | map(prod => Products(prod(0).toInt,prod(1).toInt,prod(2),prod(3),prod(4).toFloat,prod(5))).
+     | toDF()
+productsDF: org.apache.spark.sql.DataFrame = [product_id: int, product_category_id: int, product_name: string, product_description: string, product_price: float, product_image: string]
+
+
+scala> productsDF.     NOTE: (press tab after hitting .)
+agg                    alias                  apply                  as                     asInstanceOf           cache                  coalesce               
+col                    collect                collectAsList          columns                count                  createJDBCTable        cube                   
+describe               distinct               drop                   dropDuplicates         dtypes                 except                 explain                
+explode                filter                 first                  flatMap                foreach                foreachPartition       groupBy                
+head                   inputFiles             insertInto             insertIntoJDBC         intersect              isInstanceOf           isLocal                
+javaRDD                join                   limit                  map                    mapPartitions          na                     orderBy                
+persist                printSchema            queryExecution         randomlSplit            rdd                    registerTempTable      repartition            
+rollup                 sample                 save                   saveAsParquetFile      saveAsTable            schema                 select                 
+selectExpr             show                   sort                   sortWithinPartitions   sqlContext             stat                   take                   
+takeAsList             toDF                   toJSON                 toJavaRDD              toSchemaRDD            toString               transform              
+unionAll               unpersist              where                  withColumn             withColumnRenamed      write                  
+                                                                      ^
+
+scala> val productsDFFileterd = productsDF.filter(col("product_price") < 100)
+productsDFFileterd: org.apache.spark.sql.DataFrame = [product_id: int, product_category_id: int, product_name: string, product_description: string, product_price: float, product_image: string]
+
+scala> val productsDFFiltered = productsDF.filter(col("product_price") < 100)
+productsDFFiltered: org.apache.spark.sql.DataFrame = [product_id: int, product_category_id: int, product_name: string, product_description: string, product_price: float, product_image: string]
+
+scala> val productsDFAggregated = productsDFFiltered.
+     | groupBy("product_category_id").
+     | agg(max("product_price").alias("pricy_product"),count("product_id").alias("total_products"),avg("product_price").alias("avg_price_of_product"),min("product_price").alias("low_price_product"))
+productsDFAggregated: org.apache.spark.sql.DataFrame = [product_category_id: int, pricy_product: float, total_products: bigint, avg_price_of_product: double, low_price_product: float]
+
+scala> productsDFAggregated.show(10)
+
+scala> val productsDFOrdered = productsDFAggregated.
+     | orderBy(col("product_category_id").asc)
+productsDFOrdered: org.apache.spark.sql.DataFrame = [product_category_id: int, pricy_product: float, total_products: bigint, avg_price_of_product: double, low_price_product: float]
+
+scala> productsDFOrdered.show(20)
+
+scala> sqlContext.setConf("spark.sql.avro.compression.codec","snappy")
+
+scala> productsDFOrdered.write.avro("/user/cloudera/problem2/result-df")
+
+scala> productsDF.registerTempTable("products")
+
+scala> val sqlResult = sqlContext.sql("""
+     | select product_category_id, max("product_price") as high_price, min("product_price") as low_price, count("product_id") as total_products, avg("product_price") as average_price
+     | from products
+     | where product_price < 1000
+     | group by product_category_id
+     | order by product_category_id""")
+sqlResult: org.apache.spark.sql.DataFrame = [product_category_id: int, high_price: string, low_price: string, total_products: bigint, average_price: double]
+
+scala> sqlContext.setConf("spark.sql.avro.compression.codec", "snappy")
+
+scala> sqlResult.write.avro("/user/cloudera/problem2/result-sql")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

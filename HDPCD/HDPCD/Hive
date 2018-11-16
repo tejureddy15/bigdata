@@ -1,0 +1,1440 @@
+HIVE
+
+create database retail_db;
+use retail_db;
+
+create table orders(
+  order_id int,
+  order_date string,
+  order_customer_id int,
+  order_status string
+) row format delimited fields terminated by ','
+  stored as textfile;
+
+load data local inpath '/home/cloudera/Downloads/data-master/retail_db/orders' into table orders;  (into appends the data to table)
+
+load data local inpath '/home/cloudera/Downloads/data-master/retail_db/orders' overwrite into table orders; (removes the existing data and load new data)
+
+load data inpath '/home/cloudera/Downloads/data-master/retail_db/orders' into table orders; (If you are using HDFS path just omit the word local and provide hdfs path)
+
+dfs -ls /user/hive/warehouse/retail_db.db/orders
+
+o/p : 
+
+Found 1 items
+-rwxrwxrwx   1 cloudera supergroup    2999944 2018-09-16 23:45 /user/hive/warehouse/retail_db.db/orders/part-00000
+
+select * from orders limit 10;
+OK
+1	2013-07-25 00:00:00.0	11599	CLOSED
+2	2013-07-25 00:00:00.0	256	PENDING_PAYMENT
+3	2013-07-25 00:00:00.0	12111	COMPLETE
+4	2013-07-25 00:00:00.0	8827	CLOSED
+5	2013-07-25 00:00:00.0	11318	COMPLETE
+6	2013-07-25 00:00:00.0	7130	COMPLETE
+7	2013-07-25 00:00:00.0	4530	COMPLETE
+8	2013-07-25 00:00:00.0	2911	PROCESSING
+9	2013-07-25 00:00:00.0	5657	PENDING_PAYMENT
+10	2013-07-25 00:00:00.0	5648	PENDING_PAYMENT
+
+create table order_items(
+  order_item_id int,
+  order_item_order_id int,
+  order_item_product_id int,
+  order_item_quantity int,
+  order_item_subtotal float,
+  order_item_product_price float
+) row format delimited fields terminated by ','
+  stored as textfile;
+
+load data local inpath '/home/cloudera/Downloads/data-master/retail_db/order_items' into table order_items;
+
+dfs -ls /user/hive/warehouse/retail_db.db/order_items;
+
+Found 1 items
+-rwxrwxrwx   1 cloudera supergroup    5408880 2018-09-17 00:03 /user/hive/warehouse/retail_db.db/order_items/part-00000
+
+
+select * from order_items limit 10;
+OK
+1	1	957	1	299.98	299.98
+2	2	1073	1	199.99	199.99
+3	2	502	5	250.0	50.0
+4	2	403	1	129.99	129.99
+5	4	897	2	49.98	24.99
+6	4	365	5	299.95	59.99
+7	4	502	3	150.0	50.0
+8	4	1014	4	199.92	49.98
+9	5	957	1	299.98	299.98
+10	5	365	5	299.95	59.99
+
+=================================================================================================================================
+
+create database retail_db_orc;
+use retail_db_orc;   (ORC format stores meta data and data of all records)
+
+create table orders(
+  order_id int,
+  order_date string,
+  order_customer_id int,
+  order_status string
+) stored as orc;
+
+insert into table orders select * from retail_db.orders;
+
+create table order_items(
+  order_item_id int,
+  order_item_order_id int,
+  order_item_product_id int,
+  order_item_quantity int,
+  order_item_subtotal float,
+  order_item_product_price float
+) stored as orc;
+
+insert into table order_items select * from retail_db.order_items;
+
+==================================================================================================================
+
+using pyspark:
+
+sqlContext.sql("use retail_db")
+
+set hive.metastore.warehouse.configuration;
+
+==================================================
+
+Functions:
+
+show functions;
+
+select order_status, length(order_status) from orders limit 10;
+
+CLOSED	6
+PENDING_PAYMENT	15
+COMPLETE	8
+CLOSED	6
+COMPLETE	8
+COMPLETE	8
+COMPLETE	8
+PROCESSING	10
+PENDING_PAYMENT	15
+PENDING_PAYMENT	15
+
+==============================
+
+String Functions:
+
+create table customers(
+  customer_id int,
+  customer_fname varchar(45),
+  customer_lname varchar(45),
+  customer_email varchar(45),
+  customer_password varchar(45),
+  customer_street varchar(225),
+  customer_city varchar(45),
+  customer_zipcode varchar(45)
+) row format delimited fields terminated by ','
+stored as textfile;
+
+load data local inpath '/home/cloudera/Downloads/data-master/retail_db/customers' into table customers;
+
+substr or substring
+instr
+concat
+split
+like
+rlike
+length
+cast
+lcase or lower
+ucase or upper
+initcap
+trim, ltrim, rtrim
+lpad, rpad
+
+select 'Hello World, Hwo are you';
+
+select substr('Hello World, How are you', 14); (Extract How are you from Hello World, How are you)
+
+res: How are you
+
+select substr('Hello World, How are you', 7,5); (Extract World form Hello World, How are you. 7 is the index where World starts and 5 is the number of characters     
+res: World                                                                                                                 in   World)
+
+                                                                                                                                 
+select substr('Hello World, How are you',-3);  (Gives 3 characters fro the end)
+
+res: you
+
+select substr('Hello World, How are you',-7, 3); (-7 is the index from end and 3 characters from there)
+
+res: are
+
+select instr('Hello World, How are you',' ')  (Gives the index of space at it's first occurence: instr --> instring)
+
+res: 6
+
+select instr('Hello World, How are you','World') (gives the index of the world 'World' where it first occured)
+
+res: 7
+
+select "Hello World, How are you" like 'Hello%' (checks if a string starts with Hello)
+
+res: true
+
+select "Hello World, How are you" like 'World%'  (checks if a string starts with World)
+
+res: false
+
+select "World Hello, World are you" like '%World%'
+
+res: true 
+
+select length("Hello World");
+
+res: 11
+
+select lower("Hello World");
+
+res: hello world
+
+select upper("hey teju papa");   (ucase and upper are samel)
+
+res: HEY TEJU PAPA
+
+select trim(" Hello World ")   (Spaces in the beginning and at the end will be trimmed)
+
+res: Hello World
+
+select trim("Hello World and how are you");
+
+res: Hello World and how are you
+
+select trim("Hello World and how are you"), length("Hello World and how are you"), length(trim("Hello World and how are you"));
+
+res: Hello World and how are you	27	27
+
+select trim(" Hello World and how are you "), length(" Hello World and how are you "), length(trim(" Hello World and how are you "));
+
+res: Hello World and how are you	29	27
+
+rtrim ==> trims right space
+
+ltrim ==> trims left space
+
+select lpad(1, 2, 0);   (1 is input, 2 is the no of characters in input, 0 is the padding character)
+
+res: 01
+
+select lpad(12, 2, 0);
+
+res: 12
+
+hive> describe function lpad;
+OK
+lpad(str, len, pad) - Returns str, left-padded with pad to a length of len
+
+select lpad(2, 12, 0);  (number of characters are 12. so it adds 11 zeros)
+
+res: 000000000002
+
+select lpad(12, 12, 0);  (It adds 10 zeros)
+
+res: 0000000000002
+
+select "12";
+
+res: 12
+
+select cast("12" as int);
+
+hive> select order_date from orders limit 10;
+OK
+2013-07-25 00:00:00.0
+2013-07-25 00:00:00.0
+2013-07-25 00:00:00.0
+2013-07-25 00:00:00.0
+2013-07-25 00:00:00.0
+2013-07-25 00:00:00.0
+2013-07-25 00:00:00.0
+2013-07-25 00:00:00.0
+2013-07-25 00:00:00.0
+2013-07-25 00:00:00.0
+Time taken: 0.215 seconds, Fetched: 10 row(s)
+
+hive> select substr(order_date, 6, 2) from orders limit 10;    (returns string. 07 is a string)
+OK
+07
+07
+07
+07
+07
+07
+07
+07
+07
+07
+
+
+Time taken: 0.196 seconds, Fetched: 10 row(s)
+hive> select cast(substr(order_date, 6, 2) as int) from orders limit 10;  (cast converts string to int)
+OK
+7
+7
+7
+7
+7
+7
+7
+7
+7
+7
+Time taken: 0.12 seconds, Fetched: 10 row(s)
+
+select("hello" as int) ()returns null because hello is originally a string
+
+res: NULL
+
+select split("Hello world, how are you", ' ');  (converts string to array by splitting at space)
+
+res: ["Hello","world,","how","are","you"]
+
+select split("Hello world,how are you", ' ');
+
+res: ["Hello","world,how","are","you"]
+
+select index(split("Hello world, how are you", ' '), 4);
+
+res: you
+
+==========================================================================================================
+
+Date Functions:
+
+current_date
+current_timestamp
+date_add
+date_sub
+date_format
+datediff
+day
+dayofmonth
+to_date
+to_unix_timestamp
+to_utc_timestamp
+from_unixtime
+from_utc_timestamp
+minute
+month
+months_between
+next_day
+
+
+M  ==> returns month  (m always gives 0)
+Y or y ==> returns year
+d ==> returns date
+D ==> returns date in the year
+
+
+
+hive> select current_date;
+OK
+2018-09-17
+Time taken: 0.221 seconds, Fetched: 1 row(s)
+
+
+hive> select current_timestamp;
+OK
+2018-09-17 23:16:56.731
+Time taken: 0.171 seconds, Fetched: 1 row(s)
+
+
+hive> select date_format(current_date, 'y');
+OK
+2018
+Time taken: 0.119 seconds, Fetched: 1 row(s)
+
+
+hive> select date_format(current_date, 'd');
+OK
+17
+Time taken: 0.094 seconds, Fetched: 1 row(s)
+
+
+hive> select date_format(current_date, 'm');
+OK
+0
+Time taken: 0.147 seconds, Fetched: 1 row(s)
+
+
+hive> select date_format(current_date, 'M');
+OK
+9
+Time taken: 0.132 seconds, Fetched: 1 row(s)
+
+
+hive> select date_format(current_date, 'Y');
+OK
+2018
+Time taken: 0.133 seconds, Fetched: 1 row(s)
+
+
+hive> select date_format(current_date, 'D');
+OK
+260
+Time taken: 0.114 seconds, Fetched: 1 row(s)
+
+
+hive> select date_format(current_date, 'mm');
+OK
+00
+Time taken: 0.152 seconds, Fetched: 1 row(s)
+
+
+hive> select date_format(current_date, 'MM');
+OK
+09
+Time taken: 0.129 seconds, Fetched: 1 row(s)
+
+
+hive> select date_format("2018-12-07", 'MM');
+OK
+12
+Time taken: 0.131 seconds, Fetched: 1 row(s)
+
+
+hive> select date_format("2018-12-07", 'M');
+OK
+12
+Time taken: 0.119 seconds, Fetched: 1 row(s)
+
+
+hive> select date_format("2018-12-07", 'm');
+OK
+0
+Time taken: 0.094 seconds, Fetched: 1 row(s)
+
+
+hive> select date_format("2018-12-07", 'd');
+OK
+7
+Time taken: 0.107 seconds, Fetched: 1 row(s)
+
+
+hive> select date_format("2018-12-07", 'dd');
+OK
+07
+Time taken: 0.167 seconds, Fetched: 1 row(s)
+
+hive> select date_format("2018-01-01", 'dd');
+OK
+01
+Time taken: 0.077 seconds, Fetched: 1 row(s)
+
+
+hive> select date_format("2018-01-01", 'd');
+OK
+1
+Time taken: 0.12 seconds, Fetched: 1 row(s)
+
+
+hive> select date_format("2018-01-01", 'D');
+OK
+1
+Time taken: 0.086 seconds, Fetched: 1 row(s) 
+
+         
+hive> select date_format("2018-01-01", 'DD');
+OK
+01
+Time taken: 0.122 seconds, Fetched: 1 row(s)           (returns the date in year i.e, date out of 365 days )
+
+
+hive> select date_format("2018-01-31", 'DD');
+OK
+31
+Time taken: 0.114 seconds, Fetched: 1 row(s)
+
+
+hive> select date_format("2018-02-01", 'DD');
+OK
+32
+Time taken: 0.196 seconds, Fetched: 1 row(s)
+
+
+hive> select day(current_date); (day and dateofmonth are same)
+OK
+17
+Time taken: 0.202 seconds, Fetched: 1 row(s)
+
+
+hive> select dayofmonth(current_date);
+OK
+17
+Time taken: 0.113 seconds, Fetched: 1 row(s)
+
+hive> select current_date;
+OK
+2018-09-17
+Time taken: 0.092 seconds, Fetched: 1 row(s)
+
+
+hive> select current_timestamp;
+OK
+2018-09-17 23:43:39.709
+Time taken: 0.073 seconds, Fetched: 1 row(s)
+
+
+hive> select to_date(current_timestamp);
+OK
+2018-09-17
+Time taken: 0.102 seconds, Fetched: 1 row(s)
+
+hive> select to_unix_timestamp(current_date);
+OK
+1537167600
+Time taken: 0.194 seconds, Fetched: 1 row(s)
+
+
+hive> select to_unix_timestamp(current_timestamp);
+OK
+1537253228
+Time taken: 0.083 seconds, Fetched: 1 row(s)
+
+
+hive> select from_unixtime(1537167600);
+OK
+2018-09-17 00:00:00
+Time taken: 0.081 seconds, Fetched: 1 row(s)
+
+
+hive> select from_unixtime(1537253228);
+OK
+2018-09-17 23:47:08
+Time taken: 0.107 seconds, Fetched: 1 row(s)
+
+hive> select to_date(from_unixtime(1537253228));
+OK
+2018-09-17
+
+
+hive> select * from orders limit 10;
+OK
+1	2013-07-25 00:00:00.0	11599	CLOSED
+2	2013-07-25 00:00:00.0	256	PENDING_PAYMENT
+3	2013-07-25 00:00:00.0	12111	COMPLETE
+4	2013-07-25 00:00:00.0	8827	CLOSED
+5	2013-07-25 00:00:00.0	11318	COMPLETE
+6	2013-07-25 00:00:00.0	7130	COMPLETE
+7	2013-07-25 00:00:00.0	4530	COMPLETE
+8	2013-07-25 00:00:00.0	2911	PROCESSING
+9	2013-07-25 00:00:00.0	5657	PENDING_PAYMENT
+10	2013-07-25 00:00:00.0	5648	PENDING_PAYMENT
+Time taken: 0.258 seconds, Fetched: 10 row(s)
+
+
+hive> select to_date(order_date) from orders limit 10;
+OK
+2013-07-25
+2013-07-25
+2013-07-25
+2013-07-25
+2013-07-25
+2013-07-25
+2013-07-25
+2013-07-25
+2013-07-25
+2013-07-25
+Time taken: 0.221 seconds, Fetched: 10 row(s)
+
+
+hive> select date_add(order_date,10) from orders limit 10;
+OK
+2013-08-04
+2013-08-04
+2013-08-04
+2013-08-04
+2013-08-04
+2013-08-04
+2013-08-04
+2013-08-04
+2013-08-04
+2013-08-04
+Time taken: 0.118 seconds, Fetched: 10 row(s)
+
+==============================================================================================================================
+
+aggregation functions:
+
+select count(1) from orders;   (returns the no of records in orders table)
+
+res: 68883
+
+select sum(order_item_subtotal)from order_items;
+
+res: 3.432262059842491E7
+
+
+hive> select count(1), count(distinct order_status) from orders;
+
+res: 68883, 9
+
+select count(1), order_status from orders;
+
+res: FAILED: SemanticException [Error 10025]: Line 1:16 Expression not in GROUP BY key 'order_status
+
+================================================================================================================
+
+case and nvl
+
+select distinct order_status from orders;
+
+res: 
+
+CANCELED
+CLOSED
+COMPLETE
+ON_HOLD
+PAYMENT_REVIEW
+PENDING
+PENDING_PAYMENT
+PROCESSING
+SUSPECTED_FRAUD
+
+select case order_status when 'COMPLETE' then 'No Reaction'                  (case = if; when is equal to; case has to always end with 'end')
+                         when 'CLOSED' then 'No Reaction'
+                         end from orders limit 10;                           (do not use tab to add spaces)
+
+res: 
+                                      Explanation
+
+No Reaction                          (if order_status = 'COMPLETE': 'x')
+NULL                                     
+No Reaction                          (if order_status = 'COMPLETE' then 'No Reaction')   
+No Reaction                          (if order_status = 'CLOSED' then 'No Reaction')
+No Reaction
+No Reaction
+No Reaction
+NULL
+NULL
+NULL
+
+
+select order_status,
+         case order_status when 'COMPLETE' then 'No Reaction'                  
+                           when 'CLOSED' then 'No Reaction'
+                           when 'PENDING_PAYMENT' then 'No Reaction'                         
+                           when 'PAYMENT_REVIEW' then 'No Reaction'
+                           when 'PROCESSING' then 'No Reaction'
+                           when 'PENDING' then 'No Reaction'
+                           when 'ON_HOLD' then 'No Reaction'
+                         else 'Risky'
+         end from orders limit 30;
+
+
+
+
+CLOSED	No Reaction
+PENDING_PAYMENT	No Reaction
+COMPLETE	No Reaction
+CLOSED	No Reaction
+COMPLETE	No Reaction
+COMPLETE	No Reaction
+COMPLETE	No Reaction
+PROCESSING	No Reaction
+PENDING_PAYMENT	No Reaction
+PENDING_PAYMENT	No Reaction
+PAYMENT_REVIEW	No Reaction
+CLOSED	No Reaction
+PENDING_PAYMENT	No Reaction
+PROCESSING	No Reaction
+COMPLETE	No Reaction
+PENDING_PAYMENT	No Reaction
+COMPLETE	No Reaction
+CLOSED	No Reaction
+PENDING_PAYMENT	No Reaction
+PROCESSING	No Reaction
+PENDING	No Reaction
+COMPLETE	No Reaction
+PENDING_PAYMENT	No Reaction
+CLOSED	No Reaction
+CLOSED	No Reaction
+COMPLETE	No Reaction
+PENDING_PAYMENT	No Reaction
+COMPLETE	No Reaction
+PROCESSING	No Reaction
+PENDING_PAYMENT	No Reaction
+
+
+select order_status,
+       case when order_status IN ('COMPLETE', 'CLOSED') then 'No Reaction'                  
+            when order_status IN ('PENDING_PAYMENT','PAYMENT_REVIEW','PROCESSING','PENDING','ON_HOLD') then 'No Reaction'
+            else 'Risky'
+         end from orders limit 30;
+
+
+res: same as above
+
+
+select nvl(order_status, 'Status Missing') from orders limit 10;
+
+select case when order-status is null then 'Status Missing' from orders limit 10;
+
+res: 
+
+lCLOSED
+PENDING_PAYMENT
+COMPLETE
+CLOSED
+COMPLETE
+COMPLETE
+COMPLETE
+PROCESSING
+PENDING_PAYMENT
+PENDING_PAYMENT
+
+==========================================================================================================================
+
+row level transformations
+
+select * from orders limit 10;
+
+1	2013-07-25 00:00:00.0	11599	CLOSED
+2	2013-07-25 00:00:00.0	256	PENDING_PAYMENT
+3	2013-07-25 00:00:00.0	12111	COMPLETE
+4	2013-07-25 00:00:00.0	8827	CLOSED
+5	2013-07-25 00:00:00.0	11318	COMPLETE
+6	2013-07-25 00:00:00.0	7130	COMPLETE
+7	2013-07-25 00:00:00.0	4530	COMPLETE
+8	2013-07-25 00:00:00.0	2911	PROCESSING
+9	2013-07-25 00:00:00.0	5657	PENDING_PAYMENT
+10	2013-07-25 00:00:00.0	5648	PENDING_PAYMENT
+
+hive> select concat(substr(order_date,1,4), substr(order_date,6,2)) from orders limit 10;   (concat returns string)
+OK
+201307
+201307
+201307
+201307
+201307
+201307
+201307
+201307
+201307
+201307
+
+concat returns st ring. so, we need to convert it to int since it(int) gives betterperfomance.
+
+hive> select cast(concat(substr(order_date,1,4), substr(order_date,6,2)) as int) from orders limit 10;
+OK
+201307
+201307
+201307
+201307
+201307
+201307
+201307
+201307
+201307
+201307
+
+hive> select date_format('2013-07-25 00:00:00.0', 'YYYYMM');
+OK
+201307
+Time taken: 0.09 seconds, Fetched: 1 row(s)
+hive> select cast(date_format(order_date, 'YYYYMM') as int) from orders limit 10;
+OK
+201307
+201307
+201307
+201307
+201307
+201307
+201307
+201307
+201307
+201307
+
+=======================================================================================================================
+
+joining data between multiple tables
+
+select o.*, c.* from orders o, customers c where o.order_customer_id = c.customer_id limit 10;
+
+1	2013-07-25 00:00:00.0	11599	CLOSED	11599	Mary	Malone	XXXXXXXXX	XXXXXXXXX	8708 Indian Horse Highway	Hickory	NC
+2	2013-07-25 00:00:00.0	256	PENDING_PAYMENT	256	David	Rodriguez	XXXXXXXXX	XXXXXXXXX	7605 Tawny Horse Falls	Chicago	IL
+3	2013-07-25 00:00:00.0	12111	COMPLETE	12111	Amber	Franco	XXXXXXXXX	XXXXXXXXX	8766 Clear Prairie Line	Santa Cruz	CA
+4	2013-07-25 00:00:00.0	8827	CLOSED	8827	Brian	Wilson	XXXXXXXXX	XXXXXXXXX	8396 High Corners	San Antonio	TX
+5	2013-07-25 00:00:00.0	11318	COMPLETE	11318	Mary	Henry	XXXXXXXXX	XXXXXXXXX	3047 Silent Embers Maze	Caguas	PR
+6	2013-07-25 00:00:00.0	7130	COMPLETE	7130	Alice	Smith	XXXXXXXXX	XXXXXXXXX	8852 Iron Port	Brooklyn	NY
+7	2013-07-25 00:00:00.0	4530	COMPLETE	4530	Mary	Smith	XXXXXXXXX	XXXXXXXXX	1073 Green Leaf Green	Miami	FL
+8	2013-07-25 00:00:00.0	2911	PROCESSING	2911	Mary	Smith	XXXXXXXXX	XXXXXXXXX	9166 Golden Nectar Corner	Caguas	PR
+9	2013-07-25 00:00:00.0	5657	PENDING_PAYMENT	5657	Mary	James	XXXXXXXXX	XXXXXXXXX	1389 Dusty Circuit	Lakewood	OH
+10	2013-07-25 00:00:00.0	5648	PENDING_PAYMENT	5648	Joshua	Smith	XXXXXXXXX	XXXXXXXXX	864 Iron Spring Stead	Memphis	TN
+
+select o.*, c.* from orders o join customers c on o.order_customer_id = c.customer_id limit 10;  (more readable form)  (default is inner join)
+
+res: same as above
+
+select o.*, c.* from  customers c left outer join orders o on o.order_customer_id = c.customer_id limit 10;
+
+res:
+
+22945	2013-12-13 00:00:00.0	1	COMPLETE	1	Richard	Hernandez	XXXXXXXXX	XXXXXXXXX	6303 Heather Plaza	Brownsville	TX
+15192	2013-10-29 00:00:00.0	2	PENDING_PAYMENT	2	Mary	Barrett	XXXXXXXXX	XXXXXXXXX	9526 Noble Embers Ridge	Littleton	CO
+33865	2014-02-18 00:00:00.0	2	COMPLETE	2	Mary	Barrett	XXXXXXXXX	XXXXXXXXX	9526 Noble Embers Ridge	Littleton	CO
+57963	2013-08-02 00:00:00.0	2	ON_HOLD	2	Mary	Barrett	XXXXXXXXX	XXXXXXXXX	9526 Noble Embers Ridge	Littleton	CO
+67863	2013-11-30 00:00:00.0	2	COMPLETE	2	Mary	Barrett	XXXXXXXXX	XXXXXXXXX	9526 Noble Embers Ridge	Littleton	CO
+22646	2013-12-11 00:00:00.0	3	COMPLETE	3	Ann	Smith	XXXXXXXXX	XXXXXXXXX	3422 Blue Pioneer Bend	Caguas	PR
+23662	2013-12-19 00:00:00.0	3	COMPLETE	3	Ann	Smith	XXXXXXXXX	XXXXXXXXX	3422 Blue Pioneer Bend	Caguas	PR
+35158	2014-02-26 00:00:00.0	3	COMPLETE	3	Ann	Smith	XXXXXXXXX	XXXXXXXXX	3422 Blue Pioneer Bend	Caguas	PR
+46399	2014-05-09 00:00:00.0	3	PROCESSING	3	Ann	Smith	XXXXXXXXX	XXXXXXXXX	3422 Blue Pioneer Bend	Caguas	PR
+56178	2014-07-15 00:00:00.0	3	PENDING	3	Ann	Smith	XXXXXXXXX	XXXXXXXXX	3422 Blue Pioneer Bend	Caguas	PR
+
+
+
+select count(1) from orders o join customers c on o.order_customer_id = c.customer_id limit 10;   (count(1) returns the total no of records)
+
+res: 68883
+
+select count(1) from customers c left outer join orders o on o.order_customer_id = c.customer_id limit 10;
+
+res: 68913
+
+select count(1) from customers c left outer join orders o on o.order_customer_id = c.customer_id where o.order_customer_id is null limit 10;
+
+res: 30
+
+select * from customers where customer_id not in (select distinct order_customer_id from orders);  (similar to left outer join. previous query)
+
+====================================================================================================================================================
+
+groupBy and aggregations
+
+select order_status, count(1) from orders group by order_status;
+
+res: 
+
+CANCELED	1428
+CLOSED	        7556
+COMPLETE	22899
+ON_HOLD	        3798
+PAYMENT_REVIEW	729
+PENDING	        7610
+PENDING_PAYMENT	15030
+PROCESSING	8275
+SUSPECTED_FRAUD	1558
+
+select o.order_id, sum(oi.order_item_subtotal) as order_revenue 
+from orders o join order_items oi
+on o.order_id = oi.order_item_order_id
+group by order_id;
+
+res: 
+
+68870	479.9200134277344
+68871	499.9800109863281
+68873	859.9100151062012
+68875	2399.949981689453
+68878	739.9300231933594
+68879	1259.9700012207031
+68880	999.7700042724609
+68881	129.99000549316406
+68882	109.9900016784668
+68883	2149.989990234375
+
+select o.order_id,o.order_date,o.order_status,sum(oi.order_item_subtotal) as order_revenue 
+from orders o join order_items oi
+on o.order_id = oi.order_item_order_id
+group by o.order_id,o.order_date,o.order_status;
+
+res:
+
+68870	2014-06-26 00:00:00.0	COMPLETE	479.9200134277344
+68871	2014-06-28 00:00:00.0	PENDING	499.9800109863281
+68873	2014-06-30 00:00:00.0	PENDING	859.9100151062012
+68875	2014-07-04 00:00:00.0	ON_HOLD	2399.949981689453
+68878	2014-07-08 00:00:00.0	COMPLETE	739.9300231933594
+68879	2014-07-09 00:00:00.0	COMPLETE	1259.9700012207031
+68880	2014-07-13 00:00:00.0	COMPLETE	999.7700042724609
+68881	2014-07-19 00:00:00.0	PENDING_PAYMENT	129.99000549316406
+68882	2014-07-22 00:00:00.0	ON_HOLD	109.9900016784668
+68883	2014-07-23 00:00:00.0	COMPLETE	2149.989990234375
+
+select o.order_id,o.order_date,o.order_status,sum(oi.order_item_subtotal) as order_revenue 
+from orders o join order_items oi
+on o.order_id = oi.order_item_order_id
+group by o.order_id,o.order_date,o.order_status
+having sum(oi.order_item_subtotal) >= 1000;                    (order_revenue is a derived column. therefore it can't be used in having clause. where clause is not 
+
+                                                                 supported)
+
+res:
+
+68843	2014-05-16 00:00:00.0	PROCESSING	1759.8900146484375
+68848	2014-05-22 00:00:00.0	CLOSED	2399.959991455078
+68851	2014-05-26 00:00:00.0	PENDING_PAYMENT	1439.949993133545
+68858	2014-06-06 00:00:00.0	COMPLETE	2839.9100036621094
+68859	2014-06-11 00:00:00.0	COMPLETE	2349.8899841308594
+68862	2014-06-15 00:00:00.0	PROCESSING	1659.9200248718262
+68869	2014-06-25 00:00:00.0	PROCESSING	1229.9699935913086
+68875	2014-07-04 00:00:00.0	ON_HOLD	2399.949981689453
+68879	2014-07-09 00:00:00.0	COMPLETE	1259.9700012207031
+68883	2014-07-23 00:00:00.0	COMPLETE	2149.989990234375
+
+select o.order_id,o.order_date,o.order_status,sum(oi.order_item_subtotal) as order_revenue 
+from orders o join order_items oi
+on o.order_id = oi.order_item_order_id
+where o.order_status in ('COMPLETE', 'CLOSED')              (where clause should always be written before group by clause since filtering needs to be done first)
+group by o.order_id,o.order_date,o.order_status
+having sum(oi.order_item_subtotal) >= 1000;
+
+res:
+
+68789	2014-01-25 00:00:00.0	COMPLETE	1249.9400024414062
+68802	2014-02-19 00:00:00.0	COMPLETE	1079.9200286865234
+68806	2014-03-02 00:00:00.0	COMPLETE	2629.9200134277344
+68821	2014-04-05 00:00:00.0	COMPLETE	2629.9200134277344
+68822	2014-04-06 00:00:00.0	COMPLETE	1399.9499816894531
+68837	2014-05-07 00:00:00.0	COMPLETE	2299.959991455078
+68848	2014-05-22 00:00:00.0	CLOSED	        2399.959991455078
+68858	2014-06-06 00:00:00.0	COMPLETE	2839.9100036621094
+68859	2014-06-11 00:00:00.0	COMPLETE	2349.8899841308594
+68879	2014-07-09 00:00:00.0	COMPLETE	1259.9700012207031
+68883	2014-07-23 00:00:00.0	COMPLETE	2149.989990234375
+
+
+select o.order_date, round(sum(oi.order_item_subtotal)) as order_revenue (round function: ex: 123.0 123.1,123.2,123.4 => 123.0
+from orders o join order_items oi                                                             123.5,123.6 123.7,123.8,123.9 => 124.0
+on o.order_id = oi.order_item_order_id
+where o.order_status in ('COMPLETE', 'CLOSED')                            round(sum(oi.order_item_subtotal), 2) => gives only 2 digits after decimal
+group by o.order_date
+having sum(oi.order_item_subtotal) >= 1000;
+
+res:
+
+2014-07-12 00:00:00.0	38450.0
+2014-07-13 00:00:00.0	40411.0
+2014-07-14 00:00:00.0	29938.0
+2014-07-15 00:00:00.0	53480.0
+2014-07-16 00:00:00.0	43012.0
+2014-07-17 00:00:00.0	36385.0
+2014-07-18 00:00:00.0	43857.0
+2014-07-19 00:00:00.0	38421.0
+2014-07-20 00:00:00.0	60047.0
+2014-07-21 00:00:00.0	51428.0
+2014-07-22 00:00:00.0	36717.0
+2014-07-23 00:00:00.0	38795.0
+2014-07-24 00:00:00.0	50885.0
+
+
+select o.order_date, round(sum(oi.order_item_subtotal),2) as order_revenue 
+from orders o join order_items oi                                                             
+on o.order_id = oi.order_item_order_id
+where o.order_status in ('COMPLETE', 'CLOSED')                            
+group by o.order_date
+having sum(oi.order_item_subtotal) >= 1000;
+
+res:
+
+2014-07-15 00:00:00.0	53480.23
+2014-07-16 00:00:00.0	43011.92
+2014-07-17 00:00:00.0	36384.77
+2014-07-18 00:00:00.0	43856.6
+2014-07-19 00:00:00.0	38420.99
+2014-07-20 00:00:00.0	60047.45
+2014-07-21 00:00:00.0	51427.7
+2014-07-22 00:00:00.0	36717.24
+2014-07-23 00:00:00.0	38795.23
+2014-07-24 00:00:00.0	50885.19
+
+select o.order_date, round(sum(oi.order_item_subtotal),2) as order_revenue 
+from orders o join order_items oi                                                             
+on o.order_id = oi.order_item_order_id
+where o.order_status in ('COMPLETE', 'CLOSED')                            
+group by o.order_date
+having sum(oi.order_item_subtotal) >= 1000
+order by order_date, order_revenue desc;      ( it's the last clause. alias can be used in order by clause. default is asc)
+
+res:
+
+2014-07-01 00:00:00.0	40165.66
+2014-07-02 00:00:00.0	26480.01
+2014-07-03 00:00:00.0	37756.8
+2014-07-04 00:00:00.0	25467.71
+2014-07-05 00:00:00.0	47214.68
+2014-07-06 00:00:00.0	16451.76
+2014-07-07 00:00:00.0	35441.49
+2014-07-08 00:00:00.0	50434.81
+2014-07-09 00:00:00.0	36929.91
+2014-07-10 00:00:00.0	47826.02
+2014-07-11 00:00:00.0	29596.32
+2014-07-12 00:00:00.0	38449.77
+2014-07-13 00:00:00.0	40410.99
+2014-07-14 00:00:00.0	29937.52
+2014-07-15 00:00:00.0	53480.23
+2014-07-16 00:00:00.0	43011.92
+2014-07-17 00:00:00.0	36384.77
+2014-07-18 00:00:00.0	43856.6
+2014-07-19 00:00:00.0	38420.99
+2014-07-20 00:00:00.0	60047.45
+2014-07-21 00:00:00.0	51427.7
+2014-07-22 00:00:00.0	36717.24
+2014-07-23 00:00:00.0	38795.23
+2014-07-24 00:00:00.0	50885.19
+
+select o.order_id,o.order_date,o.order_status,sum(oi.order_item_subtotal) as order_revenue 
+from orders o join order_items oi
+on o.order_id = oi.order_item_order_id
+where order_status in ('COMPLETE', 'CLOSED')
+group by o.order_id,o.order_date,o.order_status
+having sum(oi.order_item_subtotal) >= 1000
+order by order_date,order_revenue desc;
+
+res:
+
+66788	2014-07-01 00:00:00.0	CLOSED	1479.8900451660156
+54007	2014-07-01 00:00:00.0	CLOSED	1289.8800354003906
+54069	2014-07-01 00:00:00.0	CLOSED	1249.910041809082
+66794	2014-07-01 00:00:00.0	COMPLETE	1239.8800354003906
+54163	2014-07-01 00:00:00.0	COMPLETE	1179.8500213623047
+54116	2014-07-01 00:00:00.0	COMPLETE	1163.8500366210938
+66798	2014-07-01 00:00:00.0	COMPLETE	1139.9400177001953
+54097	2014-07-01 00:00:00.0	COMPLETE	1129.8700332641602
+54148	2014-07-01 00:00:00.0	COMPLETE	1059.9300231933594
+54250	2014-07-02 00:00:00.0	COMPLETE	1119.9100341796875
+54171	2014-07-02 00:00:00.0	COMPLETE	1079.8900299072266
+54359	2014-07-03 00:00:00.0	COMPLETE	1429.9200363159
+
+select o.order_id,o.order_date,o.order_status,sum(oi.order_item_subtotal) as order_revenue 
+from orders o join order_items oi
+on o.order_id = oi.order_item_order_id
+where order_status in ('COMPLETE', 'CLOSED')
+group by o.order_id,o.order_date,o.order_status
+having sum(oi.order_item_subtotal) >= 1000                   (data will be sorted within order_date, but order_date will not be sorted)
+distribute by order_date sort by order_date,order_revenue desc;
+
+res:
+
+67413	2014-07-24 00:00:00.0	COMPLETE	1329.890037536621  (in this case order_date is also sorted coz the data size is low)
+57735	2014-07-24 00:00:00.0	COMPLETE	1299.9100189208984
+57733	2014-07-24 00:00:00.0	CLOSED	1209.8400421142578
+57631	2014-07-24 00:00:00.0	CLOSED	1165.8600273132324
+57691	2014-07-24 00:00:00.0	COMPLETE	1149.8100280761719
+57684	2014-07-24 00:00:00.0	COMPLETE	1129.9000244140625
+57669	2014-07-24 00:00:00.0	COMPLETE	1119.9400253295898
+57742	2014-07-24 00:00:00.0	COMPLETE	1079.8800239562988
+67406	2014-07-24 00:00:00.0	COMPLETE	1069.9000244140625
+57650	2014-07-24 00:00:00.0	COMPLETE	1049.9100151062012
+67410	2014-07-24 00:00:00.0	COMPLETE	1019.9400291442871
+57627	2014-07-24 00:00:00.0	COMPLETE	1017.9000015258789
+
+===========================================================================================================================================
+
+set operations union and union all
+
+select 1, "Hello"
+union all
+select 2, "World"
+union all
+select 1, "Hello"
+union all
+select 1, "world";
+
+res:
+
+1	Hello
+2	World
+1	Hello
+1	world
+
+
+select 1, "Hello"
+union
+select 2, "World"
+union
+select 1, "Hello"
+union
+select 1, "hello";
+
+res:   
+
+1	Hello            (union all just clubs everything and give the output.  union discards the same elements and gives unique elements)
+2	World
+1	world
+
+==========================================================================================================================================
+
+Analytics functions and aggregations
+
+
+select o.order_id,o.order_date,o.order_status, oi.order_item_subtotal,                            (it groups by (partition by) order_id  and aggregates the revenue)
+round(sum(oi.order_item_subtotal) over (partition by o.order_id),2) as order_revenue,
+oi.order_item_subtotal/round(sum(oi.order_item_subtotal) over (partition by o.order_id),2)
+from orders o join order_items oi
+on o.order_id = oi.order_item_order_id
+where order_status in ('COMPLETE', 'CLOSED')
+distribute by order_date sort by order_date,order_revenue desc;
+
+res:
+
+57731	2014-07-24 00:00:00.0	CLOSED	99.99	299.99	0.33331110324934005
+57731	2014-07-24 00:00:00.0	CLOSED	200.0	299.99	0.6666888896296543
+57748	2014-07-24 00:00:00.0	COMPLETE	299.98	299.98	1.0000000366235353
+57749	2014-07-24 00:00:00.0	CLOSED	299.97	299.97	1.0000000040694172
+57711	2014-07-24 00:00:00.0	CLOSED	100.0	299.94	0.33340001333600056
+57711	2014-07-24 00:00:00.0	CLOSED	149.94	299.94	0.49989998813564795
+57711	2014-07-24 00:00:00.0	CLOSED	50.0	299.94	0.16670000666800028
+67414	2014-07-24 00:00:00.0	COMPLETE	199.98	279.96	0.7143163156434458
+67414	2014-07-24 00:00:00.0	COMPLETE	79.98	279.96	0.2856836810863466
+57692	2014-07-24 00:00:00.0	COMPLETE	199.92	279.9	0.7142550845621484
+57692	2014-07-24 00:00:00.0	COMPLETE	79.98	279.9	0.2857449208893662
+67398	2014-07-24 00:00:00.0	COMPLETE	269.97	269.97	1.000000004521625
+57619	2014-07-24 00:00:00.0	COMPLETE	129.99	259.98	0.5000000211291794
+57619	2014-07-24 00:00:00.0	COMPLETE	129.99	259.98	0.5000000211291794
+57721	2014-07-24 00:00:00.0	COMPLETE	59.99	259.97	0.23075740154043464
+57721	2014-07-24 00:00:00.0	COMPLETE	199.98	259.97	0.7692425884815134
+
+
+
+
+select o.order_id,o.order_date,o.order_status, oi.order_item_subtotal,                            (it groups by (partition by) order_id  and aggregates the revenue)
+round(sum(oi.order_item_subtotal) over (partition by o.order_id),2) as order_revenue,
+round(oi.order_item_subtotal/round(sum(oi.order_item_subtotal) over (partition by o.order_id),2),2) as percentage_revenue==> new column will be added in the o/p.   
+from orders o join order_items oi                                                                                                  last column in the result
+on o.order_id = oi.order_item_order_id
+where order_status in ('COMPLETE', 'CLOSED')
+distribute by order_date sort by order_date,order_revenue desc;
+
+res:
+
+57619	2014-07-24 00:00:00.0	COMPLETE	129.99	259.98	0.5-----> round(oi.order_item_subtotal/round(sum(oi.order_item_subtotal)
+57619	2014-07-24 00:00:00.0	COMPLETE	129.99	259.98	0.5                                                             over (partition by o.order_id),2),2)
+57721	2014-07-24 00:00:00.0	COMPLETE	59.99	259.97	0.23
+57721	2014-07-24 00:00:00.0	COMPLETE	199.98	259.97	0.77
+67405	2014-07-24 00:00:00.0	COMPLETE	124.99	254.98	0.49
+67405	2014-07-24 00:00:00.0	COMPLETE	129.99	254.98	0.51
+57706	2014-07-24 00:00:00.0	COMPLETE	249.9	249.9	1.0
+57734	2014-07-24 00:00:00.0	CLOSED	199.99	229.99	0.87
+57734	2014-07-24 00:00:00.0	CLOSED	30.0	229.99	0.13
+57643	2014-07-24 00:00:00.0	COMPLETE	199.99	199.99	1.0
+57686	2014-07-24 00:00:00.0	CLOSED	179.97	179.97	1.0
+57747	2014-07-24 00:00:00.0	COMPLETE	174.95	174.95	1.0
+57697	2014-07-24 00:00:00.0	COMPLETE	149.94	149.94	1.0
+57623	2014-07-24 00:00:00.0	COMPLETE	100.0	114.99	0.87
+57623	2014-07-24 00:00:00.0	COMPLETE	14.99	114.99	0.13
+57705	2014-07-24 00:00:00.0	COMPLETE	59.99	59.99	1.0
+57642	2014-07-24 00:00:00.0	CLOSED	50.0	50.0	1.0
+57628	2014-07-24 00:00:00.0	CLOSED	50.0	50.0	1.0
+57693	2014-07-24 00:00:00.0	COMPLETE	39.99	39.99	1.0
+57695	2014-07-24 00:00:00.0	COMPLETE	39.98	39.98	1.0
+Time taken: 123.759 seconds, Fetched: 75408 row(s)
+
+
+select * from (
+select o.order_id,o.order_date,o.order_status, oi.order_item_subtotal,                            
+round(sum(oi.order_item_subtotal) over (partition by o.order_id),2) as order_revenue,
+round(oi.order_item_subtotal/round(sum(oi.order_item_subtotal) over (partition by o.order_id),2),2) as percentage_revenue   
+from orders o join order_items oi                                                                                                  
+on o.order_id = oi.order_item_order_id
+where order_status in ('COMPLETE', 'CLOSED')) q
+where order_revenue >= 1000
+distribute by order_date sort by order_date,order_revenue desc;
+
+
+expl: if you want to use the derived column then you need to nest the query.
+      
+      round(sum(oi.order_item_subtotal) over (partition by o.order_id),2) as order_revenue can also be written as
+      round(sum(oi.order_item_subtotal) over (partition by o.order_id),2) order_revenue  ==> (without as)
+
+res:
+
+67410	2014-07-24 00:00:00.0	COMPLETE	59.99	1019.94	0.06
+67410	2014-07-24 00:00:00.0	COMPLETE	199.99	1019.94	0.2
+67410	2014-07-24 00:00:00.0	COMPLETE	159.99	1019.94	0.16
+57627	2014-07-24 00:00:00.0	COMPLETE	199.98	1017.9	0.2
+57627	2014-07-24 00:00:00.0	COMPLETE	250.0	1017.9	0.25
+57627	2014-07-24 00:00:00.0	COMPLETE	200.0	1017.9	0.2
+57627	2014-07-24 00:00:00.0	COMPLETE	127.96	1017.9	0.13
+57627	2014-07-24 00:00:00.0	COMPLETE	239.96	1017.9	0.24
+57690	2014-07-24 00:00:00.0	CLOSED	399.98	1009.93	0.4
+57690	2014-07-24 00:00:00.0	CLOSED	200.0	1009.93	0.2
+57690	2014-07-24 00:00:00.0	CLOSED	79.98	1009.93	0.08
+57690	2014-07-24 00:00:00.0	CLOSED	199.98	1009.93	0.2
+57690	2014-07-24 00:00:00.0	CLOSED	129.99	1009.93	0.13
+
+
+
+
+select o.order_id,o.order_date,o.order_status, oi.order_item_subtotal,                            
+round(sum(oi.order_item_subtotal) over (partition by o.order_id),2) as order_revenue,
+round(oi.order_item_subtotal/round(sum(oi.order_item_subtotal) over (partition by o.order_id),2),2) as percentage_revenue   
+from orders o join order_items oi                                                                                                  
+on o.order_id = oi.order_item_order_id
+where order_status in ('COMPLETE', 'CLOSED') and round(sum(oi.order_item_subtotal) over (partition by o.order_id),2) >= 1000
+distribute by order_date sort by order_date,order_revenue desc;
+
+
+res:
+
+FAILED: SemanticException [Error 10002]: Line 6:55 Invalid column reference 'sum': (possible column names are: o.order_id, o.order_date, o.order_customer_id, o.order_status, oi.order_item_id, oi.order_item_order_id, oi.order_item_product_id, oi.order_item_quantity, oi.order_item_subtotal, oi.order_item_product_price)
+
+
+select o.order_id,o.order_date,o.order_status, oi.order_item_subtotal,                            
+round(sum(oi.order_item_subtotal) over (partition by o.order_id),2) as order_revenue,
+round(oi.order_item_subtotal/round(sum(oi.order_item_subtotal) over (partition by o.order_id),2),2) as percentage_revenue ,
+round(avg(oi.order_item_subtotal) over (partition by o.order_id),2) as avg_revenue 
+from orders o join order_items oi                                                                                                  
+on o.order_id = oi.order_item_order_id
+where order_status in ('COMPLETE', 'CLOSED')
+distribute by order_date sort by order_date,order_revenue desc;
+
+res:
+
+57706	2014-07-24 00:00:00.0	COMPLETE	249.9	249.9	1.0	249.9
+57734	2014-07-24 00:00:00.0	CLOSED	199.99	229.99	0.87	115.0
+57734	2014-07-24 00:00:00.0	CLOSED	30.0	229.99	0.13	115.0
+57643	2014-07-24 00:00:00.0	COMPLETE	199.99	199.99	1.0	199.99
+57686	2014-07-24 00:00:00.0	CLOSED	179.97	179.97	1.0	179.97
+57747	2014-07-24 00:00:00.0	COMPLETE	174.95	174.95	1.0	174.95
+57697	2014-07-24 00:00:00.0	COMPLETE	149.94	149.94	1.0	149.94
+57623	2014-07-24 00:00:00.0	COMPLETE	100.0	114.99	0.87	57.49
+57623	2014-07-24 00:00:00.0	COMPLETE	14.99	114.99	0.13	57.49
+57705	2014-07-24 00:00:00.0	COMPLETE	59.99	59.99	1.0	59.99
+57642	2014-07-24 00:00:00.0	CLOSED	50.0	50.0	1.0	50.0
+57628	2014-07-24 00:00:00.0	CLOSED	50.0	50.0	1.0	50.0
+57693	2014-07-24 00:00:00.0	COMPLETE	39.99	39.99	1.0	39.99
+57695	2014-07-24 00:00:00.0	COMPLETE	39.98	39.98	1.0	39.98
+
+
+select * from (
+select o.order_id,o.order_date,o.order_status, oi.order_item_subtotal,                            
+round(sum(oi.order_item_subtotal) over (partition by o.order_id),2) as order_revenue,
+round(oi.order_item_subtotal/round(sum(oi.order_item_subtotal) over (partition by o.order_id),2),2) as percentage_revenue ,
+round(avg(oi.order_item_subtotal) over (partition by o.order_id),2) as avg_revenue,
+rank() over (partition by o.order_id order by oi.order_item_subtotal desc) as rank_revenue,
+dense_rank() over (partition by o.order_id order by oi.order_item_subtotal desc) as dense_rank_revenue,
+percent_rank() over (partition by o.order_id order by oi.order_item_subtotal desc) as percent_rank_revenue,
+row_number() over (partition by o.order_id order by oi.order_item_subtotal desc) as rn_orderby_revenue,
+row_number() over (partition by o.order_id) as rn_revenue
+from orders o join order_items oi                                                                                                  
+on o.order_id = oi.order_item_order_id
+where order_status in ('COMPLETE', 'CLOSED')) q
+where order_revenue >= 1000
+distribute by order_date sort by order_date,order_revenue desc,rank_revenue;
+
+
+expl:  
+
+we need to specify on which col we want to perform rank function. Therefore we specify partotion by ().
+rank function should always be used with order by else it gives incorrect results.
+
+
+res:
+
+
+57650	2014-07-24 00:00:00.0	COMPLETE	239.96	1049.91	0.23	209.98	2	2	0.25	4	2
+57650	2014-07-24 00:00:00.0	COMPLETE	199.98	1049.91	0.19	209.98	3	3	0.5	3	1
+57650	2014-07-24 00:00:00.0	COMPLETE	150.0	1049.91	0.14	209.98	4	4	0.75	2	4
+57650	2014-07-24 00:00:00.0	COMPLETE	59.99	1049.91	0.06	209.98	5	5	1.0	1	5   
+67410	2014-07-24 00:00:00.0	COMPLETE	399.98	1019.94	0.39	203.99	1	1	0.0	5	2
+67410	2014-07-24 00:00:00.0	COMPLETE	199.99	1019.94	0.2	203.99	2	2	0.25	3	4
+67410	2014-07-24 00:00:00.0	COMPLETE	199.99	1019.94	0.2	203.99	2	2	0.25	4	1
+67410	2014-07-24 00:00:00.0	COMPLETE	159.99	1019.94	0.16	203.99	4	3	0.75	2	5
+67410	2014-07-24 00:00:00.0	COMPLETE	59.99	1019.94	0.06	203.99	5	4	1.0	1	3
+57627	2014-07-24 00:00:00.0	COMPLETE	250.0	1017.9	0.25	203.58	1	1	0.0	5	3
+57627	2014-07-24 00:00:00.0	COMPLETE	239.96	1017.9	0.24	203.58	2	2	0.25	4	1
+57627	2014-07-24 00:00:00.0	COMPLETE	200.0	1017.9	0.2	203.58	3	3	0.5	3	4
+
+
+(for this o/p i didn't order by desc)
+row_number() over (partition by o.order_id order by oi.order_item_subtotal) as rn_orderby_revenue,  (therefore it sorted by asc)
+
+
+just take these 5 records and analyze 
+
+row_number() over (partition by o.order_id order by oi.order_item_subtotal desc) as rn_orderby_revenue,  (therefore it sorted by asc)
+
+67410	2014-07-24 00:00:00.0	COMPLETE	399.98	1019.94	0.39	203.99	1	1	0.0	1	2
+67410	2014-07-24 00:00:00.0	COMPLETE	199.99	1019.94	0.2	203.99	2	2	0.25	3	4
+67410	2014-07-24 00:00:00.0	COMPLETE	199.99	1019.94	0.2	203.99	2	2	0.25	2	1
+67410	2014-07-24 00:00:00.0	COMPLETE	159.99	1019.94	0.16	203.99	4	3	0.75	4	5
+67410	2014-07-24 00:00:00.0	COMPLETE	59.99	1019.94	0.06	203.99	5	4	1.0	5	3
+
+
+
+rank() o/p:
+
+399.98   1
+199.99   2             (when 2 values are same it assigns same rank)
+199.99   2
+159.99   4             (but here it doesn't give 3 but gives 4)
+59.99    5
+
+
+dense_rank() o/p:
+
+399.98   1
+199.99   2
+199.99   2
+159.99   3
+59.99    4
+
+
+percent_rank() o/p:
+
+
+399.98  0.0 
+199.99  0.25
+199.99  0.25
+159.99  0.75
+59.99   1.0
+
+row_number() order by o/p:
+
+399.98   1          
+199.99   3          (it assigns the row number but when 2 values are same it assigns row number randomly)
+199.99   2          (it can assign 3 for this row and 2 for previous row also)
+159.99   4
+59.99    5
+
+row_number() o/p:
+
+399.98   2
+199.99   4             (it randomly assigns row numbers since we have not used order by)
+199.99   1
+159.99   5
+59.99    3
+
+===========================================================================================================================
+
+windowing functions
+
+
+select * from (
+select o.order_id,o.order_date,o.order_status, oi.order_item_subtotal,                            
+round(sum(oi.order_item_subtotal) over (partition by o.order_id),2) as order_revenue,
+round(oi.order_item_subtotal/round(sum(oi.order_item_subtotal) over (partition by o.order_id),2),2) as percentage_revenue ,
+round(avg(oi.order_item_subtotal) over (partition by o.order_id),2) as avg_revenue,
+rank() over (partition by o.order_id order by oi.order_item_subtotal desc) as rank_revenue,
+dense_rank() over (partition by o.order_id order by oi.order_item_subtotal desc) as dense_rank_revenue,
+percent_rank() over (partition by o.order_id order by oi.order_item_subtotal desc) as percent_rank_revenue,
+row_number() over (partition by o.order_id order by oi.order_item_subtotal desc) as rn_orderby_revenue,
+row_number() over (partition by o.order_id) as rn_revenue,
+lead(oi.order_item_subtotal) over (partition by o.order_id order by oi.order_item_subtotal desc) as lead_order_item_subtotal,
+lag(oi.order_item_subtotal) over (partition by o.order_id order by oi.order_item_subtotal desc) as lag_order_item_subtotal,
+first_value(oi.order_item_subtotal) over (partition by o.order_id order by oi.order_item_subtotal desc) as first_order_item_subtotal,
+last_value(oi.order_item_subtotal) over (partition by o.order_id order by oi.order_item_subtotal desc) as last_order_item_subtotal
+from orders o join order_items oi                                                                                                  
+on o.order_id = oi.order_item_order_id
+where order_status in ('COMPLETE', 'CLOSED')) q
+where order_revenue >= 1000
+distribute by order_date sort by order_date,order_revenue desc,rank_revenue;
+
+
+res:
+
+
+57690	2014-07-24 00:00:00.0	CLOSED	399.98	1009.93	0.4	201.99	1	1	0.0	1	3	200.0	NULL	399.98	399.98
+57690	2014-07-24 00:00:00.0	CLOSED	200.0	1009.93	0.2	201.99	2	2	0.25	2	2	199.98	399.98	399.98	200.0
+57690	2014-07-24 00:00:00.0	CLOSED	199.98	1009.93	0.2	201.99	3	3	0.5	3	5	129.99	200.0	399.98	199.98
+57690	2014-07-24 00:00:00.0	CLOSED	129.99	1009.93	0.13	201.99	4	4	0.75	4	4	79.98	199.98	399.98	129.99
+57690	2014-07-24 00:00:00.0	CLOSED	7l9.98	1009.93	0.08	201.99	5	5	1.0	5	1	NULL	129.99	399.98	79.98
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

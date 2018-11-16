@@ -1,0 +1,247 @@
+orders = sc.textFile("file:/home/cloudera/Downloads/data-master/retail_db/orders")
+
+orders.first()
+
+for i in orders.take(10) : print(i)
+... 
+1,2013-07-25 00:00:00.0,11599,CLOSED
+2,2013-07-25 00:00:00.0,256,PENDING_PAYMENT
+3,2013-07-25 00:00:00.0,12111,COMPLETE
+4,2013-07-25 00:00:00.0,8827,CLOSED
+5,2013-07-25 00:00:00.0,11318,COMPLETE
+6,2013-07-25 00:00:00.0,7130,COMPLETE
+7,2013-07-25 00:00:00.0,4530,COMPLETE
+8,2013-07-25 00:00:00.0,2911,PROCESSING
+9,2013-07-25 00:00:00.0,5657,PENDING_PAYMENT
+10,2013-07-25 00:00:00.0,5648,PENDING_PAYMENT
+
+ordersStatuses = orders.map(lambda rec : rec.split(",")[3])
+
+for i in ordersStatuses.take(10) : print(i)
+... 
+CLOSED
+PENDING_PAYMENT
+COMPLETE
+CLOSED
+COMPLETE
+COMPLETE
+COMPLETE
+PROCESSING
+PENDING_PAYMENT
+PENDING_PAYMENT
+
+for i in ordersStatuses.distinct().collect() : print(i)
+... 
+COMPLETE
+PAYMENT_REVIEW
+PROCESSING
+CANCELED
+PENDING
+CLOSED
+PENDING_PAYMENT
+SUSPECTED_FRAUD
+ON_HOLD
+
+ordersCompletedCount = sc.accumulator(0)
+ordersNonCompletedCount = sc.accumulator(0)
+
+def isComplete(rec,ordersCompletedCount,ordersNonCompletedCount):
+  isCompleted = rec.split(",")[3] == "COMPLETE" or rec.split(",")[3] == "CLOSED"
+  if(isCompleted):
+    ordersCompletedCount = ordersCompletedCount.add(1)
+  else:
+    ordersNonCompletedCount = ordersNonCompletedCount.add(1)
+  return isCompleted
+
+ordersFiltered = orders.filter\
+(lambda rec : isComplete(rec,ordersCompletedCount,ordersNonCompletedCount))
+
+for i in ordersFiltered.take(50) : print(i)
+... 
+1,2013-07-25 00:00:00.0,11599,CLOSED
+3,2013-07-25 00:00:00.0,12111,COMPLETE
+4,2013-07-25 00:00:00.0,8827,CLOSED
+5,2013-07-25 00:00:00.0,11318,COMPLETE
+6,2013-07-25 00:00:00.0,7130,COMPLETE
+7,2013-07-25 00:00:00.0,4530,COMPLETE
+12,2013-07-25 00:00:00.0,1837,CLOSED
+15,2013-07-25 00:00:00.0,2568,COMPLETE
+17,2013-07-25 00:00:00.0,2667,COMPLETE
+18,2013-07-25 00:00:00.0,1205,CLOSED
+22,2013-07-25 00:00:00.0,333,COMPLETE
+24,2013-07-25 00:00:00.0,11441,CLOSED
+
+>>> ordersCompletedCount
+Accumulator<id=1, value=101>
+>>> ordersNonCompletedCount
+Accumulator<id=4, value=79>
+
+ordersMap = ordersFiltered.map\
+(lambda rec : (int(rec.split(",")[0]), rec.split(",")[1]))
+
+>>> ordersMap.first()
+(1, u'2013-07-25 00:00:00.0')
+
+orderItems = sc.textFile("file:/home/cloudera/Downloads/data-master/retail_db/order_items")
+
+orderItemsMap = orderItems.map\
+(lambda rec : (int(rec.split(",")[1]), (int(rec.split(",")[2]), float(rec.split(",")[4]))))
+
+
+for i in orderItemsMap.take(10) : print(i)
+... 
+(1, (957, 299.98000000000002))
+(2l, (1073, 199.99000000000001))
+(2, (502, 250.0))
+(2, (403, 129.99000000000001))
+(4, (897, 49.979999999999997))
+(4, (365, 299.94999999999999))
+(4, (502, 150.0))
+(4, (1014, 199.91999999999999))
+(5, (957, 299.98000000000002))
+(5, (365, 299.94999999999999))
+>>> for i in ordersMap.take(10) : print(i)
+... 
+(1, u'2013-07-25 00:00:00.0')
+(3, u'2013-07-25 00:00:00.0')
+(4, u'2013-07-25 00:00:00.0')
+(5, u'2013-07-25 00:00:00.0')
+(6, u'2013-07-25 00:00:00.0')
+(7, u'2013-07-25 00:00:00.0')
+(12, u'2013-07-25 00:00:00.0')
+(15, u'2013-07-25 00:00:00.0')
+(17, u'2013-07-25 00:00:00.0')
+(18, u'2013-07-25 00:00:00.0')
+
+ordersJoin = ordersMap.join(orderItemsMap)
+
+>>> for i in ordersJoin.take(10) : print(i)
+... 
+(4, (u'2013-07-25 00:00:00.0', (897, 49.979999999999997)))                      
+(4, (u'2013-07-25 00:00:00.0', (365, 299.94999999999999)))
+(4, (u'2013-07-25 00:00:00.0', (502, 150.0)))
+(4, (u'2013-07-25 00:00:00.0', (1014, 199.91999999999999)))
+(12, (u'2013-07-25 00:00:00.0', (957, 299.98000000000002)))
+(12, (u'2013-07-25 00:00:00.0', (134, 100.0)))
+(12, (u'2013-07-25 00:00:00.0', (1014, 149.94)))
+(12, (u'2013-07-25 00:00:00.0', (191, 499.94999999999999)))
+(12, (u'2013-07-25 00:00:00.0', (502, 250.0)))
+(18, (u'2013-07-25 00:00:00.0', (1073, 199.99000000000001)))
+
+ordersLeftOuterJoin = ordersMap.leftOuterJoin(orderItemsMap)
+
+for i in ordersLeftOuterJoin.take(10) : print(i)  (Left outer join and right outer join)
+... 
+(4, (u'2013-07-25 00:00:00.0', (897, 49.979999999999997)))                      
+(4, (u'2013-07-25 00:00:00.0', (365, 299.94999999999999)))
+(4, (u'2013-07-25 00:00:00.0', (502, 150.0)))
+(4, (u'2013-07-25 00:00:00.0', (1014, 199.91999999999999)))
+(6, (u'2013-07-25 00:00:00.0', None))
+(12, (u'2013-07-25 00:00:00.0', (957, 299.98000000000002)))
+(12, (u'2013-07-25 00:00:00.0', (134, 100.0)))
+(12, (u'2013-07-25 00:00:00.0', (1014, 149.94)))
+(12, (u'2013-07-25 00:00:00.0', (191, 499.94999999999999)))
+(12, (u'2013-07-25 00:00:00.0', (502, 250.0)))
+
+
+(4, (u'2013-07-25 00:00:00.0', (897, 49.979999999999997))) 
+
+ordersJoinMap = ordersJoin.map\
+(lambda rec : ((rec[1][0], rec[1][1][0]), rec[1][1][1]))
+
+dailyRevenuePerProduct = ordersJoinMap.reduceByKey\
+(lambda total,element : total + element)
+
+=====================================================================================================================
+
+orders = sc.textFile("file:/home/cloudera/Downloads/data-master/retail_db/orders")
+
+orderItems = sc.textFile("file:/home/cloudera/Downloads/data-master/retail_db/order_items")
+
+ordersMap = orders.map\
+(lambda rec : (int(rec.split(",")[0]), (rec.split(",")[1], int(rec.split(",")[2]))))
+
+orderItemsMap = orderItems.map\
+(lambda rec : (int(rec.split(",")[1]), (int(rec.split(",")[2]), float(rec.split(",")[4]))))
+
+products = sc.textFile("file:/home/cloudera/Downloads/data-master/retail_db/products")
+
+productsMap = products.map\
+(lambda rec : (int(rec.split(",")[0]), rec.split(",")[2]))
+
+ordersAndOrderItemsJoin = ordersMap.join(orderItemsMap)
+
+ordersAndOrderItemsJoinMap = ordersAndOrderItemsJoin.map\
+(lambda rec: ((rec[1][0][0], rec[1][1][0]), rec[1][1][1]))
+
+ordersRevenue = ordersAndOrderItemsJoinMap.reduceByKey\
+(lambda x,y : x+y)
+
+products = open("/home/cloudera/Downloads/data-master/retail_db/products/part-00000").read().splitlines()
+
+productsMap = dict(map(lambda rec : (int(rec.split(",")[0]), rec.split(",")[2]),products))
+
+productsBV = sc.broadcast(productsMap)
+
+ordersJoin = ordersAndOrderItemsJoin.map\
+(lambda rec : ((rec[1][0][0], productsBV.value[rec[1][1][0]]), rec[1][1][1]))
+
+
+productsMap = map(lambda rec : (int(rec.split(",")[0]), rec.split(",")[2]),products)
+
+orderAndOrderItemsJoinUsingAggregateKey = ordersAndOrderItemsJoinMap.aggregateByKey\
+((0.0,1), lambda inter,revenue : (inter[0] + revenue, inter[1] + 1) , lambda final , inter : (final[0] + inter[0], final[1] + inter[1]) )
+
+
+ordersRevenuePerProductName= ordersAndOrderItemsJoin.map\
+(lambda rec : ((rec[1][0][0], productsBV.value[rec[1][1][0]]), rec[1][1][1]))for i in ordersRevenuePerProductName.sortByKey().take(10) : print(i)
+
+for i in ordersRevenuePerProductName.sortByKey().take(10) : print(i)
+
+for i in ordersRevenuePerProductName.sortByKey(False).take(10) : print(i)
+
+ordersRevenueReArrangingColumns = ordersRevenuePerProductName.map\
+(lambda rec : ((rec[0][0], -rec[1]), rec[0][1]))
+
+ordersRevenueReArrangingColumnsSorted = ordersRevenueReArrangingColumns.\
+sortByKey()
+
+ordersRevenueReArrangingColumnsSortedResults = ordersRevenueReArrangingColumnsSorted.map\
+(lambda rec : rec[0][0] + "," + str(-rec[0][1]) + "," + rec[1])
+
+ordersRevenueReArrangingColumnsSortedResults.saveAsTextFile("/user/Katamreddy.Tejaswini/HDPCD/dailyRevenuePerProduct")
+
+hadoop fs -ls /user/Katamreddy.Tejaswini/HDPCD/dailyRevenuePerProduct  (make sure the directory doesn't exist in HDFS)
+
+hadoop fs -cat  /user/Katamreddy.Tejaswini/HDPCD/dailyRevenuePerProduct/part-00000
+
+hadoop fs -cat  /user/Katamreddy.Tejaswini/HDPCD/dailyRevenuePerProduct/part*  ==> prints content in all the files
+
+hadoop fs -get /user/Katamreddy.Tejaswini/HDPCD/dailyRevenuePerProduct /home/cloudera/. (If the path is same we can just put .)  ==> copies files from HDFS to local path
+
+cd
+
+ls -ltr
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
